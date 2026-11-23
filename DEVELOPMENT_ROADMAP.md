@@ -64,3 +64,5 @@
 - [x] Definition of Done checklist audit.
 - [x] Release documentation and changelog completion.
 - [x] Live portrait preview companion verification.
+- [x] Signed Android Release APK (`release/DetectiveGenius-release.apk`) generated and verified.
+- [x] Google Play Store compliance audit (targetSdk 34, minSdk 26, V2/V3 signatures, explicit exports, uncompressed resources.arsc).

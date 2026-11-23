@@ -58,7 +58,7 @@ fun AvatarView(
     val backgroundBrush = if (state == AvatarState.ELIMINATED) {
         Brush.linearGradient(listOf(Color(0xFF334155), Color(0xFF1E293B)))
     } else {
-        Brush.linearGradient(listOf(def.primaryColor, def.secondaryColor))
+        Brush.linearGradient(listOf(Color(def.primaryColor), Color(def.secondaryColor)))
     }
 
     Box(

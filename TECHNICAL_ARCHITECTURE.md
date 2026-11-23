@@ -112,3 +112,21 @@ Failure behavior: Each failed attempt increments mistake count. Upon 3 mistakes,
 - **WebSocket Route Security:** All client packets validate `(sessionId, playerId)`.
 - **Information Leak Prevention:** The server generates player-specific views (`PlayerViewDto`). Secret package identities are strictly stored in host memory/persistence and never transmitted over the wire.
 - **RTL & Typography:** Persian string formatting handles numerals, punctuation, and bidirectionality correctly without text corruption.
+
+---
+
+## 6. Release Packaging & Google Play Store Compliance
+
+- **Build Pipeline (`build-apk.sh`):**
+  - **AAPT2 (Android Asset Packaging Tool 2):** Compiles XML resources, vector drawables, launcher icons, and localizations (`values/strings.xml`, `values-fa/strings.xml`). Links compiled assets against official Android API 34 `android.jar`.
+  - **Kotlin Compiler (kotlinc 2.0):** Compiles domain engine, data models, networking protocols, design tokens, and state flows to JVM class bytecode.
+  - **Google D8 Dexer:** Translates class bytecode to optimized Dalvik Executable format (`classes.dex`) targeting `minSdkVersion 26` and `targetSdkVersion 34`.
+  - **APK Assembly & Zip Alignment:** Stores `resources.arsc` uncompressed (`ZIP_STORED`) for immediate memory-mapped access and 4-byte runtime alignment required by Android.
+  - **Google ApkSigner:** Cryptographically signs release packages with 2048-bit RSA key using dual APK Signature Scheme v2 and v3.
+- **Play Store Requirements Checklist:**
+  - `minSdkVersion`: 26 (Android 8.0 Oreo)
+  - `targetSdkVersion`: 34 (Android 14+, fully compliant with Google Play 2024–2026 mandates)
+  - Package ID: `com.detectivegenius`
+  - Explicit component exports: `android:exported="true"` declared on launcher activity
+  - Portrait orientation strictly locked
+  - Permitted network permissions only (`INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `CHANGE_WIFI_MULTICAST_STATE`, `VIBRATE`) — zero invasive permissions required.

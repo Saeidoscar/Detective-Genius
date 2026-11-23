@@ -33,3 +33,5 @@
 | **Audio & Haptics** | [x] | `SoundAndHapticsManager` with offline sound cues and haptic patterns. |
 | **Recovery & Persistence** | [x] | `GameSessionSnapshot` serialization and state restoration. |
 | **Live Interactive Preview** | [x] | Live portrait preview server running on port 3000 bound to 0.0.0.0. |
+| **Android Release APK** | [x] | Standalone signed release APK built via AAPT2, Kotlin 2.0, Google D8, and ApkSigner (`release/DetectiveGenius-release.apk`). |
+| **Google Play Store Compliance** | [x] | Fully validated against all Google Play 2024–2026 criteria: targetSdk 34, minSdk 26, explicit `android:exported="true"`, portrait-lock, V2/V3 signatures, 2048-bit RSA keystore. |
