@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.detectivegenius">
 
     <!-- Permissions for Local Wi-Fi Multiplayer, NSD Discovery, and Haptics -->
     <uses-permission android:name="android.permission.INTERNET" />

@@ -1,7 +1,5 @@
 package com.detectivegenius.designsystem.avatar
 
-import androidx.compose.ui.graphics.Color
-
 enum class AvatarState {
     IDLE,
     SELECTED,
@@ -16,8 +14,8 @@ data class AvatarDefinition(
     val nameEn: String,
     val nameFa: String,
     val emoji: String,
-    val primaryColor: Color,
-    val secondaryColor: Color,
+    val primaryColor: Long,
+    val secondaryColor: Long,
     val badgeIconName: String,
     val descriptionEn: String,
     val descriptionFa: String
@@ -30,8 +28,8 @@ object AvatarRegistry {
             nameEn = "Detective",
             nameFa = "کارآگاه",
             emoji = "🕵️",
-            primaryColor = Color(0xFF6366F1),
-            secondaryColor = Color(0xFF312E81),
+            primaryColor = 0xFF6366F1L,
+            secondaryColor = 0xFF312E81L,
             badgeIconName = "search",
             descriptionEn = "Master of observation and inductive reasoning.",
             descriptionFa = "استاد مشاهده دقیق و استنتاج‌های منطقی."
@@ -41,8 +39,8 @@ object AvatarRegistry {
             nameEn = "Magician",
             nameFa = "شعبده‌باز",
             emoji = "🎩",
-            primaryColor = Color(0xFF8B5CF6),
-            secondaryColor = Color(0xFF4C1D95),
+            primaryColor = 0xFF8B5CF6L,
+            secondaryColor = 0xFF4C1D95L,
             badgeIconName = "auto_fix_high",
             descriptionEn = "Keeper of secrets, sleights, and misdirection.",
             descriptionFa = "نگهبان رازها و شعبده‌های غیرقابل پیش‌بینی."
@@ -52,8 +50,8 @@ object AvatarRegistry {
             nameEn = "Astronaut",
             nameFa = "فضانورد",
             emoji = "🧑‍🚀",
-            primaryColor = Color(0xFF0EA5E9),
-            secondaryColor = Color(0xFF075985),
+            primaryColor = 0xFF0EA5E9L,
+            secondaryColor = 0xFF075985L,
             badgeIconName = "rocket_launch",
             descriptionEn = "Explorer of uncharted cosmic mysteries.",
             descriptionFa = "کاوشگر ناشناخته‌ها و رازهای کهکشانی."
@@ -63,8 +61,8 @@ object AvatarRegistry {
             nameEn = "Fox",
             nameFa = "روباه",
             emoji = "🦊",
-            primaryColor = Color(0xFFF97316),
-            secondaryColor = Color(0xFF9A3412),
+            primaryColor = 0xFFF97316L,
+            secondaryColor = 0xFF9A3412L,
             badgeIconName = "pets",
             descriptionEn = "Cunning investigator who reads between the lines.",
             descriptionFa = "زیرک و چابک در خواندن نیت‌های پنهان."
@@ -74,8 +72,8 @@ object AvatarRegistry {
             nameEn = "Owl",
             nameFa = "جغد",
             emoji = "🦉",
-            primaryColor = Color(0xFFA855F7),
-            secondaryColor = Color(0xFF581C87),
+            primaryColor = 0xFFA855F7L,
+            secondaryColor = 0xFF581C87L,
             badgeIconName = "visibility",
             descriptionEn = "Wise night watcher with unmatched scrutiny.",
             descriptionFa = "دیده‌بان خردمند شب با نگاهی ژرف‌نگر."
@@ -85,8 +83,8 @@ object AvatarRegistry {
             nameEn = "Cat",
             nameFa = "گربه",
             emoji = "🐱",
-            primaryColor = Color(0xFFEC4899),
-            secondaryColor = Color(0xFF831843),
+            primaryColor = 0xFFEC4899L,
+            secondaryColor = 0xFF831843L,
             badgeIconName = "cruelty_free",
             descriptionEn = "Silent inquisitor slipping through locked doors.",
             descriptionFa = "کارآگاهی آرام که از تمام درهای بسته عبور می‌کند."
@@ -96,8 +94,8 @@ object AvatarRegistry {
             nameEn = "Robot",
             nameFa = "ربات",
             emoji = "🤖",
-            primaryColor = Color(0xFF06B6D4),
-            secondaryColor = Color(0xFF164E63),
+            primaryColor = 0xFF06B6D4L,
+            secondaryColor = 0xFF164E63L,
             badgeIconName = "memory",
             descriptionEn = "High-precision computational deduction unit.",
             descriptionFa = "واحد پردازش تحلیلی با محاسبات فوق دقیق."
@@ -107,8 +105,8 @@ object AvatarRegistry {
             nameEn = "Ghost",
             nameFa = "شبح",
             emoji = "👻",
-            primaryColor = Color(0xFF94A3B8),
-            secondaryColor = Color(0xFF334155),
+            primaryColor = 0xFF94A3B8L,
+            secondaryColor = 0xFF334155L,
             badgeIconName = "blur_on",
             descriptionEn = "Unseen presence listening to confidential whispers.",
             descriptionFa = "حضور نادیدنی که زمزمه‌های محرمانه را می‌شنود."
@@ -118,8 +116,8 @@ object AvatarRegistry {
             nameEn = "Artist",
             nameFa = "هنرمند",
             emoji = "🎨",
-            primaryColor = Color(0xFFF43F5E),
-            secondaryColor = Color(0xFF881337),
+            primaryColor = 0xFFF43F5EL,
+            secondaryColor = 0xFF881337L,
             badgeIconName = "palette",
             descriptionEn = "Perceives subtle patterns, styles, and brushstrokes.",
             descriptionFa = "درک‌کننده ظریف‌ترین الگوها و خطوط پنهان."
@@ -129,8 +127,8 @@ object AvatarRegistry {
             nameEn = "Scientist",
             nameFa = "دانشمند",
             emoji = "🔬",
-            primaryColor = Color(0xFF10B981),
-            secondaryColor = Color(0xFF064E3B),
+            primaryColor = 0xFF10B981L,
+            secondaryColor = 0xFF064E3BL,
             badgeIconName = "biotech",
             descriptionEn = "Forensic analyst testing hypotheses rigorously.",
             descriptionFa = "آزمایشگر فرضیه‌ها با روش‌های علمی استوار."
@@ -140,8 +138,8 @@ object AvatarRegistry {
             nameEn = "Pirate",
             nameFa = "دزد دریایی",
             emoji = "🏴‍☠️",
-            primaryColor = Color(0xFFB45309),
-            secondaryColor = Color(0xFF451A03),
+            primaryColor = 0xFFB45309L,
+            secondaryColor = 0xFF451A03L,
             badgeIconName = "sailing",
             descriptionEn = "Fearless navigator pursuing hidden treasures.",
             descriptionFa = "دریانورد شجاع در جستجوی گنجینه‌های مدفون."
@@ -151,8 +149,8 @@ object AvatarRegistry {
             nameEn = "Knight",
             nameFa = "شوالیه",
             emoji = "🛡️",
-            primaryColor = Color(0xFF64748B),
-            secondaryColor = Color(0xFF1E293B),
+            primaryColor = 0xFF64748BL,
+            secondaryColor = 0xFF1E293BL,
             badgeIconName = "shield",
             descriptionEn = "Steadfast defender of truth and honor.",
             descriptionFa = "مدافع استوار حقیقت، سوگند و شرافت."
@@ -162,8 +160,8 @@ object AvatarRegistry {
             nameEn = "Alien",
             nameFa = "بیگانه",
             emoji = "👽",
-            primaryColor = Color(0xFF84CC16),
-            secondaryColor = Color(0xFF365314),
+            primaryColor = 0xFF84CC16L,
+            secondaryColor = 0xFF365314L,
             badgeIconName = "public",
             descriptionEn = "Possesses strange intuition from distant worlds.",
             descriptionFa = "دارای شهود غریب و ناشناخته از دنیاهای دوردست."
@@ -173,8 +171,8 @@ object AvatarRegistry {
             nameEn = "Penguin",
             nameFa = "پنگوئن",
             emoji = "🐧",
-            primaryColor = Color(0xFF0284C7),
-            secondaryColor = Color(0xFF082F49),
+            primaryColor = 0xFF0284C7L,
+            secondaryColor = 0xFF082F49L,
             badgeIconName = "ac_unit",
             descriptionEn = "Cool, calm, and collected under cross-examination.",
             descriptionFa = "خونسرد و مسلط در برابر سخت‌ترین بازجویی‌ها."
@@ -184,8 +182,8 @@ object AvatarRegistry {
             nameEn = "Raven",
             nameFa = "کلاغ",
             emoji = "🪶",
-            primaryColor = Color(0xFF475569),
-            secondaryColor = Color(0xFF0F172A),
+            primaryColor = 0xFF475569L,
+            secondaryColor = 0xFF0F172AL,
             badgeIconName = "feather",
             descriptionEn = "Harbinger of cryptic omens and lost knowledge.",
             descriptionFa = "پیام‌آور نشانه‌های مبهم و دانش‌های گم‌شده."
@@ -195,8 +193,8 @@ object AvatarRegistry {
             nameEn = "Explorer",
             nameFa = "کاوشگر",
             emoji = "🧭",
-            primaryColor = Color(0xFFD97706),
-            secondaryColor = Color(0xFF78350F),
+            primaryColor = 0xFFD97706L,
+            secondaryColor = 0xFF78350FL,
             badgeIconName = "explore",
             descriptionEn = "Pathfinder untangling labyrinthine conspiracies.",
             descriptionFa = "راه‌یاب در هزارتوهای معما و توطئه‌های پیچیده."
@@ -206,8 +204,8 @@ object AvatarRegistry {
             nameEn = "Jester",
             nameFa = "دلقک",
             emoji = "🃏",
-            primaryColor = Color(0xFFD946EF),
-            secondaryColor = Color(0xFF701A75),
+            primaryColor = 0xFFD946EFL,
+            secondaryColor = 0xFF701A75L,
             badgeIconName = "theater_comedy",
             descriptionEn = "Feigns foolishness to extract guarded confessions.",
             descriptionFa = "با نقاب بازیگوشی، اعتراف‌های مهم را آشکار می‌کند."
@@ -217,8 +215,8 @@ object AvatarRegistry {
             nameEn = "Ninja",
             nameFa = "نینجا",
             emoji = "🥷",
-            primaryColor = Color(0xFF334155),
-            secondaryColor = Color(0xFF020617),
+            primaryColor = 0xFF334155L,
+            secondaryColor = 0xFF020617L,
             badgeIconName = "visibility_off",
             descriptionEn = "Shadow operative extracting intelligence unseen.",
             descriptionFa = "عامل سایه‌ها که اطلاعات را نامحسوس جمع‌آوری می‌کند."
@@ -228,8 +226,8 @@ object AvatarRegistry {
             nameEn = "Wizard",
             nameFa = "جادوگر",
             emoji = "🧙",
-            primaryColor = Color(0xFF7C3AED),
-            secondaryColor = Color(0xFF2E1065),
+            primaryColor = 0xFF7C3AEDL,
+            secondaryColor = 0xFF2E1065L,
             badgeIconName = "flare",
             descriptionEn = "Master of ancient runic riddles and arcane logic.",
             descriptionFa = "استاد معماهای کهن و منطق‌های شگفت‌انگیز."
@@ -239,8 +237,8 @@ object AvatarRegistry {
             nameEn = "Inventor",
             nameFa = "مخترع",
             emoji = "⚙️",
-            primaryColor = Color(0xFFEAB308),
-            secondaryColor = Color(0xFF713F12),
+            primaryColor = 0xFFEAB308L,
+            secondaryColor = 0xFF713F12L,
             badgeIconName = "build",
             descriptionEn = "Constructs ingenious traps and evidence decoders.",
             descriptionFa = "سازنده ابزارهای نبوغ‌آمیز برای رمزگشایی مدارک."
@@ -250,8 +248,8 @@ object AvatarRegistry {
             nameEn = "Wolf",
             nameFa = "گرگ",
             emoji = "🐺",
-            primaryColor = Color(0xFF6B7280),
-            secondaryColor = Color(0xFF1F2937),
+            primaryColor = 0xFF6B7280L,
+            secondaryColor = 0xFF1F2937L,
             badgeIconName = "crisis_alert",
             descriptionEn = "Tenacious tracker hunting down elusive trails.",
             descriptionFa = "ردیاب سرسخت ردپاهای فرار و پنهان‌کاری."
@@ -261,8 +259,8 @@ object AvatarRegistry {
             nameEn = "Panda",
             nameFa = "پاندا",
             emoji = "🐼",
-            primaryColor = Color(0xFF14B8A6),
-            secondaryColor = Color(0xFF134E4A),
+            primaryColor = 0xFF14B8A6L,
+            secondaryColor = 0xFF134E4AL,
             badgeIconName = "spa",
             descriptionEn = "Zen detective cutting through distractions.",
             descriptionFa = "کارآگاه صبور و آرام با تمرکز روی اصل ماجرا."
@@ -272,8 +270,8 @@ object AvatarRegistry {
             nameEn = "Time Traveler",
             nameFa = "مسافر زمان",
             emoji = "⏳",
-            primaryColor = Color(0xFF3B82F6),
-            secondaryColor = Color(0xFF1E3A8A),
+            primaryColor = 0xFF3B82F6L,
+            secondaryColor = 0xFF1E3A8AL,
             badgeIconName = "hourglass_top",
             descriptionEn = "Reconstructs timelines with chronological precision.",
             descriptionFa = "بازساز خطوط زمانی حوادث با دقت بی‌نظیر."
@@ -283,8 +281,8 @@ object AvatarRegistry {
             nameEn = "Phantom",
             nameFa = "فانتوم",
             emoji = "🎭",
-            primaryColor = Color(0xFF4F46E5),
-            secondaryColor = Color(0xFF1E1B4B),
+            primaryColor = 0xFF4F46E5L,
+            secondaryColor = 0xFF1E1B4BL,
             badgeIconName = "masks",
             descriptionEn = "Enigmatic mastermind always one step ahead.",
             descriptionFa = "مغز متفکر رازآلود که همیشه یک گام جلوتر است."

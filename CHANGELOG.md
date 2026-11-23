@@ -46,3 +46,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 14 Jetpack Compose screens:
     - `HomeScreen`, `OnboardingScreen`, `CreateRoomScreen`, `JoinRoomScreen`, `LobbyScreen`, `QuestionCreationScreen`, `AnsweringScreen`, `DistributionScreen`, `MysteryBoardScreen`, `PackageViewerScreen`, `ChatScreen`, `VictoryScreen`, `EliminationScreen`, `SettingsScreen`.
   - Live interactive mobile preview server running on port 3000.
+- Signed Release Android APK (`release/DetectiveGenius-release.apk`) & Play Store Compliance:
+  - Built with AAPT2 2.20, Kotlin 2.0, Google D8 Dexer, and Google ApkSigner.
+  - Target SDK 34 (Android 14) and Min SDK 26 (Android 8.0) satisfying Google Play requirements.
+  - Release Keystore (`keystore/detectivegenius-release.jks`) with 2048-bit RSA key and 10,000-day validity.
+  - Dual APK Signature Scheme v2 and v3 verified.
+  - Automated build script `build-apk.sh` with complete Play Store compliance audit suite.
