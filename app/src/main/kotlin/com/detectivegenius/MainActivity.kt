@@ -1,164 +1,155 @@
 package com.detectivegenius
 
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import com.detectivegenius.designsystem.theme.DetectiveTheme
-import com.detectivegenius.navigation.Screen
-import com.detectivegenius.ui.screens.*
-import com.detectivegenius.viewmodel.GameViewModel
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.view.WindowManager
+import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.FrameLayout
 
-class MainActivity : ComponentActivity() {
+/**
+ * Main launcher Activity for Detective Genius.
+ * Enforces strict portrait orientation, hardware acceleration,
+ * and hosts the offline local asset web environment with native bridges.
+ */
+class MainActivity : Activity() {
+
+    private lateinit var webView: WebView
+
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // STRICT INVARIANT: Force portrait orientation exclusively!
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
-        setContent {
-            val gameViewModel: GameViewModel = viewModel()
-            val isDarkTheme by gameViewModel.isDarkTheme.collectAsState()
-            val language by gameViewModel.currentLanguage.collectAsState()
+        // Enable hardware acceleration for fluid 60fps animations
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
+        )
 
-            // RTL support for Persian, LTR for English
-            val layoutDirection = if (language == "fa") LayoutDirection.Rtl else LayoutDirection.Ltr
+        // Immersive dark status bar matching Detective Genius palette
+        window.statusBarColor = 0xFF070B18.toInt()
+        window.navigationBarColor = 0xFF070B18.toInt()
 
-            CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-                DetectiveTheme(darkTheme = isDarkTheme) {
-                    DetectiveNavigationGraph(viewModel = gameViewModel)
+        val rootLayout = FrameLayout(this)
+        rootLayout.setBackgroundColor(0xFF070B18.toInt())
+
+        webView = WebView(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            setBackgroundColor(0xFF070B18.toInt())
+            isVerticalScrollBarEnabled = false
+            isHorizontalScrollBarEnabled = false
+
+            settings.apply {
+                javaScriptEnabled = true
+                domStorageEnabled = true
+                databaseEnabled = true
+                allowFileAccess = true
+                allowContentAccess = true
+                cacheMode = WebSettings.LOAD_DEFAULT
+                useWideViewPort = true
+                loadWithOverviewMode = true
+                mediaPlaybackRequiresUserGesture = false
+                defaultTextEncodingName = "UTF-8"
+            }
+
+            addJavascriptInterface(DetectiveNativeBridge(this@MainActivity), "DetectiveNative")
+
+            webChromeClient = WebChromeClient()
+            webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                    return false
                 }
             }
         }
+
+        rootLayout.addView(webView)
+        setContentView(rootLayout)
+
+        // Load offline packaged game bundle from Android assets
+        webView.loadUrl("file:///android_asset/www/index.html")
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        if (this::webView.isInitialized && webView.canGoBack()) {
+            webView.goBack()
+        } else {
+            @Suppress("DEPRECATION")
+            super.onBackPressed()
+        }
+    }
+
+    override fun onDestroy() {
+        if (this::webView.isInitialized) {
+            webView.destroy()
+        }
+        super.onDestroy()
     }
 }
 
-@Composable
-fun DetectiveNavigationGraph(viewModel: GameViewModel) {
-    val navController = rememberNavController()
+/**
+ * JavaScript interface exposed to the WebView as window.DetectiveNative.
+ * Bridges Android OS features (Vibration/Haptics, Share, Platform detection).
+ */
+class DetectiveNativeBridge(private val context: Context) {
 
-    NavHost(
-        navController = navController,
-        startDestination = Screen.Home.route
-    ) {
-        composable(Screen.Onboarding.route) {
-            OnboardingScreen(
-                onFinishOnboarding = { navController.navigate(Screen.Home.route) }
-            )
-        }
-
-        composable(Screen.Home.route) {
-            HomeScreen(
-                viewModel = viewModel,
-                onCreateRoom = { navController.navigate(Screen.CreateRoom.route) },
-                onJoinRoom = { navController.navigate(Screen.JoinRoom.route) },
-                onHowToPlay = { navController.navigate(Screen.Onboarding.route) },
-                onSettings = { navController.navigate(Screen.Settings.route) }
-            )
-        }
-
-        composable(Screen.CreateRoom.route) {
-            CreateRoomScreen(
-                viewModel = viewModel,
-                onRoomCreated = { navController.navigate(Screen.Lobby.route) },
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(Screen.JoinRoom.route) {
-            JoinRoomScreen(
-                viewModel = viewModel,
-                onRoomJoined = { navController.navigate(Screen.Lobby.route) },
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(Screen.Lobby.route) {
-            LobbyScreen(
-                viewModel = viewModel,
-                onGameStarted = { navController.navigate(Screen.QuestionCreation.route) }
-            )
-        }
-
-        composable(Screen.QuestionCreation.route) {
-            QuestionCreationScreen(
-                viewModel = viewModel,
-                onQuestionsSubmitted = { navController.navigate(Screen.Answering.route) }
-            )
-        }
-
-        composable(Screen.Answering.route) {
-            AnsweringScreen(
-                viewModel = viewModel,
-                onAnswersSubmitted = { navController.navigate(Screen.Distribution.route) }
-            )
-        }
-
-        composable(Screen.Distribution.route) {
-            DistributionScreen(
-                viewModel = viewModel,
-                onOpenMysteryBoard = { navController.navigate(Screen.MysteryBoard.route) }
-            )
-        }
-
-        composable(Screen.MysteryBoard.route) {
-            MysteryBoardScreen(
-                viewModel = viewModel,
-                onInspectPackages = { navController.navigate(Screen.PackageViewer.route) },
-                onOpenChat = { navController.navigate(Screen.Chat.route) },
-                onEliminated = { navController.navigate(Screen.Elimination.route) },
-                onVictory = { navController.navigate(Screen.Victory.route) }
-            )
-        }
-
-        composable(Screen.PackageViewer.route) {
-            PackageViewerScreen(
-                viewModel = viewModel,
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(Screen.Chat.route) {
-            ChatScreen(
-                viewModel = viewModel,
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(Screen.Victory.route) {
-            VictoryScreen(
-                viewModel = viewModel,
-                onReturnHome = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Home.route) { inclusive = true }
-                    }
+    @JavascriptInterface
+    fun vibrate(durationMs: Long) {
+        try {
+            @Suppress("DEPRECATION")
+            val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            if (vibrator != null && vibrator.hasVibrator()) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator.vibrate(
+                        VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE)
+                    )
+                } else {
+                    @Suppress("DEPRECATION")
+                    vibrator.vibrate(durationMs)
                 }
-            )
+            }
+        } catch (_: Exception) {
+            // Graceful fallback if device lacks vibrator permission or hardware
         }
+    }
 
-        composable(Screen.Elimination.route) {
-            EliminationScreen(
-                viewModel = viewModel,
-                onOpenComms = { navController.navigate(Screen.Chat.route) },
-                onViewEvidence = { navController.navigate(Screen.PackageViewer.route) }
-            )
+    @JavascriptInterface
+    fun shareRoom(roomCode: String, message: String) {
+        try {
+            val sendIntent = Intent().apply {
+                action = Intent.ACTION_SEND
+                putExtra(Intent.EXTRA_TEXT, "$message: $roomCode")
+                type = "text/plain"
+            }
+            context.startActivity(Intent.createChooser(sendIntent, "Detective Genius"))
+        } catch (_: Exception) {
         }
+    }
 
-        composable(Screen.Settings.route) {
-            SettingsScreen(
-                viewModel = viewModel,
-                onBack = { navController.popBackStack() }
-            )
-        }
+    @JavascriptInterface
+    fun getPlatform(): String {
+        return "Android"
+    }
+
+    @JavascriptInterface
+    fun getAppVersion(): String {
+        return "1.0.0"
     }
 }
