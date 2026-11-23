@@ -52,3 +52,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Release Keystore (`keystore/detectivegenius-release.jks`) with 2048-bit RSA key and 10,000-day validity.
   - Dual APK Signature Scheme v2 and v3 verified.
   - Automated build script `build-apk.sh` with complete Play Store compliance audit suite.
+  - Resolved Android launch crash (`ClassNotFoundException` on `MainActivity` / `DetectiveGeniusApp`) by directly packaging compiled launcher bytecode into `classes.dex`.
+  - Packaged complete offline asset bundle (`assets/www/index.html`) with hardware-accelerated full-screen UI, SVG stickers, Web Audio synthesizer, and native haptics bridge (`DetectiveNativeBridge`).
