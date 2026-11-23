@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App & General -->
+    <string name="app_name">کارآگاه نابغه</string>
+    <string name="app_tagline">بازی مهمانی رمزآلود ارتباطات پنهان</string>
+    <string name="ok">تأیید</string>
+    <string name="cancel">انصراف</string>
+    <string name="confirm">تأیید نهایی</string>
+    <string name="back">بازگشت</string>
+    <string name="close">بستن</string>
+    <string name="next">بعدی</string>
+    <string name="done">انجام شد</string>
+    <string name="error">خطا</string>
+    <string name="retry">تلاش مجدد</string>
+    <string name="loading">در حال بارگذاری...</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title_1">خوش آمدید کارآگاه</string>
+    <string name="onboarding_desc_1">وارد دنیای استنتاج اجتماعی، رازها و معماهای هوشمندانه شوید که در آن همه درباره همه تحقیق می‌کنند.</string>
+    <string name="onboarding_title_2">بنویسید و پاسخ دهید</string>
+    <string name="onboarding_desc_2">سه سوال رازآلود طرح کنید. یکی از کارآگاهان به طور ناشناس به آنها پاسخ می‌دهد و شما نیز به سوالات شرکت‌کننده دیگری پاسخ می‌دهید.</string>
+    <string name="onboarding_title_3">کشف ۴ راز بزرگ</string>
+    <string name="onboarding_desc_3">دو بسته مهروموم‌شده مدارک دریافت کنید. حدس بزنید چه کسی به سوالات شما پاسخ داده، شما به سوالات چه کسی پاسخ داده‌اید، و پرونده‌های در دست شما متعلق به چه کسانی است.</string>
+    <string name="onboarding_button_start">ورود به اداره کارآگاهی</string>
+    <string name="onboarding_button_skip">رد کردن آموزش</string>
+
+    <!-- Home -->
+    <string name="home_title">کارآگاه نابغه</string>
+    <string name="home_subtitle">مهمانی معمایی شبکه محلی وای‌فای</string>
+    <string name="home_create_room">ایجاد اتاق پرونده</string>
+    <string name="home_join_room">پیوستن به اتاق</string>
+    <string name="home_how_to_play">راهنمای بازی</string>
+    <string name="home_settings">تنظیمات</string>
+
+    <!-- Create Room (Host) -->
+    <string name="create_room_title">ایجاد پرونده جدید</string>
+    <string name="create_room_nickname">نام مستعار میزبان</string>
+    <string name="create_room_avatar">انتخاب آواتار</string>
+    <string name="create_room_pin">کد امنیتی اتاق (پین)</string>
+    <string name="create_room_generate_pin">ایجاد پین جدید</string>
+    <string name="create_room_ip_label">آدرس آی‌پی محلی میزبان:</string>
+    <string name="create_room_qr_title">اسکن برای پیوستن</string>
+    <string name="create_room_start_btn">راه‌اندازی اتاق و میزبانی</string>
+
+    <!-- Join Room -->
+    <string name="join_room_title">ورود به پرونده</string>
+    <string name="join_room_nickname">نام مستعار کارآگاهی شما</string>
+    <string name="join_room_avatar">انتخاب آواتار شما</string>
+    <string name="join_room_tab_discovery">اتاق‌های مجاور</string>
+    <string name="join_room_tab_manual">اتصال دستی</string>
+    <string name="join_room_searching">در حال جستجوی اتاق‌های فعال در شبکه محلی...</string>
+    <string name="join_room_no_rooms">هنوز اتاقی یافت نشد. مطمئن شوید به یک شبکه وای‌فای متصل هستید.</string>
+    <string name="join_room_host_ip">آدرس آی‌پی میزبان</string>
+    <string name="join_room_port">پورت (پیش‌فرض ۸۰۸۰)</string>
+    <string name="join_room_pin">کد پین ۴ رقمی</string>
+    <string name="join_room_connect_btn">اتصال به اتاق</string>
+    <string name="join_room_scan_qr">اسکن کد QR میزبان</string>
+
+    <!-- Lobby -->
+    <string name="lobby_title">اداره تحقیقات کارآگاهی</string>
+    <string name="lobby_room_pin">پین: %1$s</string>
+    <string name="lobby_host_ip">آی‌پی: %1$s</string>
+    <string name="lobby_players_count">کارآگاهان: %1$d از %2$d</string>
+    <string name="lobby_players_title">کارآگاهان حاضر در اتاق</string>
+    <string name="lobby_player_ready">آماده</string>
+    <string name="lobby_player_not_ready">در حال آماده‌سازی</string>
+    <string name="lobby_ready_toggle_on">اعلام آمادگی</string>
+    <string name="lobby_ready_toggle_off">لغو آمادگی</string>
+    <string name="lobby_min_players_warning">حداقل ۴ کارآگاه برای شروع لازم است.</string>
+    <string name="lobby_even_players_warning">تعداد بازیکنان باید زوج باشد (۴، ۶، ۸، ...).</string>
+    <string name="lobby_not_all_ready_warning">همه کارآگاهان باید آماده باشند.</string>
+    <string name="lobby_start_game_btn">شروع عملیات کارآگاهی</string>
+    <string name="lobby_waiting_for_host">در انتظار شروع توسط میزبان...</string>
+
+    <!-- Question Creation -->
+    <string name="qc_title">طرح سوالات معمایی</string>
+    <string name="qc_instructions">دقیقاً ۳ سوال مجزا برای همکاران کارآگاه خود بنویسید. هر سوال باید بین ۵ تا ۳۰۰ نویسه باشد.</string>
+    <string name="qc_progress">%1$d از ۳ سوال آماده شده است</string>
+    <string name="qc_q1_label">سوال اول</string>
+    <string name="qc_q2_label">سوال دوم</string>
+    <string name="qc_q3_label">سوال سوم</string>
+    <string name="qc_placeholder">سوال خود را اینجا بنویسید...</string>
+    <string name="qc_error_too_short">طول سوال باید حداقل ۵ نویسه باشد.</string>
+    <string name="qc_error_too_long">طول سوال نمی‌تواند بیشتر از ۳۰۰ نویسه باشد.</string>
+    <string name="qc_error_duplicate">سوالات یک کارآگاه نباید تکراری باشند.</string>
+    <string name="qc_submit_btn">مهروموم و ارسال سوالات</string>
+    <string name="qc_submitted_waiting">سوالات ارسال شد! در انتظار سایر کارآگاهان...</string>
+
+    <!-- Answering -->
+    <string name="ans_title">پاسخ به بازجویی</string>
+    <string name="ans_instructions">۳ سوال ناشناس دریافت کرده‌اید. به هرکدام با صداقت یا زیرکی پاسخ دهید. حداکثر ۵۰۰ نویسه برای هر پاسخ.</string>
+    <string name="ans_q_label">سوال شماره %1$d</string>
+    <string name="ans_placeholder">پاسخ ناشناس شما...</string>
+    <string name="ans_error_empty">پاسخ دادن به هر ۳ سوال الزامی است.</string>
+    <string name="ans_error_too_long">طول پاسخ نمی‌تواند بیشتر از ۵۰۰ نویسه باشد.</string>
+    <string name="ans_submit_btn">ارسال پاسخ‌ها</string>
+    <string name="ans_submitted_waiting">پاسخ‌ها ارسال شد! در حال آماده‌سازی بسته‌های محرمانه...</string>
+
+    <!-- Distribution -->
+    <string name="dist_title">توزیع مدارک</string>
+    <string name="dist_subtitle">بسته‌های محرمانه مدارک در حال مهروموم و توزیع هستند...</string>
+    <string name="dist_received_notice">شما ۲ بسته مهروموم‌شده مدارک دریافت کردید!</string>
+    <string name="dist_open_packages">گشودن کیف مدارک</string>
+
+    <!-- Mystery Board -->
+    <string name="mb_title">تخته اسرار و معماها</string>
+    <string name="mb_mistakes_count">اشتباهات: %1$d از ۳</string>
+    <string name="mb_mistakes_warning">هشدار: ۳ اشتباه منجر به حذف کارآگاه از تحقیقات میدانی می‌شود!</string>
+    <string name="mb_q1_title">معمای ۱: چه کسی به سوالات من پاسخ داده است؟</string>
+    <string name="mb_q1_desc">کارآگاهی که به ۳ سوال شما پاسخ داده است را شناسایی کنید.</string>
+    <string name="mb_q2_title">معمای ۲: من به سوالات چه کسی پاسخ داده‌ام؟</string>
+    <string name="mb_q2_desc">کارآگاهی که شما به ۳ سوال او پاسخ داده‌اید را شناسایی کنید.</string>
+    <string name="mb_q3_title">معمای ۳: سوالات چه کسانی در دست من است؟</string>
+    <string name="mb_q3_desc">۲ کارآگاهی که سوالات بسته‌های مدارک شما را نوشته‌اند شناسایی کنید.</string>
+    <string name="mb_q4_title">معمای ۴: پاسخ‌های چه کسانی در دست من است؟</string>
+    <string name="mb_q4_desc">۲ کارآگاهی که به سوالات بسته‌های مدارک شما پاسخ داده‌اند شناسایی کنید.</string>
+    <string name="mb_status_solved">حل شده</string>
+    <string name="mb_status_unsolved">حل نشده</string>
+    <string name="mb_solve_action">ثبت حدس استنتاجی</string>
+    <string name="mb_inspect_packages">بررسی بسته‌های مدارک</string>
+
+    <!-- Deduction Guess Dialog -->
+    <string name="guess_title_single">انتخاب مظنون</string>
+    <string name="guess_title_pair">انتخاب دقیقاً دو مظنون</string>
+    <string name="guess_pair_hint">دو کارآگاه را انتخاب کنید. هر دو باید درست باشند؛ درستی جزیی آشکار نخواهد شد.</string>
+    <string name="guess_submit">تأیید استنتاج</string>
+    <string name="guess_correct">استنتاج درخشان! معما حل شد!</string>
+    <string name="guess_incorrect">استنتاج نادرست! یک خطا ثبت شد.</string>
+
+    <!-- Package Viewer -->
+    <string name="pv_title">بایگانی مدارک</string>
+    <string name="pv_package_1">بسته مدارک آلفا</string>
+    <string name="pv_package_2">بسته مدارک بتا</string>
+    <string name="pv_sealed_header">پرونده فوق محرمانه — هویت‌ها پنهان</string>
+    <string name="pv_qa_pair">سوال و پاسخ شماره %1$d</string>
+
+    <!-- Chat -->
+    <string name="chat_title">بی‌سیم ارتباطات</string>
+    <string name="chat_tab_group">گفتگوی اتاق</string>
+    <string name="chat_tab_private">خط خصوصی</string>
+    <string name="chat_input_hint">ارسال پیام...</string>
+    <string name="chat_send">ارسال</string>
+    <string name="chat_select_partner">انتخاب کارآگاه برای گفتگوی خصوصی</string>
+    <string name="chat_typing">%1$s در حال نوشتن است...</string>
+    <string name="chat_private_notice">ارتباط مستقیم محرمانه. فقط شما دو نفر این پیام‌ها را می‌بینید.</string>
+
+    <!-- Victory & Elimination -->
+    <string name="victory_title">پرونده بسته شد!</string>
+    <string name="victory_winner_announcement">کارآگاه نابغه %1$s هر ۴ معما را با موفقیت حل کرد!</string>
+    <string name="victory_play_again">بازگشت به اداره</string>
+    <string name="elimination_title">کارآگاه سلب صلاحیت شد</string>
+    <string name="elimination_message">شما ۳ اشتباه مرتکب شدید و از عملیات میدانی کنار گذاشته شدید.</string>
+    <string name="elimination_spectate">می‌توانید در بی‌سیم بمانید و به عنوان مشاور ارشد جریان پرونده را دنبال کنید.</string>
+
+    <!-- Settings -->
+    <string name="settings_title">تنظیمات اداره</string>
+    <string name="settings_language">زبان</string>
+    <string name="settings_lang_en">انگلیسی (English)</string>
+    <string name="settings_lang_fa">فارسی</string>
+    <string name="settings_theme">پوسته</string>
+    <string name="settings_theme_system">پیش‌فرض سیستم</string>
+    <string name="settings_theme_dark">حالت تاریک (اتاق تجسس)</string>
+    <string name="settings_theme_light">حالت روشن (بایگانی)</string>
+    <string name="settings_sound_fx">جلوه‌های صوتی</string>
+    <string name="settings_music">موسیقی رازآلود</string>
+    <string name="settings_haptics">بازخورد لمسی (لرزش)</string>
+    <string name="settings_reduced_motion">کاهش انیمیشن‌ها</string>
+    <string name="settings_version">نسخه %1$s</string>
+
+    <!-- Avatars -->
+    <string name="avatar_detective">کارآگاه</string>
+    <string name="avatar_magician">شعبده‌باز</string>
+    <string name="avatar_astronaut">فضانورد</string>
+    <string name="avatar_fox">روباه</string>
+    <string name="avatar_owl">جغد</string>
+    <string name="avatar_cat">گربه</string>
+    <string name="avatar_robot">ربات</string>
+    <string name="avatar_ghost">شبح</string>
+    <string name="avatar_artist">هنرمند</string>
+    <string name="avatar_scientist">دانشمند</string>
+    <string name="avatar_pirate">دزد دریایی</string>
+    <string name="avatar_knight">شوالیه</string>
+    <string name="avatar_alien">بیگانه</string>
+    <string name="avatar_penguin">پنگوئن</string>
+    <string name="avatar_raven">کلاغ</string>
+    <string name="avatar_explorer">کاوشگر</string>
+    <string name="avatar_jester">دلقک</string>
+    <string name="avatar_ninja">نینجا</string>
+    <string name="avatar_wizard">جادوگر</string>
+    <string name="avatar_inventor">مخترع</string>
+    <string name="avatar_wolf">گرگ</string>
+    <string name="avatar_panda">پاندا</string>
+    <string name="avatar_time_traveler">مسافر زمان</string>
+    <string name="avatar_phantom">فانتوم</string>
+</resources>

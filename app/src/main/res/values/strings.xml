@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App & General -->
+    <string name="app_name">Detective Genius</string>
+    <string name="app_tagline">The Mystery Party Game of Hidden Connections</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="confirm">Confirm</string>
+    <string name="back">Back</string>
+    <string name="close">Close</string>
+    <string name="next">Next</string>
+    <string name="done">Done</string>
+    <string name="error">Error</string>
+    <string name="retry">Retry</string>
+    <string name="loading">Loading...</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title_1">Welcome Detective</string>
+    <string name="onboarding_desc_1">Step into a world of social deduction, secrets, and clever deduction where everyone is investigating everyone else.</string>
+    <string name="onboarding_title_2">Write and Answer</string>
+    <string name="onboarding_desc_2">Craft 3 intriguing questions. Someone will answer them anonymously, while you answer another mystery participant\'s queries.</string>
+    <string name="onboarding_title_3">Uncover 4 Mysteries</string>
+    <string name="onboarding_desc_3">Receive two sealed evidence packages. Deduce who answered your questions, whose you answered, and who is behind the packages you hold.</string>
+    <string name="onboarding_button_start">Enter the Bureau</string>
+    <string name="onboarding_button_skip">Skip Tutorial</string>
+
+    <!-- Home -->
+    <string name="home_title">Detective Genius</string>
+    <string name="home_subtitle">Local Wi-Fi Mystery Party</string>
+    <string name="home_create_room">Create Investigation Room</string>
+    <string name="home_join_room">Join Room</string>
+    <string name="home_how_to_play">How to Play</string>
+    <string name="home_settings">Settings</string>
+
+    <!-- Create Room (Host) -->
+    <string name="create_room_title">Create Investigation</string>
+    <string name="create_room_nickname">Host Nickname</string>
+    <string name="create_room_avatar">Select Avatar</string>
+    <string name="create_room_pin">Room Security PIN</string>
+    <string name="create_room_generate_pin">Generate PIN</string>
+    <string name="create_room_ip_label">Host Local IP:</string>
+    <string name="create_room_qr_title">Scan to Join</string>
+    <string name="create_room_start_btn">Launch Room &amp; Host</string>
+
+    <!-- Join Room -->
+    <string name="join_room_title">Join Investigation</string>
+    <string name="join_room_nickname">Your Detective Nickname</string>
+    <string name="join_room_avatar">Choose Your Avatar</string>
+    <string name="join_room_tab_discovery">Nearby Rooms</string>
+    <string name="join_room_tab_manual">Manual Connect</string>
+    <string name="join_room_searching">Searching local Wi-Fi for active rooms...</string>
+    <string name="join_room_no_rooms">No rooms detected yet. Ensure you are on the same Wi-Fi.</string>
+    <string name="join_room_host_ip">Host IP Address</string>
+    <string name="join_room_port">Port (Default 8080)</string>
+    <string name="join_room_pin">Enter 4-Digit PIN</string>
+    <string name="join_room_connect_btn">Connect to Room</string>
+    <string name="join_room_scan_qr">Scan Host QR Code</string>
+
+    <!-- Lobby -->
+    <string name="lobby_title">Investigation Bureau</string>
+    <string name="lobby_room_pin">PIN: %1$s</string>
+    <string name="lobby_host_ip">IP: %1$s</string>
+    <string name="lobby_players_count">Detectives: %1$d / %2$d</string>
+    <string name="lobby_players_title">Registered Detectives</string>
+    <string name="lobby_player_ready">READY</string>
+    <string name="lobby_player_not_ready">PREPARING</string>
+    <string name="lobby_ready_toggle_on">Mark Ready</string>
+    <string name="lobby_ready_toggle_off">Unmark Ready</string>
+    <string name="lobby_min_players_warning">Minimum 4 detectives required to start.</string>
+    <string name="lobby_even_players_warning">Player count must be an EVEN number (4, 6, 8, ...).</string>
+    <string name="lobby_not_all_ready_warning">All detectives must be marked Ready.</string>
+    <string name="lobby_start_game_btn">Commence Investigation</string>
+    <string name="lobby_waiting_for_host">Waiting for host to commence...</string>
+
+    <!-- Question Creation -->
+    <string name="qc_title">Question Formulation</string>
+    <string name="qc_instructions">Write exactly 3 distinct questions for your fellow detectives. Minimum 5 and maximum 300 characters each.</string>
+    <string name="qc_progress">%1$d / 3 Questions Formulated</string>
+    <string name="qc_q1_label">Question 1</string>
+    <string name="qc_q2_label">Question 2</string>
+    <string name="qc_q3_label">Question 3</string>
+    <string name="qc_placeholder">Type your question here...</string>
+    <string name="qc_error_too_short">Question must have at least 5 characters.</string>
+    <string name="qc_error_too_long">Question exceeds 300 characters limit.</string>
+    <string name="qc_error_duplicate">Questions from the same detective must be unique.</string>
+    <string name="qc_submit_btn">Seal and Submit Questions</string>
+    <string name="qc_submitted_waiting">Questions submitted! Awaiting other detectives...</string>
+
+    <!-- Answering -->
+    <string name="ans_title">Interrogation Response</string>
+    <string name="ans_instructions">You have received 3 anonymous questions. Answer each candidly or cleverly. Maximum 500 characters per answer.</string>
+    <string name="ans_q_label">Question %1$d</string>
+    <string name="ans_placeholder">Your anonymous response...</string>
+    <string name="ans_error_empty">All 3 answers must be provided.</string>
+    <string name="ans_error_too_long">Answer exceeds 500 characters limit.</string>
+    <string name="ans_submit_btn">Deliver Answers</string>
+    <string name="ans_submitted_waiting">Answers delivered! Assembling confidential packages...</string>
+
+    <!-- Distribution -->
+    <string name="dist_title">Package Delivery</string>
+    <string name="dist_subtitle">Confidential evidence packages are being sealed and delivered...</string>
+    <string name="dist_received_notice">You have received 2 sealed evidence packages!</string>
+    <string name="dist_open_packages">Open Evidence Briefcase</string>
+
+    <!-- Mystery Board -->
+    <string name="mb_title">Mystery Board</string>
+    <string name="mb_mistakes_count">Mistakes: %1$d / 3</string>
+    <string name="mb_mistakes_warning">Warning: 3 mistakes results in elimination!</string>
+    <string name="mb_q1_title">Mystery 1: Who answered my questions?</string>
+    <string name="mb_q1_desc">Identify the detective who answered the 3 questions you authored.</string>
+    <string name="mb_q2_title">Mystery 2: Whose questions did I answer?</string>
+    <string name="mb_q2_desc">Identify the detective whose 3 questions you answered.</string>
+    <string name="mb_q3_title">Mystery 3: Whose questions am I holding?</string>
+    <string name="mb_q3_desc">Identify the 2 detectives who authored the packages in your possession.</string>
+    <string name="mb_q4_title">Mystery 4: Whose answers am I holding?</string>
+    <string name="mb_q4_desc">Identify the 2 detectives who answered the packages in your possession.</string>
+    <string name="mb_status_solved">SOLVED</string>
+    <string name="mb_status_unsolved">UNSOLVED</string>
+    <string name="mb_solve_action">Submit Deduction</string>
+    <string name="mb_inspect_packages">Inspect Evidence Packages</string>
+
+    <!-- Deduction Guess Dialog -->
+    <string name="guess_title_single">Select Suspect Detective</string>
+    <string name="guess_title_pair">Select Exactly Two Suspects</string>
+    <string name="guess_pair_hint">Select two detectives. Both must be correct; partial matches will not be revealed.</string>
+    <string name="guess_submit">Confirm Deduction</string>
+    <string name="guess_correct">Brilliant deduction! Mystery Solved!</string>
+    <string name="guess_incorrect">Deduction incorrect! Mistake recorded.</string>
+
+    <!-- Package Viewer -->
+    <string name="pv_title">Evidence Archive</string>
+    <string name="pv_package_1">Evidence Package Alpha</string>
+    <string name="pv_package_2">Evidence Package Beta</string>
+    <string name="pv_sealed_header">Classified Dossier — Identities Redacted</string>
+    <string name="pv_qa_pair">Question %1$d &amp; Answer</string>
+
+    <!-- Chat -->
+    <string name="chat_title">Investigation Comms</string>
+    <string name="chat_tab_group">Room Discussion</string>
+    <string name="chat_tab_private">Private Wire</string>
+    <string name="chat_input_hint">Transmit message...</string>
+    <string name="chat_send">Send</string>
+    <string name="chat_select_partner">Select Detective for Private Chat</string>
+    <string name="chat_typing">%1$s is typing...</string>
+    <string name="chat_private_notice">Direct transmission. Only the two of you can read this.</string>
+
+    <!-- Victory & Elimination -->
+    <string name="victory_title">Case Closed!</string>
+    <string name="victory_winner_announcement">Master Detective %1$s has solved all 4 mysteries!</string>
+    <string name="victory_play_again">Return to Bureau</string>
+    <string name="elimination_title">Detective Compromised</string>
+    <string name="elimination_message">You have accumulated 3 incorrect deductions and have been retired from field investigations.</string>
+    <string name="elimination_spectate">You can remain in Comms and observe the investigation as a senior advisor.</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Bureau Settings</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_lang_en">English</string>
+    <string name="settings_lang_fa">Persian (فارسی)</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System Default</string>
+    <string name="settings_theme_dark">Dark Mode (Investigation)</string>
+    <string name="settings_theme_light">Light Mode (Archive)</string>
+    <string name="settings_sound_fx">Sound Effects</string>
+    <string name="settings_music">Atmospheric Music</string>
+    <string name="settings_haptics">Haptic Feedback</string>
+    <string name="settings_reduced_motion">Reduced Motion</string>
+    <string name="settings_version">Version %1$s</string>
+
+    <!-- Avatars -->
+    <string name="avatar_detective">Detective</string>
+    <string name="avatar_magician">Magician</string>
+    <string name="avatar_astronaut">Astronaut</string>
+    <string name="avatar_fox">Fox</string>
+    <string name="avatar_owl">Owl</string>
+    <string name="avatar_cat">Cat</string>
+    <string name="avatar_robot">Robot</string>
+    <string name="avatar_ghost">Ghost</string>
+    <string name="avatar_artist">Artist</string>
+    <string name="avatar_scientist">Scientist</string>
+    <string name="avatar_pirate">Pirate</string>
+    <string name="avatar_knight">Knight</string>
+    <string name="avatar_alien">Alien</string>
+    <string name="avatar_penguin">Penguin</string>
+    <string name="avatar_raven">Raven</string>
+    <string name="avatar_explorer">Explorer</string>
+    <string name="avatar_jester">Jester</string>
+    <string name="avatar_ninja">Ninja</string>
+    <string name="avatar_wizard">Wizard</string>
+    <string name="avatar_inventor">Inventor</string>
+    <string name="avatar_wolf">Wolf</string>
+    <string name="avatar_panda">Panda</string>
+    <string name="avatar_time_traveler">Time Traveler</string>
+    <string name="avatar_phantom">Phantom</string>
+</resources>

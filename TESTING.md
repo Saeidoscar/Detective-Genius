@@ -1,0 +1,71 @@
+# Detective Genius — Testing Strategy & Verification Plan
+
+**Version:** 1.0  
+**Target:** Continuous automated verification across engine, networking, invariants, and UI  
+**Execution Date:** 2026-11-23
+
+---
+
+## 1. Test Layers
+
+### Layer 1: Game Engine & Invariant Verification (Pure Kotlin / JVM)
+- **Constraint Solver Simulations:**
+  - Exhaustive randomized tests across all even player counts: $N \in \{4, 6, 8, 10, 12, 14, 16, 18, 20\}$.
+  - 1,000 simulation runs per player count (9,000 runs total) with deterministic seeds.
+  - Verifies all 13 core invariants:
+    1. Every player creates exactly 1 package.
+    2. Every package contains exactly 3 questions.
+    3. Every question has exactly 1 corresponding answer.
+    4. Every package has 1 author.
+    5. Every package has 1 answerer.
+    6. Author != Answerer.
+    7. Every package has exactly 2 recipients.
+    8. Recipient != Author.
+    9. Recipient != Answerer.
+    10. Every player receives exactly 2 packages.
+    11. The 2 packages received by any player have distinct authors.
+    12. No player receives the same package twice.
+    13. Every player participates as author and answerer.
+    14. Distinct answerers preference when feasible.
+- **Challenge Verification Tests:**
+  - Q1: Single identity check (Author's answerer).
+  - Q2: Single identity check (Answerer's author).
+  - Q3: Set of 2 package authors (unordered equality).
+  - Q4: Set of 2 package answerers (unordered equality).
+  - Verification that partial matches do not disclose single correct answers.
+  - Mistake counting and elimination upon 3 mistakes.
+  - Victory determination upon first player completing all 4 challenges.
+  - Serialized event tie-breaking.
+  - Session snapshot serialization and restoration.
+
+### Layer 2: Protocol & Serialization Tests
+- JSON serialization/deserialization contracts.
+- DTO sanitization test: Assert that `ClientPlayerViewDto` contains zero hidden package authors or answerers.
+- Reconnection token validation and duplicate packet filtering.
+
+### Layer 3: Networking & Chat Isolation Tests
+- Multi-client connection simulation over local WebSockets.
+- Group chat broadcast verification.
+- Private chat isolation verification: Assert that client C never receives messages between client A and B.
+- QR payload generation and parsing.
+- Manual IPv4 and 4-digit PIN validation.
+
+---
+
+## 2. Test Execution Log
+
+### Test Suite 1: Pure Kotlin Engine Test Suite (`com.detectivegenius.gameengine.tests.EngineTestSuite`)
+- `testValidationRules`: **PASSED** (Validated length limits 5..300 for questions, 1..500 for answers, duplicate rejection, and even player constraints)
+- `testAssignmentSolverInvariantsAcrossPlayerCounts`: **PASSED** (9,000 simulations: 1,000 runs each for counts 4, 6, 8, 10, 12, 14, 16, 18, 20 with 100% success rate)
+- `testCompleteGameFlowAndRules`: **PASSED** (Full lifecycle from Lobby to Answering to Investigation)
+- `testMysteryChallengesAndPartialCorrectnessSecrecy`: **PASSED** (Verified that guessing 1 of 2 correct in Q3/Q4 does not disclose partial correctness)
+- `testMistakesAndElimination`: **PASSED** (Verified 1 mistake, 2 mistakes, and elimination on 3rd mistake with active spectator permissions)
+- `testWinnerDeterminationAndTieBreaking`: **PASSED** (Verified first player to solve all 4 wins, tie-breaking order preserved)
+- `testSnapshotAndRestore`: **PASSED** (Verified zero state loss when restoring engine state)
+- `testDataPrivacySanitization`: **PASSED** (Verified zero author/answerer package identities in client views)
+
+### Test Suite 2: Networking & Protocol Test Suite (`com.detectivegenius.networking.tests.NetworkTestSuite`)
+- `testDiscoveryAndQrCode`: **PASSED** (QR payload format `detectivegenius://join?ip=...&port=...&pin=...` round-trip verified)
+- `testMultiClientMultiplayerAndStateSync`: **PASSED** (4 simultaneous clients synchronized through host server)
+- `testPrivateChatStrictIsolation`: **PASSED** (Client 3 verified to never receive private messages exchanged between Client 1 and Client 2)
+- `testDuplicateMessageProtection`: **PASSED** (Duplicate message IDs filtered and dropped idempotently)
