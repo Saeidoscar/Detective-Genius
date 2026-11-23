@@ -12,7 +12,7 @@ Detective Genius is an offline-first social deduction and mystery-solving party 
 
 | File | Size | Format | SHA-256 Checksum | Download Link |
 |---|---|---|---|---|
-| **`DetectiveGenius-release.apk`** | ~116 KB | Android Release APK (Signed) | `aa3db656c1f966fec320c30f49650d396fbed501c3689be0250c6ffcdd79f11f` | [Download APK](https://github.com/Saeidoscar/Detective-Genius/raw/main/release/DetectiveGenius-release.apk) |
+| **`DetectiveGenius-release.apk`** | ~760 KB | Android Release APK (Signed) | `aef04e5a495e96080456b32df3fc9086082cd9c637fadf656dff1aacdfeed86f` | [Download APK](https://github.com/Saeidoscar/Detective-Genius/raw/main/release/DetectiveGenius-release.apk) |
 
 ---
 
