@@ -57,8 +57,8 @@ echo "==> [2/5] Linking binary resources, assets, and AndroidManifest.xml..."
   -A app/src/main/assets \
   --min-sdk-version 26 \
   --target-sdk-version 34 \
-  --version-code 1 \
-  --version-name "1.0.0" \
+  --version-code 2 \
+  --version-name "1.0.1" \
   -o "$BUILD_DIR/base_linked.apk" \
   "$BUILD_DIR/compiled_res"/*.flat
 
@@ -112,22 +112,24 @@ print('Verified classes.dex contains launcher MainActivity, Application, and Kot
 # 5. Assemble and Sign Release APK (v1, v2, v3 Signature Schemes)
 echo "==> [5/5] Assembling and signing release APK with Google ApkSigner..."
 python3 -c "
-import zipfile, os
+import zipfile, os, time
 
 base_apk = '$BUILD_DIR/base_linked.apk'
 dex_file = '$BUILD_DIR/dex/classes.dex'
 unsigned_apk = '$BUILD_DIR/app-unsigned.apk'
 
+valid_date = (2026, 11, 23, 12, 0, 0)
+
 with zipfile.ZipFile(base_apk, 'r') as zin, zipfile.ZipFile(unsigned_apk, 'w') as zout:
     for item in zin.infolist():
         data = zin.read(item.filename)
-        # resources.arsc must be stored uncompressed for 4-byte runtime alignment
         compress_type = zipfile.ZIP_STORED if item.filename == 'resources.arsc' else zipfile.ZIP_DEFLATED
+        item.date_time = valid_date
         zout.writestr(item, data, compress_type=compress_type)
     
     with open(dex_file, 'rb') as f:
         dex_data = f.read()
-    dex_info = zipfile.ZipInfo('classes.dex')
+    dex_info = zipfile.ZipInfo('classes.dex', valid_date)
     dex_info.compress_type = zipfile.ZIP_DEFLATED
     zout.writestr(dex_info, dex_data)
 "
