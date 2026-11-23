@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.view.View
 import android.view.WindowManager
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
@@ -19,77 +20,97 @@ import android.webkit.WebViewClient
 import android.widget.FrameLayout
 
 /**
- * Main launcher Activity for Detective Genius.
+ * Robust, production launcher Activity for Detective Genius.
  * Enforces strict portrait orientation, hardware acceleration,
- * and hosts the offline local asset web environment with native bridges.
+ * and hosts the offline asset package with zero external dependencies.
  */
 class MainActivity : Activity() {
 
-    private lateinit var webView: WebView
+    private var webView: WebView? = null
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // STRICT INVARIANT: Force portrait orientation exclusively!
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        try {
+            // STRICT INVARIANT: Force portrait orientation exclusively!
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        } catch (_: Throwable) {}
 
-        // Enable hardware acceleration for fluid 60fps animations
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
-            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
-        )
-
-        // Immersive dark status bar matching Detective Genius palette
-        window.statusBarColor = 0xFF070B18.toInt()
-        window.navigationBarColor = 0xFF070B18.toInt()
-
-        val rootLayout = FrameLayout(this)
-        rootLayout.setBackgroundColor(0xFF070B18.toInt())
-
-        webView = WebView(this).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
+        try {
+            // Enable hardware acceleration for fluid 60fps animations
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+                WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
             )
+            window.statusBarColor = 0xFF070B18.toInt()
+            window.navigationBarColor = 0xFF070B18.toInt()
+        } catch (_: Throwable) {}
+
+        val rootLayout = FrameLayout(this).apply {
             setBackgroundColor(0xFF070B18.toInt())
-            isVerticalScrollBarEnabled = false
-            isHorizontalScrollBarEnabled = false
-
-            settings.apply {
-                javaScriptEnabled = true
-                domStorageEnabled = true
-                databaseEnabled = true
-                allowFileAccess = true
-                allowContentAccess = true
-                cacheMode = WebSettings.LOAD_DEFAULT
-                useWideViewPort = true
-                loadWithOverviewMode = true
-                mediaPlaybackRequiresUserGesture = false
-                defaultTextEncodingName = "UTF-8"
-            }
-
-            addJavascriptInterface(DetectiveNativeBridge(this@MainActivity), "DetectiveNative")
-
-            webChromeClient = WebChromeClient()
-            webViewClient = object : WebViewClient() {
-                override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                    return false
-                }
-            }
         }
 
-        rootLayout.addView(webView)
-        setContentView(rootLayout)
+        try {
+            val wv = WebView(this).apply {
+                layoutParams = FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+                setBackgroundColor(0xFF070B18.toInt())
+                isVerticalScrollBarEnabled = false
+                isHorizontalScrollBarEnabled = false
+                overScrollMode = View.OVER_SCROLL_NEVER
 
-        // Load offline packaged game bundle from Android assets
-        webView.loadUrl("file:///android_asset/www/index.html")
+                settings.apply {
+                    javaScriptEnabled = true
+                    domStorageEnabled = true
+                    databaseEnabled = true
+                    allowFileAccess = true
+                    allowContentAccess = true
+                    @Suppress("DEPRECATION")
+                    allowFileAccessFromFileURLs = true
+                    @Suppress("DEPRECATION")
+                    allowUniversalAccessFromFileURLs = true
+                    cacheMode = WebSettings.LOAD_DEFAULT
+                    useWideViewPort = true
+                    loadWithOverviewMode = true
+                    mediaPlaybackRequiresUserGesture = false
+                    defaultTextEncodingName = "UTF-8"
+                }
+
+                addJavascriptInterface(DetectiveNativeBridge(this@MainActivity), "DetectiveNative")
+
+                webChromeClient = WebChromeClient()
+                webViewClient = object : WebViewClient() {
+                    override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                        return false
+                    }
+                }
+            }
+
+            rootLayout.addView(wv)
+            webView = wv
+            wv.loadUrl("file:///android_asset/www/index.html")
+        } catch (t: Throwable) {
+            // Graceful fallback if device webview is temporarily unavailable
+            val errorView = android.widget.TextView(this).apply {
+                text = "Detective Genius is initializing...\nPlease relaunch if updating."
+                setTextColor(0xFFF8FAFC.toInt())
+                textSize = 16f
+                setPadding(40, 40, 40, 40)
+            }
+            rootLayout.addView(errorView)
+        }
+
+        setContentView(rootLayout)
     }
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        if (this::webView.isInitialized && webView.canGoBack()) {
-            webView.goBack()
+        val wv = webView
+        if (wv != null && wv.canGoBack()) {
+            wv.goBack()
         } else {
             @Suppress("DEPRECATION")
             super.onBackPressed()
@@ -97,9 +118,10 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
-        if (this::webView.isInitialized) {
-            webView.destroy()
-        }
+        try {
+            webView?.destroy()
+            webView = null
+        } catch (_: Throwable) {}
         super.onDestroy()
     }
 }
@@ -125,9 +147,7 @@ class DetectiveNativeBridge(private val context: Context) {
                     vibrator.vibrate(durationMs)
                 }
             }
-        } catch (_: Exception) {
-            // Graceful fallback if device lacks vibrator permission or hardware
-        }
+        } catch (_: Throwable) {}
     }
 
     @JavascriptInterface
@@ -139,8 +159,7 @@ class DetectiveNativeBridge(private val context: Context) {
                 type = "text/plain"
             }
             context.startActivity(Intent.createChooser(sendIntent, "Detective Genius"))
-        } catch (_: Exception) {
-        }
+        } catch (_: Throwable) {}
     }
 
     @JavascriptInterface
@@ -150,6 +169,6 @@ class DetectiveNativeBridge(private val context: Context) {
 
     @JavascriptInterface
     fun getAppVersion(): String {
-        return "1.0.0"
+        return "1.0.1"
     }
 }

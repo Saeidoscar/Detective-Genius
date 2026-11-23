@@ -5,6 +5,14 @@ All notable changes to the Detective Genius project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-11-23
+
+### Fixed & Enhanced
+- Incremented `versionCode` to `2` and `versionName` to `1.0.1` to enable clean Android package updates over previous builds without "App not installed" conflict.
+- Bundled full 1.0 MB asset suite including 6 PCM WAV sound effects in `assets/www/audio/` (card deal, click, clue solve, mistake buzz, victory fanfare, envelope rip).
+- Added 24 individual SVG character badges and cards in `assets/www/stickers/`.
+- Enhanced `MainActivity` with defensive exception handling and dark window background initialization.
+
 ## [1.0.0] - 2026-11-23
 
 ### Added

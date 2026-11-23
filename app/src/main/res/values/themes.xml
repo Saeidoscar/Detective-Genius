@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.DetectiveGenius" parent="android:Theme.Material.NoActionBar">
-        <item name="android:statusBarColor">#0B1021</item>
-        <item name="android:navigationBarColor">#0B1021</item>
+        <item name="android:statusBarColor">#070B18</item>
+        <item name="android:navigationBarColor">#070B18</item>
+        <item name="android:windowBackground">#070B18</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>
