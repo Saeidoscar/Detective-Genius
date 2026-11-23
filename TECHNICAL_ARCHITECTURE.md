@@ -1,0 +1,114 @@
+# Detective Genius — Technical Architecture
+
+**Document Version:** 1.0  
+**Status:** In Progress / Milestone 1  
+**Architecture Pattern:** Clean Architecture + MVVM + Unidirectional Data Flow (UDF)  
+**Target Platform:** Android (Portrait only, API 26+ / Target SDK 34)
+
+---
+
+## 1. Architectural Principles
+
+1. **Pure Kotlin Game Engine:**
+   - The game rules, state machine, package assignment algorithm, and challenge validation logic reside in a pure Kotlin module (`game-engine`).
+   - Zero Android framework dependencies in the game engine.
+   - 100% testable via standard JVM / Kotlin test suites and simulations.
+
+2. **Authoritative Host Model:**
+   - One device acts as both Host and Player.
+   - The Host runs an embedded Ktor HTTP + WebSocket server.
+   - All state transitions, validation, mistake counting, assignments, and eliminations are strictly computed and authorized by the host engine.
+   - Clients only maintain UI state and receive sanitized Data Transfer Objects (DTOs).
+
+3. **Privacy by Design:**
+   - Hidden author and answerer identities are NEVER sent to clients during distribution or investigation.
+   - Specific DTOs (`AuthorizedGameStateDto`, `PackageSummaryDto`, `MysteryChallengeDto`) sanitize internal engine models before wire serialization.
+   - Set-based mystery challenges (Q3 and Q4) do not disclose partial matches to prevent information leakage.
+
+4. **Offline First & Resilient Networking:**
+   - Operates entirely without external internet access over local Wi-Fi or Android Hotspot.
+   - Room discovery via NSD (Network Service Discovery / mDNS) with fallbacks for QR-code joining and manual IP + Room PIN entry.
+   - Reconnection tokens allow seamless recovery from transient Wi-Fi drops without state loss.
+
+5. **Portrait-Only Interface & Design System:**
+   - Strictly enforced portrait orientation (`android:screenOrientation="portrait"`).
+   - Centralized semantic design tokens for Dark mode and Light mode.
+   - Bilingual first-class support for English (LTR) and Persian (RTL) with externalized string resources.
+
+---
+
+## 2. System Architecture & Module Boundaries
+
+```
++-------------------------------------------------------------+
+|                           App                               |
+|   (Application, MainActivity, Navigation, DI Injection)     |
++-------------------------------------------------------------+
+                              |
+       +----------------------+----------------------+
+       |                                             |
++-----------------------+                 +---------------------+
+|       Features        |                 |    Design System    |
+| - Onboarding / Home   |                 | - Color Tokens      |
+| - Lobby / Host / Join |                 | - Typography        |
+| - Question Creation   |                 | - 24 Stylized       |
+| - Answering           |                 |   Avatars           |
+| - Distribution        |                 | - Animations        |
+| - Mystery Board       |                 | - Audio / Haptics   |
+| - Chat (Group/Private)|                 +---------------------+
+| - Victory/Elimination |
++-----------------------+
+       |
+       +----------------------+----------------------+
+       |                                             |
++-----------------------+                 +---------------------+
+|      Networking       |                 |     Game Engine     |
+| - Ktor WS Server      |                 |   (Pure Kotlin)     |
+| - Ktor WS Client      | <-------------> | - Domain Models     |
+| - NSD / Discovery     |                 | - State Machine     |
+| - Session Auth        |                 | - Assignment Algo   |
+| - DTO Sanitization    |                 | - Mystery Validator |
++-----------------------+                 +---------------------+
+       |                                             |
+       +----------------------+----------------------+
+                              |
++-------------------------------------------------------------+
+|                            Core                             |
+|       (Common Models, Protocols, Events, Serialization)     |
++-------------------------------------------------------------+
+```
+
+---
+
+## 3. Package Assignment Algorithm
+
+The constrained randomized assignment algorithm solves the following bipartite/hypergraph distribution constraints:
+1. $N$ players ($N \in \{4, 6, 8, \dots, 20\}$).
+2. Exactly $N$ packages: Package $P_i$ has Author $A_i$ and Answerer $B_i$ ($A_i \ne B_i$).
+3. Exactly 2 recipients per package: $R_{i,1}, R_{i,2} \notin \{A_i, B_i\}$.
+4. Every player receives exactly 2 packages: $\forall p, |\{P_i : p \in \text{Recipients}(P_i)\}| = 2$.
+5. Distinct authors per recipient: For any player $p$ receiving $P_x$ and $P_y$, $A_x \ne A_y$.
+6. Distinct answerers preference: For any player $p$ receiving $P_x$ and $P_y$, $B_x \ne B_y$ whenever feasible.
+7. Derangement mapping for Question Answering: $B = \text{Derangement}(A)$ such that $\forall i, B_i \ne A_i$.
+
+Validation checks enforce invariants deterministically with bounded restart heuristics (max 100 attempts, average convergence < 3 attempts).
+
+---
+
+## 4. Mystery Challenges Validation
+
+- **Q1 (Who answered my questions?):** Correct if $guess == \text{Answerer}(P_{\text{self}})$.
+- **Q2 (Whose questions did I answer?):** Correct if $guess == \text{Author}(P_{\text{answered}})$.
+- **Q3 (Whose questions am I holding?):** Correct if $\{guess_1, guess_2\} == \{Author(P_{rec,1}), Author(P_{rec,2})\}$.
+- **Q4 (Whose answers am I holding?):** Correct if $\{guess_1, guess_2\} == \{Answerer(P_{rec,1}), Answerer(P_{rec,2})\}$.
+
+Failure behavior: Each failed attempt increments mistake count. Upon 3 mistakes, player is transitioned to `Eliminated` state. Partial matches in Q3/Q4 return `INCORRECT` without exposing single-element correctness.
+
+---
+
+## 5. Security & Privacy Model
+
+- **Session Tokens:** Cryptographically secure random UUID tokens issued upon room join.
+- **WebSocket Route Security:** All client packets validate `(sessionId, playerId)`.
+- **Information Leak Prevention:** The server generates player-specific views (`PlayerViewDto`). Secret package identities are strictly stored in host memory/persistence and never transmitted over the wire.
+- **RTL & Typography:** Persian string formatting handles numerals, punctuation, and bidirectionality correctly without text corruption.
