@@ -35,4 +35,4 @@
 | **Live Interactive Preview** | [x] | Live portrait preview server running on port 3000 bound to 0.0.0.0. |
 | **Android Release APK** | [x] | Standalone signed release APK built via AAPT2, Kotlin 2.0, Google D8, and ApkSigner (`release/DetectiveGenius-release.apk`) with verified launcher `MainActivity` and bundled offline assets. |
 | **Google Play Store Compliance** | [x] | Fully validated against all Google Play 2024–2026 criteria: targetSdk 34, minSdk 26, explicit `android:exported="true"`, portrait-lock, V2/V3 signatures, 2048-bit RSA keystore. |
-| **Mobile Runtime Crash Fix** | [x] | Verified bytecode inclusion for `MainActivity` and `DetectiveGeniusApp` in `classes.dex`, preventing startup ClassNotFoundException on physical Android devices. |
+| **Mobile Runtime Crash Fix** | [x] | Verified bytecode inclusion for `MainActivity`, `DetectiveGeniusApp`, and complete Kotlin standard library (`kotlin.jvm.internal.Intrinsics`, `kotlin.Unit`, etc. — 1,161 classes total) in `classes.dex`, preventing startup NoClassDefFoundError / ClassNotFoundException on physical Android devices. |

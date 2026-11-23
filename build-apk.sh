@@ -82,25 +82,31 @@ kotlinc \
   design-system/src/main/kotlin/com/detectivegenius/designsystem/avatar/*.kt \
   -d "$BUILD_DIR/classes"
 
-# 4. Convert Class Files to Dalvik Executable (classes.dex) with D8
-echo "==> [4/5] Running Google D8 dexer to produce classes.dex..."
+# 4. Convert Class Files to Dalvik Executable (classes.dex) with D8 (including Kotlin stdlib runtime!)
+echo "==> [4/5] Running Google D8 dexer to produce classes.dex with Kotlin runtime..."
 rm -rf "$BUILD_DIR/dex"/*
+KOTLIN_STDLIB="/usr/local/lib/node_modules/kotlin-compiler/lib/kotlin-stdlib.jar"
 java -cp "$BUNDLETOOL" com.android.tools.r8.D8 \
   --lib "$ANDROID_JAR" \
   --min-api 26 \
   --release \
   --output "$BUILD_DIR/dex" \
+  "$KOTLIN_STDLIB" \
   $(find "$BUILD_DIR/classes" -name "*.class")
 
-# Verify that MainActivity and DetectiveGeniusApp are present in classes.dex
+# Verify that MainActivity, DetectiveGeniusApp, and Kotlin Intrinsics are present in classes.dex
 python3 -c "
 with open('$BUILD_DIR/dex/classes.dex', 'rb') as f:
     dex = f.read()
-required = [b'Lcom/detectivegenius/MainActivity;', b'Lcom/detectivegenius/DetectiveGeniusApp;']
+required = [
+    b'Lcom/detectivegenius/MainActivity;',
+    b'Lcom/detectivegenius/DetectiveGeniusApp;',
+    b'Lkotlin/jvm/internal/Intrinsics;'
+]
 for r in required:
     if r not in dex:
         raise ValueError(f'CRITICAL: {r.decode()} not found in classes.dex!')
-print('Verified classes.dex contains launcher MainActivity and Application.')
+print('Verified classes.dex contains launcher MainActivity, Application, and Kotlin runtime intrinsics.')
 "
 
 # 5. Assemble and Sign Release APK (v1, v2, v3 Signature Schemes)
