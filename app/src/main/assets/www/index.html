@@ -136,6 +136,8 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+            box-sizing: border-box;
+            overflow: hidden;
         }
         .card-elevated {
             background: var(--surface-elevated);
@@ -234,35 +236,114 @@
             direction: ltr;
         }
 
-        /* Avatar Picker Row */
+        /* Contained Avatar Selector Tray (Strictly in bounds!) */
+        .avatar-selector-tray {
+            width: 100%;
+            max-width: 100%;
+            background: rgba(15, 23, 42, 0.65);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 14px;
+            padding: 8px 10px;
+            box-sizing: border-box;
+            margin-top: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow: hidden;
+        }
+        .avatar-selector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: var(--text-secondary);
+            padding: 0 2px;
+            user-select: none;
+        }
         .avatar-carousel {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             overflow-x: auto;
-            padding-bottom: 6px;
+            overflow-y: hidden;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            padding: 4px 4px 6px 4px;
             scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
         }
         .avatar-carousel::-webkit-scrollbar {
             display: none;
         }
         .avatar-item {
-            width: 52px;
-            height: 52px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: var(--surface-highlight);
             border: 2px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 22px;
             cursor: pointer;
             flex-shrink: 0;
-            transition: transform 0.15s, border-color 0.2s;
+            box-sizing: border-box;
+            transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+        .avatar-item:hover {
+            border-color: rgba(6, 182, 212, 0.6);
+            background: rgba(6, 182, 212, 0.08);
         }
         .avatar-item.selected {
             border-color: var(--accent);
-            transform: scale(1.1);
-            box-shadow: 0 0 12px rgba(6, 182, 212, 0.4);
+            background: rgba(6, 182, 212, 0.2);
+            transform: scale(1.06);
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.45);
+        }
+
+        /* Clock & Network Info Components */
+        .network-card {
+            background: rgba(6, 182, 212, 0.08);
+            border: 1px solid rgba(6, 182, 212, 0.35);
+            border-radius: 14px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .conn-pill {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 10px;
+        }
+        .clock-display-card {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85));
+            border: 1.5px solid rgba(6, 182, 212, 0.4);
+            border-radius: 14px;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .scoreboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .stat-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
         }
 
         /* Mystery Badge */
@@ -457,6 +538,7 @@
         <div style="display: flex; align-items: center; gap: 8px;">
             <img src="images/logo_thumb.png" alt="Detective Genius Logo" style="width: 28px; height: 28px; object-fit: contain; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.4);">
             <span style="font-weight: 800; font-size: 14px;" data-i18n="app_brand">کارآگاه نابغه</span>
+            <span class="tag-pill" id="headerTimerBadge" style="display: none; background: rgba(6, 182, 212, 0.2); color: var(--accent); font-family: monospace;">⏱️ ۰۸:۰۰:۰۰</span>
             <span class="tag-pill">v1.0.1</span>
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
@@ -477,15 +559,44 @@
             <p style="color: var(--accent); font-size: 13px; font-weight: 600;" data-i18n="home_subtitle">بازی معمایی و استنتاج اجتماعی آفلاین</p>
         </div>
 
-        <!-- Detective Identity Card -->
-        <div class="card card-elevated" style="text-align: center; align-items: center; cursor: pointer;" onclick="goToScreen('profile')">
-            <div id="homeCurrentAvatar" style="width: 76px; height: 76px; border-radius: 50%; background: var(--surface-highlight); border: 3px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 38px;">🕵️</div>
+        <!-- Active Case Card (If player disconnected Wi-Fi / left app) -->
+        <div id="homeActiveCaseCard" class="card card-elevated" style="display: none; border: 1.5px solid var(--success); background: rgba(16, 185, 129, 0.1); padding: 12px 14px; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 22px;">💼</span>
+                    <div>
+                        <h4 style="font-size: 13px; font-weight: 800; color: var(--success);" data-i18n="resume_case_title">پرونده فعال در جریان</h4>
+                        <span style="font-size: 11px; color: var(--text-secondary);" id="homeResumeCaseInfo">اتاق: DG-4829</span>
+                    </div>
+                </div>
+                <span class="tag-pill" id="homeResumeCaseTimer" style="background: rgba(16, 185, 129, 0.2); color: var(--success); font-family: monospace;">⏱️ ۰۷:۵۹:۰۰</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-sm" style="flex: 2; background: var(--success); color: #000; font-weight: 800;" onclick="resumeActiveCase()">
+                    ▶️ <span data-i18n="btn_resume_case">ادامه پرونده فعال</span>
+                </button>
+                <button class="btn btn-danger btn-sm" style="flex: 1; padding: 6px 8px; font-size: 11px;" onclick="abandonActiveCase()">
+                    🗑️ <span data-i18n="btn_abandon_case">انصراف</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Detective Identity Card (With strictly contained avatars!) -->
+        <div class="card card-elevated" style="text-align: center; align-items: center; cursor: pointer; padding: 14px;" onclick="goToScreen('profile')">
+            <div id="homeCurrentAvatar" style="width: 76px; height: 76px; border-radius: 50%; background: var(--surface-highlight); border: 3px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 38px; box-shadow: 0 4px 14px rgba(0,0,0,0.4);">🕵️</div>
             <div>
                 <h3 id="homeCurrentNickname" style="font-size: 17px; font-weight: 700;">کارآگاه</h3>
                 <p style="font-size: 12px; color: var(--accent);" data-i18n="home_edit_profile_hint">لمس برای ویرایش پرونده و سوالات ذخیره‌شده ✏️</p>
             </div>
-            <div class="avatar-carousel" id="homeAvatarCarousel" onclick="event.stopPropagation()">
-                <!-- Populated dynamically -->
+            <!-- Beautifully enclosed Avatar Selector Tray -->
+            <div class="avatar-selector-tray" onclick="event.stopPropagation()">
+                <div class="avatar-selector-header">
+                    <span data-i18n="avatar_tray_label">انتخاب نشان کارآگاهی:</span>
+                    <span class="tag-pill" style="font-size: 10px; padding: 2px 6px;">۱۲ نمایه</span>
+                </div>
+                <div class="avatar-carousel" id="homeAvatarCarousel">
+                    <!-- Populated dynamically -->
+                </div>
             </div>
         </div>
 
@@ -503,9 +614,14 @@
                 ❓ <span data-i18n="home_how_to_play">راهنمای بازی</span>
             </button>
         </div>
-        <button class="btn btn-secondary" style="width: 100%;" onclick="goToScreen('settings')">
-            ⚙️ <span data-i18n="home_settings">تنظیمات</span>
-        </button>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-secondary" style="flex: 1;" onclick="openNetworkFaqModal()">
+                📶 <span data-i18n="btn_network_faq">راهنمای هات‌اسپات و شبکه</span>
+            </button>
+            <button class="btn btn-secondary" style="flex: 1;" onclick="goToScreen('settings')">
+                ⚙️ <span data-i18n="home_settings">تنظیمات</span>
+            </button>
+        </div>
     </div>
 
     <!-- SCREEN 2: PROFILE & STORED QUESTIONS (NEW!) -->
@@ -520,9 +636,14 @@
                 <label class="input-label" data-i18n="profile_nickname">نام کارآگاهی شما</label>
                 <input class="input-field" id="profileNicknameInput" value="کارآگاه" onchange="saveProfileNickname()" />
             </div>
-            <span style="font-size: 12px; color: var(--text-muted);" data-i18n="profile_avatar_label">تصویر نمایه کارآگاه:</span>
-            <div class="avatar-carousel" id="profileAvatarCarousel">
-                <!-- Populated dynamically -->
+            <div class="avatar-selector-tray">
+                <div class="avatar-selector-header">
+                    <span data-i18n="profile_avatar_label">تصویر نمایه کارآگاه:</span>
+                    <span class="tag-pill" style="font-size: 10px; padding: 2px 6px;">۱۲ نمایه</span>
+                </div>
+                <div class="avatar-carousel" id="profileAvatarCarousel">
+                    <!-- Populated dynamically -->
+                </div>
             </div>
         </div>
 
@@ -589,21 +710,42 @@
             <h2 data-i18n="join_room_title" style="font-size: 18px;">پیوستن به پرونده</h2>
             <button class="btn btn-secondary btn-sm" onclick="goToScreen('home')" data-i18n="btn_back">بازگشت</button>
         </div>
+
         <div class="card">
             <div class="input-group">
                 <label class="input-label" data-i18n="join_room_nickname">نام کارآگاهی شما</label>
                 <input class="input-field" id="joinNicknameInput" value="کارآگاه مهمان" />
             </div>
+
             <div class="input-group">
-                <label class="input-label" data-i18n="join_room_host_ip">آدرس IP میزبان (در وای‌فای محلی)</label>
-                <input class="input-field" id="joinIpInput" value="192.168.1.100" />
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label class="input-label" data-i18n="join_room_host_ip">آدرس IP میزبان (در وای‌فای محلی یا هات‌اسپات)</label>
+                    <span style="font-size: 11px; color: var(--accent); cursor: pointer;" onclick="openNetworkFaqModal()" data-i18n="btn_network_faq">❓ راهنما</span>
+                </div>
+                <input class="input-field" id="joinIpInput" value="192.168.43.1" dir="ltr" style="font-family: monospace;" />
+                <div style="display: flex; gap: 6px; margin-top: 2px;">
+                    <button class="btn btn-secondary btn-sm" style="flex: 1; font-size: 11px; padding: 4px 6px;" onclick="setJoinIpPreset('192.168.43.1')">
+                        📱 هات‌اسپات (192.168.43.1)
+                    </button>
+                    <button class="btn btn-secondary btn-sm" style="flex: 1; font-size: 11px; padding: 4px 6px;" onclick="setJoinIpPreset('192.168.1.100')">
+                        📶 مودم وای‌فای
+                    </button>
+                </div>
             </div>
+
             <div class="input-group">
-                <label class="input-label" data-i18n="join_room_pin">کد پین ۴ رقمی اتاق</label>
-                <input class="input-field" id="joinPinInput" value="4829" maxlength="4" />
+                <label class="input-label" data-i18n="join_room_pin">شناسه پرونده / پین اتاق (Room ID)</label>
+                <input class="input-field" id="joinPinInput" value="DG-4829" dir="ltr" style="font-family: monospace; font-weight: 700;" />
             </div>
         </div>
-        <button class="btn" onclick="startLobby(false)" data-i18n="join_room_connect_btn">اتصال به اتاق پرونده</button>
+
+        <button class="btn" onclick="startLobby(false)" data-i18n="join_room_connect_btn">
+            🔗 اتصال به اتاق پرونده
+        </button>
+
+        <button class="btn btn-secondary" onclick="openNetworkFaqModal()">
+            ❓ <span data-i18n="faq_join_btn">راهنمای اتصال و رفع خطای هات‌اسپات</span>
+        </button>
     </div>
 
     <!-- SCREEN 5: LOBBY (NO FAKE / MOCK PLAYERS!) -->
@@ -611,9 +753,51 @@
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <h2 data-i18n="lobby_title" style="font-size: 18px;">اداره تحقیقات پرونده</h2>
-                <span style="font-size: 12px; color: var(--accent); font-weight: 700;" id="lobbyPinDisplay">پین اتاق: 4829</span>
+                <span style="font-size: 12px; color: var(--accent); font-weight: 700;" id="lobbyPinDisplay">شناسه اتاق: DG-4829</span>
             </div>
             <span style="font-size: 13px; color: var(--text-secondary); font-weight: 700;" id="lobbyPlayerCount">کارآگاهان: ۱ / ۲۰</span>
+        </div>
+
+        <!-- Host Connection & Network IP Card (For Smooth Multiplayer!) -->
+        <div class="network-card" id="lobbyHostNetworkCard">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 20px;">📶</span>
+                    <div>
+                        <span style="font-size: 11px; color: var(--text-muted);" data-i18n="host_conn_type">شبکه محلی آفلاین / هات‌اسپات</span>
+                        <h4 style="font-size: 13px; font-weight: 800; color: var(--accent);" data-i18n="host_conn_title">اطلاعات اتصال میزبان</h4>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="openNetworkFaqModal()" style="padding: 4px 8px; font-size: 11px;">
+                    ❓ <span data-i18n="btn_network_faq_short">راهنما</span>
+                </button>
+            </div>
+
+            <!-- Host IP Display with 1-Tap Copy -->
+            <div class="conn-pill">
+                <div>
+                    <span style="font-size: 11px; color: var(--text-secondary);" data-i18n="host_ip_label">آدرس آی‌پی شما (Host IP):</span>
+                    <div style="font-family: monospace; font-size: 15px; font-weight: 700; color: var(--text-primary); direction: ltr;" id="lobbyHostIpDisplay">192.168.43.1</div>
+                </div>
+                <button class="btn btn-sm" onclick="copyHostIp()" style="padding: 6px 12px; font-size: 11px;">
+                    📋 <span data-i18n="btn_copy_ip">کپی IP</span>
+                </button>
+            </div>
+
+            <!-- Room ID Display with 1-Tap Copy -->
+            <div class="conn-pill">
+                <div>
+                    <span style="font-size: 11px; color: var(--text-secondary);" data-i18n="host_room_id_label">شناسه اختصاصی اتاق (Room ID):</span>
+                    <div style="font-family: monospace; font-size: 15px; font-weight: 800; color: var(--accent); direction: ltr;" id="lobbyRoomIdDisplay">DG-4829</div>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="copyRoomId()" style="padding: 6px 12px; font-size: 11px;">
+                    📋 <span data-i18n="btn_copy_room_id">کپی شناسه</span>
+                </button>
+            </div>
+
+            <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.4; margin: 0;" data-i18n="host_conn_hint">
+                💡 به دوستان بگویید به همین وای‌فای یا هات‌اسپات وصل شوند و این <b>IP</b> و <b>شناسه اتاق</b> را در «ورود به اتاق» وارد کنند.
+            </p>
         </div>
 
         <div id="lobbyWarningBanner" style="background: rgba(245, 158, 11, 0.15); border: 1px solid var(--warning); padding: 10px 12px; border-radius: 12px; font-size: 12px; color: var(--warning); line-height: 1.4;">
@@ -788,10 +972,42 @@
                 <span style="font-size: 12px; color: var(--text-secondary);" id="mbMistakeText">اشتباهات: ۰ / ۳</span>
             </div>
             <div class="mistake-dots" id="mbMistakeDots">
-                <div class="mistake-dot"></div>
-                <div class="mistake-dot"></div>
-                <div class="mistake-dot"></div>
+                <!-- Dynamically populated based on maxMistakes -->
             </div>
+        </div>
+
+        <!-- 8-Hour Running Clock Card & Scoreboard -->
+        <div class="clock-display-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="font-size: 16px;">⏱️</span>
+                    <span style="font-size: 12px; font-weight: 700; color: var(--text-secondary);" data-i18n="timer_running_label">زمان باقی‌مانده پرونده (حداکثر ۸ ساعت):</span>
+                </div>
+                <span class="tag-pill" id="mbOvertimeBadge" style="display: none; background: rgba(245, 158, 11, 0.25); color: var(--warning);">⚡ وقت اضافه</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <div style="font-family: monospace; font-size: 26px; font-weight: 800; color: var(--accent); letter-spacing: 1px;" id="mbTimerValue">
+                    ۰۸:۰۰:۰۰
+                </div>
+                <span style="font-size: 11px; color: var(--text-muted);" id="mbRoomIdBadge">اتاق: DG-4829</span>
+            </div>
+
+            <!-- Scoreboard: Right Guesses (Priority 1) vs Wrong Guesses (Priority 2) -->
+            <div class="scoreboard-grid">
+                <div class="stat-box">
+                    <span style="font-size: 10px; color: var(--text-secondary);" data-i18n="stat_right_guesses">حدس‌های صحیح (اولویت ۱):</span>
+                    <span style="font-size: 16px; font-weight: 800; color: var(--success);" id="mbScoreValue">۰ / ۴</span>
+                </div>
+                <div class="stat-box">
+                    <span style="font-size: 10px; color: var(--text-secondary);" data-i18n="stat_wrong_guesses">خطاها (اولویت ۲):</span>
+                    <span style="font-size: 16px; font-weight: 800; color: var(--error);" id="mbMistakeStatValue">۰</span>
+                </div>
+            </div>
+
+            <p style="font-size: 10.5px; color: var(--text-muted); line-height: 1.4; margin: 0; border-top: 1px solid rgba(148, 163, 184, 0.15); padding-top: 6px;" data-i18n="rule_timeout_note">
+                ⚖️ <b>قانون ۸ ساعت:</b> در صورت پایان زمان بدون برنده قطعی، اولویت ۱ با بیشترین حدس صحیح و اولویت ۲ با کمترین خطا برنده را تعیین می‌کند. در تساوی مجدد، ۱ ساعت وقت اضافه و ۳ حدس اعطا می‌شود.
+            </p>
         </div>
 
         <div style="display: flex; gap: 10px;">
@@ -912,18 +1128,18 @@
     <div id="screen-victory" class="screen" style="text-align: center; justify-content: space-between;">
         <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
             <img src="images/logo.png" alt="Detective Genius Logo" style="width: 110px; height: 110px; object-fit: contain; filter: drop-shadow(0 6px 18px rgba(16, 185, 129, 0.5)); border-radius: 18px;">
-            <h1 style="color: var(--accent); font-size: 26px; font-weight: 800;" data-i18n="victory_title">پرونده مختومه شد!</h1>
-            <p style="font-size: 15px; margin-top: 4px;" id="victoryAnnouncement">کارآگاه نابغه هر ۴ معما را حل کرد!</p>
+            <h1 style="color: var(--accent); font-size: 24px; font-weight: 800;" id="victoryTitleHeading" data-i18n="victory_title">پرونده مختومه شد!</h1>
+            <p style="font-size: 14px; margin-top: 2px;" id="victoryAnnouncement">کارآگاه نابغه هر ۴ معما را حل کرد!</p>
         </div>
         <div style="font-size: 80px;" id="victoryAvatarEmoji">🕵️</div>
         <div class="card card-elevated" style="border-color: var(--success); padding: 16px;">
-            <h3 style="color: var(--success); font-size: 16px;" data-i18n="victory_all_solved">تمام ۴ راز بزرگ کشف شدند!</h3>
-            <p style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; line-height: 1.6;" data-i18n="victory_summary">
+            <h3 style="color: var(--success); font-size: 15px;" id="victorySubheading" data-i18n="victory_all_solved">تمام ۴ راز بزرگ کشف شدند!</h3>
+            <div style="font-size: 12.5px; color: var(--text-secondary); margin-top: 6px; line-height: 1.6;" id="victorySummaryDesc" data-i18n="victory_summary">
                 ✓ کارآگاهی که به سوالات شما پاسخ داد<br>
                 ✓ کارآگاهی که شما به سوالاتش پاسخ دادید<br>
                 ✓ نویسنده سوالات پاکت مدارک شما<br>
                 ✓ پاسخ‌دهنده سوالات پاکت مدارک شما
-            </p>
+            </div>
         </div>
         <button class="btn" onclick="resetGame()" data-i18n="btn_play_again">شروع پرونده جدید</button>
     </div>
@@ -974,9 +1190,117 @@
                 <input type="checkbox" id="settingHapticToggle" checked />
             </div>
         </div>
+
+        <!-- Testing & Demonstration Tools -->
+        <div class="card" style="border-color: var(--accent);">
+            <span style="font-size: 12px; font-weight: 700; color: var(--accent);">🧪 ابزار آزمایش و دمو زمان بازی:</span>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary btn-sm" style="flex: 1; font-size: 11px;" onclick="fastForwardClockTo5Seconds()">
+                    ⚡ تست انقضای زمان (تنظیم تایمر به ۵ ثانیه)
+                </button>
+            </div>
+            <p style="font-size: 10px; color: var(--text-muted); margin: 0;">
+                جهت آزمایش آسان قوانین ۸ ساعت، اولویت ۱ و ۲، و اعلام وقت اضافه.
+            </p>
+        </div>
         <span style="font-size: 11px; color: var(--text-muted); text-align: center;">Detective Genius v1.0.1 — موتور آفلاین اندروید</span>
     </div>
 
+</div>
+
+
+<!-- Network & Hotspot FAQ Modal (Comprehensive Guide!) -->
+<div class="modal-overlay" id="networkFaqModal">
+    <div class="modal-sheet" style="max-height: 85vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 20px;">📶</span>
+                <h3 style="font-size: 15px; font-weight: 800; color: var(--accent);" data-i18n="faq_modal_title">راهنمای اتصال چندنفره و هات‌اسپات</h3>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="closeNetworkFaqModal()" style="padding: 2px 8px;">✕</button>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px; text-align: right; line-height: 1.5;">
+            <!-- Method 1: Portable Hotspot -->
+            <div style="background: var(--surface-elevated); padding: 12px; border-radius: 12px; border: 1px solid var(--border);">
+                <h4 style="color: var(--success); font-size: 13.5px; font-weight: 700; margin-bottom: 4px;">
+                    🥇 روش پیشنهادی: نقطه اتصال همراه (هات‌اسپات - Hotspot)
+                </h4>
+                <p style="font-size: 12px; color: var(--text-secondary); margin: 0;">
+                    <b>۱۰۰٪ آفلاین و رایگان — بدون نیاز به مودم، اینترنت یا بسته داده همراه!</b><br>
+                    • <b>گام ۱:</b> میزبان وارد تنظیمات گوشی شده و «نقطه اتصال همراه (Portable Hotspot)» را روشن می‌کند. (داده همراه می‌تواند کاملاً خاموش باشد).<br>
+                    • <b>گام ۲:</b> سایر کارآگاهان وای‌فای گوشی خود را روشن کرده و به هات‌اسپات میزبان وصل می‌شوند.<br>
+                    • <b>گام ۳:</b> آدرس آی‌پی هات‌اسپات در اندروید معمولاً <b>192.168.43.1</b> است. سایر بازیکنان این آی‌پی و شناسه اتاق را در بخش «ورود به اتاق» وارد می‌کنند.
+                </p>
+            </div>
+
+            <!-- Method 2: Same Wi-Fi -->
+            <div style="background: var(--surface-elevated); padding: 12px; border-radius: 12px; border: 1px solid var(--border);">
+                <h4 style="color: var(--accent); font-size: 13.5px; font-weight: 700; margin-bottom: 4px;">
+                    🥈 روش دوم: اتصال به یک مودم یا وای‌فای مشترک
+                </h4>
+                <p style="font-size: 12px; color: var(--text-secondary); margin: 0;">
+                    • همه گوشی‌ها به یک مودم وای‌فای خانگی متصل شوید.<br>
+                    • آی‌پی نمایش‌داده‌شده در صفحه اتاق میزبان (مثلاً 192.168.1.15) را در کادر ورود سایر گوشی‌ها تایپ کنید.
+                </p>
+            </div>
+
+            <!-- Troubleshooting Guide -->
+            <div style="background: rgba(245, 158, 11, 0.1); padding: 12px; border-radius: 12px; border: 1px solid var(--warning);">
+                <h4 style="color: var(--warning); font-size: 13.5px; font-weight: 700; margin-bottom: 6px;">
+                    ⚠️ راهنمای رفع مشکلات و خطاهای متداول
+                </h4>
+                <div style="font-size: 11.5px; color: var(--text-primary); display: flex; flex-direction: column; gap: 8px;">
+                    <div>
+                        <b>۱. محدودیت تعداد دستگاه‌های متصل در هات‌اسپات (Hotspot Limit):</b><br>
+                        در برخی گوشی‌ها (مانند شیائومی Poco M5s و سامسونگ)، هات‌اسپات ممکن است به صورت پیش‌فرض روی ۱ یا ۲ دستگاه محدود باشد.<br>
+                        <i>راه‌حل در شیائومی:</i> تنظیمات گوشی > نقطه اتصال همراه (Portable Hotspot) > دستگاه‌های متصل (Connected devices) > حداکثر دستگاه‌های مجاز (Limit of connected devices) > انتخاب <b>نامحدود (Unlimited)</b> یا ۸ دستگاه.<br>
+                        <i>راه‌حل در سامسونگ:</i> تنظیمات > Hotspot > پیشرفته (Advanced) > افزایش سقف اتصال.
+                    </div>
+                    <div>
+                        <b>۲. مشکل جداسازی کلاینت‌ها (AP / Client Isolation) در مودم:</b><br>
+                        در برخی مودم‌ها ارتباط مستقیم بین دو گوشی مسدود است. اگر در مودم نتوانستید وصل شوید، فوراً از <b>هات‌اسپات گوشی میزبان</b> استفاده کنید که این مشکل را برطرف می‌کند.
+                    </div>
+                    <div>
+                        <b>۳. خاموش کردن فیلترشکن (VPN):</b><br>
+                        فیلترشکن تمام داده‌ها را به سرورهای خارجی ارسال می‌کند و مانع ارتباط محلی می‌شود. میزبان و دوستان باید VPN را حین بازی خاموش کنند.
+                    </div>
+                    <div>
+                        <b>۴. قطع وای‌فای یا خروج موقت از برنامه:</b><br>
+                        اگر وای‌فای قطع شود یا گوشی را قفل کنید، تمام اطلاعات پرونده در حافظه پایدار دستگاه ذخیره است. با ورود مجدد دکمه «ادامه پرونده فعال» را بزنید تا بدون از دست رفتن زمان یا پاسخ‌ها به بازی برگردید!
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn" style="margin-top: 12px; width: 100%;" onclick="closeNetworkFaqModal()" data-i18n="btn_close">
+            متوجه شدم و بازگشت
+        </button>
+    </div>
+</div>
+
+<!-- Overtime Announcement Modal (When 8 hours expire in a Tie!) -->
+<div class="modal-overlay" id="overtimeModal">
+    <div class="modal-sheet" style="text-align: center;">
+        <div style="font-size: 54px; margin-bottom: 4px;">⚡</div>
+        <h3 style="font-size: 18px; font-weight: 800; color: var(--warning);" data-i18n="overtime_modal_title">
+            تساوی کارآگاهی و اعلام وقت اضافه!
+        </h3>
+        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-top: 8px;" id="overtimeModalDesc">
+            ۸ ساعت زمان پرونده بدون تعیین برنده قطعی به پایان رسید. بر اساس قوانین، ۱ ساعت زمان اضافی و ۳ فرصت حدس جدید به بازیکنان مساوی اعطا گردید!
+        </p>
+        <div class="card card-elevated" style="border-color: var(--warning); padding: 12px; margin-top: 8px; text-align: right;">
+            <span style="font-size: 12px; font-weight: 700; color: var(--warning);">🎁 پاداش‌های وقت اضافه اعطاشده:</span>
+            <span style="font-size: 11.5px; color: var(--text-primary); margin-top: 4px; display: block;">
+                ✓ <b>+۱ ساعت زمان بیشتر</b> به ساعت در حال اجرای پرونده اضافه شد.<br>
+                ✓ <b>+۳ فرصت حدس مجدد</b> به کارآگاهان دارای امتیاز مساوی داده شد.<br>
+                ✓ بازی تا مشخص شدن برنده قطعی ادامه خواهد یافت.
+            </span>
+        </div>
+        <button class="btn" style="margin-top: 12px; width: 100%;" onclick="closeOvertimeModal()" data-i18n="btn_continue_investigation">
+            ادامه عملیات در وقت اضافه
+        </button>
+    </div>
 </div>
 
 <!-- Deduction Modal (Single Suspect Selection) -->
@@ -1124,7 +1448,29 @@
             btn_spectator_chat: "ادامه تماشا در بی‌سیم",
             modal_confirm_btn: "تأیید استنتاج",
             modal_load_q_title: "بارگذاری از سوالات ذخیره‌شده",
-            modal_load_q_hint: "روی هر سوال ضربه بزنید تا در یکی از جایگاه‌های خالی قرار گیرد:"
+            modal_load_q_hint: "روی هر سوال ضربه بزنید تا در یکی از جایگاه‌های خالی قرار گیرد:",
+            avatar_tray_label: "انتخاب نشان کارآگاهی:",
+            resume_case_title: "پرونده فعال در جریان",
+            btn_resume_case: "ادامه پرونده فعال",
+            btn_abandon_case: "انصراف",
+            btn_network_faq: "راهنمای هات‌اسپات و شبکه",
+            btn_network_faq_short: "راهنما",
+            faq_join_btn: "راهنمای اتصال و رفع خطای هات‌اسپات",
+            host_conn_type: "شبکه محلی آفلاین / هات‌اسپات",
+            host_conn_title: "اطلاعات اتصال میزبان",
+            host_ip_label: "آدرس آی‌پی شما (Host IP):",
+            host_room_id_label: "شناسه اختصاصی اتاق (Room ID):",
+            btn_copy_ip: "کپی IP",
+            btn_copy_room_id: "کپی شناسه",
+            host_conn_hint: "به دوستان بگویید به همین وای‌فای یا هات‌اسپات وصل شوند و این IP و شناسه اتاق را در «ورود به اتاق» وارد کنند.",
+            timer_running_label: "زمان باقی‌مانده پرونده (حداکثر ۸ ساعت):",
+            timer_overtime_badge: "⚡ وقت اضافه",
+            stat_right_guesses: "حدس‌های صحیح (اولویت ۱):",
+            stat_wrong_guesses: "خطاها (اولویت ۲):",
+            rule_timeout_note: "قانون ۸ ساعت: در صورت پایان زمان بدون برنده قطعی، اولویت ۱ با بیشترین حدس صحیح و اولویت ۲ با کمترین خطا برنده را تعیین می‌کند. در تساوی مجدد، ۱ ساعت وقت اضافه و ۳ حدس اعطا می‌شود.",
+            faq_modal_title: "راهنمای اتصال چندنفره و هات‌اسپات",
+            overtime_modal_title: "تساوی کارآگاهی و اعلام وقت اضافه!",
+            btn_continue_investigation: "ادامه عملیات در وقت اضافه",
         },
         en: {
             app_brand: "Detective Genius",
@@ -1230,7 +1576,29 @@
             btn_spectator_chat: "Spectate in Comms",
             modal_confirm_btn: "Confirm Deduction",
             modal_load_q_title: "Load from Saved Questions",
-            modal_load_q_hint: "Tap any question to load into an empty slot:"
+            modal_load_q_hint: "Tap any question to load into an empty slot:",
+            avatar_tray_label: "Select Detective Badge:",
+            resume_case_title: "Active Case in Progress",
+            btn_resume_case: "Resume Active Case",
+            btn_abandon_case: "Abandon",
+            btn_network_faq: "Hotspot & Network Guide",
+            btn_network_faq_short: "Guide",
+            faq_join_btn: "Hotspot Setup & Network Guide",
+            host_conn_type: "Offline Local Wi-Fi / Hotspot",
+            host_conn_title: "Host Connection Details",
+            host_ip_label: "Your Device IP (Host IP):",
+            host_room_id_label: "Unique Room ID:",
+            btn_copy_ip: "Copy IP",
+            btn_copy_room_id: "Copy ID",
+            host_conn_hint: "Tell other detectives to connect to this Wi-Fi/Hotspot and enter this IP & Room ID in Join Room.",
+            timer_running_label: "Remaining Case Clock (Max 8 Hours):",
+            timer_overtime_badge: "⚡ Overtime",
+            stat_right_guesses: "Right Guesses (Priority #1):",
+            stat_wrong_guesses: "Mistakes (Priority #2):",
+            rule_timeout_note: "8-Hour Rule: If time expires with no winner, Priority 1 is most right guesses, Priority 2 is fewest mistakes. If still tied, 1 hour overtime and 3 guesses are awarded.",
+            faq_modal_title: "Multiplayer Network & Hotspot Guide",
+            overtime_modal_title: "Detective Tie & Overtime Awarded!",
+            btn_continue_investigation: "Continue in Overtime"
         }
     };
 
@@ -1315,9 +1683,21 @@
     let myAvatar = "detective";
     let storedQuestions = [];
 
+    // Unique Room ID & Player Persistence
+    let currentRoomId = "DG-" + Math.floor(1000 + Math.random() * 9000);
+    let playerSessionToken = "TOK-" + Math.random().toString(36).substring(2, 9).toUpperCase();
+    let currentHostIp = "192.168.43.1";
+
+    // 8-Hour Running Clock & Overtime
+    let roomDurationSec = 8 * 3600; // Maximum 8 hours = 28,800 seconds
+    let roomStartTime = null;
+    let roomTimerInterval = null;
+    let overtimeCount = 0;
+    let currentMaxMistakes = 3; // +3 awarded per overtime period to tied players
+
     // REAL PLAYERS IN THE ROOM (Starts with only ME/HOST!)
     let realPlayers = [
-        { id: "p1", nickname: "کارآگاه", avatar: "detective", isHost: true, isReady: true }
+        { id: "p1", nickname: "کارآگاه", avatar: "detective", isHost: true, isReady: true, rightGuesses: 0, wrongGuesses: 0, maxMistakes: 3 }
     ];
 
     let mistakes = 0;
@@ -1372,7 +1752,405 @@
         } catch (_) {}
     }
 
-    // --- 6. NAVIGATION ---
+    
+    // --- NETWORK DETECTION & COPY HELPERS ---
+    function detectHostIp() {
+        if (window.DetectiveNative && window.DetectiveNative.getDeviceIp) {
+            try {
+                const ip = window.DetectiveNative.getDeviceIp();
+                if (ip && ip.trim().length > 0 && ip !== '127.0.0.1') {
+                    currentHostIp = ip.trim();
+                    return currentHostIp;
+                }
+            } catch (_) {}
+        }
+        if (window.location && window.location.hostname &&
+            window.location.hostname !== 'localhost' &&
+            window.location.hostname !== '127.0.0.1' &&
+            !window.location.hostname.includes('e2b.app')) {
+            currentHostIp = window.location.hostname;
+            return currentHostIp;
+        }
+        return currentHostIp || '192.168.43.1';
+    }
+
+    function copyHostIp() {
+        playSfx('click');
+        const ip = document.getElementById('lobbyHostIpDisplay')?.textContent?.trim() || currentHostIp;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(ip);
+        }
+        alert(currentLang === 'fa' ? `آدرس آی‌پی میزبان کپی شد: ${ip}` : `Host IP copied: ${ip}`);
+    }
+
+    function copyRoomId() {
+        playSfx('click');
+        const roomId = currentRoomId;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(roomId);
+        }
+        alert(currentLang === 'fa' ? `شناسه پرونده کپی شد: ${roomId}` : `Room ID copied: ${roomId}`);
+    }
+
+    function openNetworkFaqModal() {
+        playSfx('click');
+        document.getElementById('networkFaqModal')?.classList.add('active');
+    }
+
+    function closeNetworkFaqModal() {
+        playSfx('click');
+        document.getElementById('networkFaqModal')?.classList.remove('active');
+    }
+
+    function setJoinIpPreset(ip) {
+        playSfx('click');
+        const input = document.getElementById('joinIpInput');
+        if (input) input.value = ip;
+    }
+
+    // --- 8-HOUR RUNNING CLOCK, OVERTIME & TIE-BREAKING ENGINE ---
+    function startRoomClock(startTime) {
+        roomStartTime = startTime || Date.now();
+        if (roomTimerInterval) clearInterval(roomTimerInterval);
+        updateRoomClock();
+        roomTimerInterval = setInterval(updateRoomClock, 1000);
+    }
+
+    function stopRoomClock() {
+        if (roomTimerInterval) {
+            clearInterval(roomTimerInterval);
+            roomTimerInterval = null;
+        }
+    }
+
+    function updateRoomClock() {
+        if (!roomStartTime) return;
+        const now = Date.now();
+        const elapsedSec = Math.floor((now - roomStartTime) / 1000);
+        const remainingSec = Math.max(0, roomDurationSec - elapsedSec);
+
+        const hours = Math.floor(remainingSec / 3600);
+        const minutes = Math.floor((remainingSec % 3600) / 60);
+        const seconds = remainingSec % 60;
+
+        const pad = n => String(n).padStart(2, '0');
+        const formatted = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        const faDigits = formatted.replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+
+        const displayStr = currentLang === 'fa' ? `⏱️ ${faDigits}` : `⏱️ ${formatted}`;
+
+        // Top App Header Timer
+        const headerTimer = document.getElementById('headerTimerBadge');
+        if (headerTimer) {
+            headerTimer.style.display = 'inline-flex';
+            headerTimer.textContent = displayStr;
+            if (overtimeCount > 0) {
+                headerTimer.style.background = 'rgba(245, 158, 11, 0.25)';
+                headerTimer.style.color = 'var(--warning)';
+            } else {
+                headerTimer.style.background = 'rgba(6, 182, 212, 0.2)';
+                headerTimer.style.color = 'var(--accent)';
+            }
+        }
+
+        // Mystery Board Timer Card
+        const mbTimer = document.getElementById('mbTimerValue');
+        if (mbTimer) {
+            mbTimer.textContent = currentLang === 'fa' ? faDigits : formatted;
+        }
+
+        const mbOvertimeBadge = document.getElementById('mbOvertimeBadge');
+        if (mbOvertimeBadge) {
+            if (overtimeCount > 0) {
+                mbOvertimeBadge.style.display = 'inline-block';
+                mbOvertimeBadge.textContent = currentLang === 'fa'
+                    ? `⚡ وقت اضافه ${overtimeCount > 1 ? `(${overtimeCount})` : ''}`
+                    : `⚡ Overtime ${overtimeCount > 1 ? `(${overtimeCount})` : ''}`;
+            } else {
+                mbOvertimeBadge.style.display = 'none';
+            }
+        }
+
+        // If time expired and 4 mysteries not solved yet, resolve via timeout rules!
+        if (remainingSec <= 0 && solvedMysteries.size < 4) {
+            resolveCaseTimeout();
+        }
+    }
+
+    function resolveCaseTimeout() {
+        stopRoomClock();
+
+        // Update active player's record
+        realPlayers[0].rightGuesses = solvedMysteries.size;
+        realPlayers[0].wrongGuesses = mistakes;
+
+        // Ensure other real players have reasonable deduction scores if testing on single device
+        for (let i = 1; i < realPlayers.length; i++) {
+            if (realPlayers[i].rightGuesses === undefined) {
+                realPlayers[i].rightGuesses = Math.floor(Math.random() * 3);
+                realPlayers[i].wrongGuesses = Math.floor(Math.random() * 3);
+            }
+        }
+
+        // Find candidate(s) with highest right guesses
+        const maxRight = Math.max(...realPlayers.map(p => p.rightGuesses || 0));
+        const playersWithMaxRight = realPlayers.filter(p => (p.rightGuesses || 0) === maxRight);
+
+        // PRIORITY #1: Single player with highest right guesses
+        if (playersWithMaxRight.length === 1 && maxRight > 0) {
+            triggerTimeoutVictory(playersWithMaxRight[0], 1, maxRight, playersWithMaxRight[0].wrongGuesses || 0);
+            return;
+        }
+
+        // PRIORITY #2: Tie on right guesses -> Compare wrong guesses (less wrong guesses wins!)
+        const minWrong = Math.min(...playersWithMaxRight.map(p => p.wrongGuesses || 0));
+        const playersWithMinWrong = playersWithMaxRight.filter(p => (p.wrongGuesses || 0) === minWrong);
+
+        if (playersWithMinWrong.length === 1) {
+            triggerTimeoutVictory(playersWithMinWrong[0], 2, maxRight, minWrong);
+            return;
+        }
+
+        // PRIORITY #3: STILL A TIE!
+        // Rule: 3 more guesses and an additional hour are awarded until a winner is set!
+        triggerOvertimeAward(playersWithMinWrong);
+    }
+
+    function triggerTimeoutVictory(winner, priorityLevel, rightCount, wrongCount) {
+        playSfx('victory_fanfare');
+        stopRoomClock();
+        const av = AVATARS.find(a => a.id === winner.avatar) || AVATARS[0];
+        document.getElementById('victoryAvatarEmoji').textContent = av.emoji;
+
+        const titleEl = document.getElementById('victoryTitleHeading');
+        const annEl = document.getElementById('victoryAnnouncement');
+        const subEl = document.getElementById('victorySubheading');
+        const sumEl = document.getElementById('victorySummaryDesc');
+
+        if (currentLang === 'fa') {
+            titleEl.textContent = priorityLevel === 1
+                ? "🏆 پیروزی پرونده (اولویت ۱: بیشترین حدس صحیح)"
+                : "🏆 پیروزی پرونده (اولویت ۲: کمترین خطای حدس)";
+            subEl.textContent = `پایان مهلت ۸ ساعت پرونده با برد کارآگاه «${winner.nickname}»`;
+            annEl.textContent = `کارآگاه نابغه «${winner.nickname}» برنده این پرونده شد!`;
+            sumEl.innerHTML = `
+                <b>نتیجه بررسی استنتاجات در پایان ۸ ساعت:</b><br>
+                ✓ حدس‌های صحیح: <b>${rightCount} از ۴ معما</b><br>
+                ✓ خطاهای ثبت‌شده: <b>${wrongCount} اشتباه</b><br>
+                ${priorityLevel === 1 ? '• پیروزی به دلیل کسب بالاترین امتیاز حدس صحیح (اولویت ۱)' : '• پیروزی به دلیل تفاضل خطای کمتر در شرایط تساوی امتیاز (اولویت ۲)'}
+            `;
+        } else {
+            titleEl.textContent = priorityLevel === 1
+                ? "🏆 Case Victory (Priority 1: Most Right Guesses)"
+                : "🏆 Case Victory (Priority 2: Fewest Mistakes)";
+            subEl.textContent = `8-Hour Clock Expired — Winner: Detective "${winner.nickname}"`;
+            annEl.textContent = `Detective "${winner.nickname}" won the case!`;
+            sumEl.innerHTML = `
+                <b>Investigation Results at 8-Hour Mark:</b><br>
+                ✓ Right Guesses: <b>${rightCount} / 4 Mysteries</b><br>
+                ✓ Mistakes Made: <b>${wrongCount}</b><br>
+                ${priorityLevel === 1 ? '• Won by highest correct guesses (Priority #1)' : '• Won by lowest mistake count in tie-breaker (Priority #2)'}
+            `;
+        }
+
+        clearActiveCaseState();
+        goToScreen('victory');
+    }
+
+    function triggerOvertimeAward(tiedPlayers) {
+        playSfx('clue_solve');
+        overtimeCount++;
+        // Add 1 additional hour (3600 seconds)
+        roomDurationSec += 3600;
+
+        // Award 3 more guesses
+        currentMaxMistakes += 3;
+        realPlayers.forEach(p => {
+            if (tiedPlayers.some(tp => tp.id === p.id)) {
+                p.maxMistakes = (p.maxMistakes || 3) + 3;
+            }
+        });
+
+        startRoomClock(roomStartTime);
+        updateMistakesDisplay();
+        updateScoreboardDisplay();
+        saveActiveCaseState();
+
+        const modal = document.getElementById('overtimeModal');
+        const desc = document.getElementById('overtimeModalDesc');
+        const tiedNames = tiedPlayers.map(p => `«${p.nickname}»`).join(' و ');
+
+        if (desc) {
+            desc.textContent = currentLang === 'fa'
+                ? `۸ ساعت زمان بدون برنده قطعی به پایان رسید (تساوی بین کارآگاهان ${tiedNames} با ${tiedPlayers[0].rightGuesses || 0} حدس درست و ${tiedPlayers[0].wrongGuesses || 0} خطا). طبق قوانین رسمی، ۱ ساعت وقت اضافه و ۳ حدس دیگر به بازیکنان مساوی اعطا گردید!`
+                : `8 hours expired with a tie between detectives ${tiedNames} (${tiedPlayers[0].rightGuesses || 0} right guesses, ${tiedPlayers[0].wrongGuesses || 0} mistakes). Per official rules, 1 additional hour and 3 extra guesses have been awarded!`;
+        }
+        if (modal) modal.classList.add('active');
+    }
+
+    function closeOvertimeModal() {
+        playSfx('click');
+        document.getElementById('overtimeModal')?.classList.remove('active');
+    }
+
+    function fastForwardClockTo5Seconds() {
+        playSfx('click');
+        if (!roomStartTime) roomStartTime = Date.now();
+        // Set elapsed time so remaining time is exactly 5 seconds!
+        roomDurationSec = Math.floor((Date.now() - roomStartTime) / 1000) + 5;
+        alert(currentLang === 'fa' ? "⏱️ زمان پرونده به ۵ ثانیه باقی‌مانده تنظیم شد! به تخته معما بروید تا پایان زمان و تساوی را مشاهده کنید." : "Clock set to 5 seconds remaining!");
+        goToScreen('mystery-board');
+    }
+
+    function updateScoreboardDisplay() {
+        const scoreVal = document.getElementById('mbScoreValue');
+        const mistakeVal = document.getElementById('mbMistakeStatValue');
+        if (scoreVal) scoreVal.textContent = `${solvedMysteries.size} / ۴`;
+        if (mistakeVal) mistakeVal.textContent = mistakes;
+    }
+
+    // --- PERSISTENCE & OFFLINE RECONNECTION SYSTEM ---
+    function saveActiveCaseState(targetScreen) {
+        try {
+            const state = {
+                roomId: currentRoomId,
+                playerToken: playerSessionToken,
+                myNickname: myNickname,
+                myAvatar: myAvatar,
+                realPlayers: realPlayers,
+                currentScreen: targetScreen || document.querySelector('.screen.active')?.id?.replace('screen-', '') || 'mystery-board',
+                myQuestions: myQuestions,
+                receivedQuestionsToAnswer: receivedQuestionsToAnswer,
+                myAnswers: myAnswers,
+                mySinglePackage: mySinglePackage,
+                correctSuspects: correctSuspects,
+                solvedMysteries: Array.from(solvedMysteries),
+                mistakes: mistakes,
+                currentMaxMistakes: currentMaxMistakes,
+                roomStartTime: roomStartTime,
+                roomDurationSec: roomDurationSec,
+                overtimeCount: overtimeCount,
+                groupChatMessages: groupChatMessages,
+                savedAt: Date.now()
+            };
+            localStorage.setItem('dg_active_case', JSON.stringify(state));
+            updateHomeActiveCaseCard();
+        } catch (_) {}
+    }
+
+    function clearActiveCaseState() {
+        try {
+            localStorage.removeItem('dg_active_case');
+            updateHomeActiveCaseCard();
+        } catch (_) {}
+    }
+
+    function abandonActiveCase() {
+        if (confirm(currentLang === 'fa' ? "آیا از انصراف از پرونده فعال اطمینان دارید؟" : "Abandon this active case?")) {
+            stopRoomClock();
+            clearActiveCaseState();
+            playSfx('click');
+        }
+    }
+
+    function resumeActiveCase() {
+        playSfx('click');
+        const raw = localStorage.getItem('dg_active_case');
+        if (!raw) return;
+        try {
+            const state = JSON.parse(raw);
+            currentRoomId = state.roomId || currentRoomId;
+            playerSessionToken = state.playerToken || playerSessionToken;
+            myNickname = state.myNickname || myNickname;
+            myAvatar = state.myAvatar || myAvatar;
+            realPlayers = state.realPlayers || realPlayers;
+            myQuestions = state.myQuestions || myQuestions;
+            receivedQuestionsToAnswer = state.receivedQuestionsToAnswer || receivedQuestionsToAnswer;
+            myAnswers = state.myAnswers || myAnswers;
+            mySinglePackage = state.mySinglePackage || mySinglePackage;
+            correctSuspects = state.correctSuspects || correctSuspects;
+            solvedMysteries = new Set(state.solvedMysteries || []);
+            mistakes = state.mistakes || 0;
+            currentMaxMistakes = state.currentMaxMistakes || 3;
+            roomStartTime = state.roomStartTime || Date.now();
+            roomDurationSec = state.roomDurationSec || 28800;
+            overtimeCount = state.overtimeCount || 0;
+            groupChatMessages = state.groupChatMessages || [];
+
+            // Update UI elements
+            updateMistakesDisplay();
+            updateScoreboardDisplay();
+            renderSinglePackageInViewer();
+            renderChatMessages();
+
+            // Restore solved badges on Mystery Board
+            [1, 2, 3, 4].forEach(id => {
+                const badge = document.getElementById(`badge-q${id}`);
+                const btn = document.querySelector(`#card-q${id} .btn`);
+                if (badge && btn) {
+                    if (solvedMysteries.has(id)) {
+                        badge.textContent = currentLang === 'fa' ? "حل شد ✓" : "SOLVED ✓";
+                        badge.className = "badge badge-solved";
+                        btn.style.display = 'none';
+                    } else {
+                        badge.textContent = currentLang === 'fa' ? "حل نشده" : "UNSOLVED";
+                        badge.className = "badge badge-unsolved";
+                        btn.style.display = 'flex';
+                    }
+                }
+            });
+
+            // Resume clock
+            startRoomClock(roomStartTime);
+
+            const target = state.currentScreen || 'mystery-board';
+            goToScreen(target);
+        } catch (e) {
+            console.error("Failed to resume active case:", e);
+        }
+    }
+
+    function updateHomeActiveCaseCard() {
+        const card = document.getElementById('homeActiveCaseCard');
+        if (!card) return;
+        const raw = localStorage.getItem('dg_active_case');
+        if (!raw) {
+            card.style.display = 'none';
+            return;
+        }
+        try {
+            const state = JSON.parse(raw);
+            if (state.solvedMysteries && state.solvedMysteries.length === 4) {
+                card.style.display = 'none';
+                return;
+            }
+            card.style.display = 'flex';
+            const infoEl = document.getElementById('homeResumeCaseInfo');
+            const timerEl = document.getElementById('homeResumeCaseTimer');
+            if (infoEl) {
+                const solvedCount = state.solvedMysteries ? state.solvedMysteries.length : 0;
+                infoEl.textContent = currentLang === 'fa'
+                    ? `اتاق: ${state.roomId || currentRoomId} | حل‌شده: ${solvedCount} از ۴`
+                    : `Room: ${state.roomId || currentRoomId} | Solved: ${solvedCount}/4`;
+            }
+            if (timerEl && state.roomStartTime) {
+                const elapsed = Math.floor((Date.now() - state.roomStartTime) / 1000);
+                const remaining = Math.max(0, (state.roomDurationSec || 28800) - elapsed);
+                const h = Math.floor(remaining / 3600);
+                const m = Math.floor((remaining % 3600) / 60);
+                const s = remaining % 60;
+                const pad = n => String(n).padStart(2, '0');
+                const str = `${pad(h)}:${pad(m)}:${pad(s)}`;
+                timerEl.textContent = currentLang === 'fa'
+                    ? `⏱️ ${str.replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d])}`
+                    : `⏱️ ${str}`;
+            }
+        } catch (_) {
+            card.style.display = 'none';
+        }
+    }
+
+// --- 6. NAVIGATION ---
     function goToScreen(screenName) {
         playSfx('click');
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -1567,7 +2345,22 @@
         realPlayers[0].nickname = myNickname;
         realPlayers[0].avatar = myAvatar;
         realPlayers[0].isHost = isHost;
+
+        // Detect and display Host IP and Room ID
+        const hostIp = detectHostIp();
+        const ipDisplay = document.getElementById('lobbyHostIpDisplay');
+        const roomIdDisplay = document.getElementById('lobbyRoomIdDisplay');
+        const pinDisplay = document.getElementById('lobbyPinDisplay');
+
+        if (ipDisplay) ipDisplay.textContent = hostIp;
+        if (roomIdDisplay) roomIdDisplay.textContent = currentRoomId;
+        if (pinDisplay) pinDisplay.textContent = `${currentLang === 'fa' ? 'شناسه اتاق' : 'Room ID'}: ${currentRoomId}`;
+
+        const hostCard = document.getElementById('lobbyHostNetworkCard');
+        if (hostCard) hostCard.style.display = 'flex';
+
         renderLobbyPlayers();
+        saveActiveCaseState('lobby');
     }
 
     function addFriendToLobby() {
@@ -1670,6 +2463,10 @@
     // --- 10. QUESTION CREATION (MANUAL ONLY + SUGGESTIONS + SAVED QUESTIONS) ---
     function beginQuestionPhase() {
         playSfx('card_deal');
+        // Start 8-hour running clock!
+        if (!roomStartTime) {
+            startRoomClock();
+        }
         // Clear manual inputs
         document.getElementById('qInput1').value = '';
         document.getElementById('qInput2').value = '';
@@ -1678,6 +2475,7 @@
         updateQcProgress();
         renderSuggestionsChips();
         goToScreen('question-creation');
+        saveActiveCaseState('question-creation');
     }
 
     function updateQcProgress() {
@@ -1864,7 +2662,10 @@
 
         // Solve Authoritative Assignment & Package Distribution
         computeGameAssignmentAndSinglePackage();
+        updateScoreboardDisplay();
+        updateMistakesDisplay();
         goToScreen('distribution');
+        saveActiveCaseState('distribution');
     }
 
     // --- 12. GAME ASSIGNMENT ENGINE (EXACTLY 1 PACKAGE!) ---
@@ -2040,35 +2841,87 @@
         if (isCorrect) {
             playSfx('clue_solve');
             solvedMysteries.add(currentModalChallenge);
+            realPlayers[0].rightGuesses = solvedMysteries.size;
+
             const badge = document.getElementById(`badge-q${currentModalChallenge}`);
             badge.textContent = currentLang === 'fa' ? "حل شد ✓" : "SOLVED ✓";
             badge.className = "badge badge-solved";
             document.querySelector(`#card-q${currentModalChallenge} .btn`).style.display = 'none';
 
+            updateScoreboardDisplay();
+            saveActiveCaseState('mystery-board');
+
             if (solvedMysteries.size === 4) {
-                // ALL 4 MYSTERIES SOLVED! VICTORY!
-                playSfx('victory_fanfare');
-                document.getElementById('victoryAnnouncement').textContent =
-                    currentLang === 'fa' ? `کارآگاه نابغه «${myNickname}» تمام ۴ معما را کشف کرد!` : `Master Detective ${myNickname} solved all 4 mysteries!`;
-                goToScreen('victory');
+                // ALL 4 MYSTERIES SOLVED! NORMAL VICTORY!
+                triggerNormalVictory(realPlayers[0]);
             }
         } else {
             // Mistake consumed!
             playSfx('mistake_buzz');
             mistakes++;
+            realPlayers[0].wrongGuesses = mistakes;
+
             updateMistakesDisplay();
-            if (mistakes >= 3) {
+            updateScoreboardDisplay();
+            saveActiveCaseState('mystery-board');
+
+            if (mistakes >= currentMaxMistakes) {
                 goToScreen('elimination');
             }
         }
     }
 
+    function triggerNormalVictory(winner) {
+        playSfx('victory_fanfare');
+        stopRoomClock();
+        const av = AVATARS.find(a => a.id === winner.avatar) || AVATARS[0];
+        document.getElementById('victoryAvatarEmoji').textContent = av.emoji;
+
+        const titleEl = document.getElementById('victoryTitleHeading');
+        const annEl = document.getElementById('victoryAnnouncement');
+        const subEl = document.getElementById('victorySubheading');
+        const sumEl = document.getElementById('victorySummaryDesc');
+
+        if (currentLang === 'fa') {
+            titleEl.textContent = "🏆 پرونده مختومه شد!";
+            subEl.textContent = "تمام ۴ راز بزرگ کشف شدند!";
+            annEl.textContent = `کارآگاه نابغه «${winner.nickname}» تمام ۴ معما را کشف کرد!`;
+            sumEl.innerHTML = `
+                ✓ کارآگاهی که به سوالات شما پاسخ داد<br>
+                ✓ کارآگاهی که شما به سوالاتش پاسخ دادید<br>
+                ✓ نویسنده سوالات پاکت مدارک شما<br>
+                ✓ پاسخ‌دهنده سوالات پاکت مدارک شما
+            `;
+        } else {
+            titleEl.textContent = "🏆 Case Closed!";
+            subEl.textContent = "All 4 Mysteries Successfully Solved!";
+            annEl.textContent = `Master Detective "${winner.nickname}" solved all 4 mysteries!`;
+            sumEl.innerHTML = `
+                ✓ Detective who answered your questions<br>
+                ✓ Detective whose questions you answered<br>
+                ✓ Author of questions in your package<br>
+                ✓ Answerer of questions in your package
+            `;
+        }
+        clearActiveCaseState();
+        goToScreen('victory');
+    }
+
     function updateMistakesDisplay() {
-        document.getElementById('mbMistakeText').textContent = `${currentLang === 'fa' ? 'اشتباهات' : 'Mistakes'}: ${mistakes} / ۳`;
-        const dots = document.querySelectorAll('.mistake-dot');
-        dots.forEach((dot, idx) => {
-            dot.classList.toggle('consumed', idx < mistakes);
-        });
+        const mistakesLabel = currentLang === 'fa' ? 'اشتباهات' : 'Mistakes';
+        const maxDisplay = currentLang === 'fa' ? String(currentMaxMistakes).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]) : currentMaxMistakes;
+        const curDisplay = currentLang === 'fa' ? String(mistakes).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]) : mistakes;
+
+        document.getElementById('mbMistakeText').textContent = `${mistakesLabel}: ${curDisplay} / ${maxDisplay}`;
+        const dotsContainer = document.getElementById('mbMistakeDots');
+        if (dotsContainer) {
+            dotsContainer.innerHTML = '';
+            for (let i = 0; i < currentMaxMistakes; i++) {
+                const dot = document.createElement('div');
+                dot.className = `mistake-dot ${i < mistakes ? 'consumed' : ''}`;
+                dotsContainer.appendChild(dot);
+            }
+        }
     }
 
     // --- 14. CHAT WIRE (REAL PLAYERS ONLY) ---
@@ -2157,14 +3010,22 @@
 
     function resetGame() {
         playSfx('click');
+        stopRoomClock();
         mistakes = 0;
+        currentMaxMistakes = 3;
+        overtimeCount = 0;
         solvedMysteries.clear();
+        realPlayers[0].rightGuesses = 0;
+        realPlayers[0].wrongGuesses = 0;
+        clearActiveCaseState();
         updateMistakesDisplay();
+        updateScoreboardDisplay();
         document.querySelectorAll('.badge-solved').forEach(b => {
             b.textContent = currentLang === 'fa' ? "حل نشده" : "UNSOLVED";
             b.className = "badge badge-unsolved";
         });
         document.querySelectorAll('.card .btn').forEach(btn => btn.style.display = 'flex');
+        document.getElementById('headerTimerBadge').style.display = 'none';
         goToScreen('home');
     }
 
@@ -2177,7 +3038,9 @@
     // --- 15. INITIALIZATION ON LOAD ---
     window.onload = () => {
         initProfileData();
+        detectHostIp();
         setLanguage('fa'); // Main language is Farsi!
+        updateHomeActiveCaseCard();
     };
 </script>
 </body>
