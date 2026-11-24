@@ -2,11 +2,11 @@
 set -euo pipefail
 
 echo "=============================================="
-echo " Building Detective Genius Release APK        "
+echo " Detective Genius APK Repair & Build Pipeline "
 echo " Target SDK: 34 (Android 14)                  "
 echo " Min SDK: 26 (Android 8.0)                    "
-echo " Native Android Activity & Offline Assets     "
-echo " Play Store Ready & Signed                    "
+echo " Version: 1.0.1 (code: 2)                     "
+echo " 4-Byte ZipAlign + Dual v2/v3 Signing         "
 echo "=============================================="
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -44,13 +44,28 @@ if [ ! -f "$ANDROID_JAR" ]; then
     cd "$ROOT_DIR"
 fi
 
+# Ensure debug keystore exists for debug builds
+DEBUG_KEYSTORE="$ROOT_DIR/keystore/debug.keystore"
+if [ ! -f "$DEBUG_KEYSTORE" ]; then
+    echo "==> Generating standard Android debug keystore..."
+    keytool -genkeypair -v \
+      -keystore "$DEBUG_KEYSTORE" \
+      -alias androiddebugkey \
+      -keyalg RSA \
+      -keysize 2048 \
+      -validity 10000 \
+      -storepass android \
+      -keypass android \
+      -dname "CN=Android Debug,O=Android,C=US"
+fi
+
 # 1. Compile Resources with AAPT2
-echo "==> [1/5] Compiling resources with AAPT2..."
+echo "==> [1/6] Compiling resources with AAPT2..."
 rm -rf "$BUILD_DIR/compiled_res"/*
 "$AAPT2" compile --dir app/src/main/res -o "$BUILD_DIR/compiled_res"
 
 # 2. Link Resources & Manifest with Assets
-echo "==> [2/5] Linking binary resources, assets, and AndroidManifest.xml..."
+echo "==> [2/6] Linking binary resources, assets, and AndroidManifest.xml..."
 "$AAPT2" link \
   -I "$ANDROID_JAR" \
   --manifest app/src/main/AndroidManifest.xml \
@@ -62,8 +77,8 @@ echo "==> [2/5] Linking binary resources, assets, and AndroidManifest.xml..."
   -o "$BUILD_DIR/base_linked.apk" \
   "$BUILD_DIR/compiled_res"/*.flat
 
-# 3. Compile Kotlin Code to Class Bytecode (including MainActivity & DetectiveGeniusApp!)
-echo "==> [3/5] Compiling Kotlin application and domain engine..."
+# 3. Compile Kotlin Code to Class Bytecode
+echo "==> [3/6] Compiling Kotlin application and domain engine..."
 rm -rf "$BUILD_DIR/classes"/*
 kotlinc \
   -classpath "$ANDROID_JAR" \
@@ -82,8 +97,8 @@ kotlinc \
   design-system/src/main/kotlin/com/detectivegenius/designsystem/avatar/*.kt \
   -d "$BUILD_DIR/classes"
 
-# 4. Convert Class Files to Dalvik Executable (classes.dex) with D8 (including Kotlin stdlib runtime!)
-echo "==> [4/5] Running Google D8 dexer to produce classes.dex with Kotlin runtime..."
+# 4. Convert Class Files to Dalvik Executable (classes.dex) with D8
+echo "==> [4/6] Running Google D8 dexer with Kotlin runtime stdlib..."
 rm -rf "$BUILD_DIR/dex"/*
 KOTLIN_STDLIB="/usr/local/lib/node_modules/kotlin-compiler/lib/kotlin-stdlib.jar"
 java -cp "$BUNDLETOOL" com.android.tools.r8.D8 \
@@ -94,7 +109,7 @@ java -cp "$BUNDLETOOL" com.android.tools.r8.D8 \
   "$KOTLIN_STDLIB" \
   $(find "$BUILD_DIR/classes" -name "*.class")
 
-# Verify that MainActivity, DetectiveGeniusApp, and Kotlin Intrinsics are present in classes.dex
+# Verify classes.dex contents
 python3 -c "
 with open('$BUILD_DIR/dex/classes.dex', 'rb') as f:
     dex = f.read()
@@ -109,31 +124,67 @@ for r in required:
 print('Verified classes.dex contains launcher MainActivity, Application, and Kotlin runtime intrinsics.')
 "
 
-# 5. Assemble and Sign Release APK (v1, v2, v3 Signature Schemes)
-echo "==> [5/5] Assembling and signing release APK with Google ApkSigner..."
+# 5. Assemble and 4-Byte ZipAlign Uncompressed Entries
+echo "==> [5/6] Assembling and applying 4-byte ZipAlignment to uncompressed resources..."
 python3 -c "
-import zipfile, os, time
+import zipfile, struct
 
 base_apk = '$BUILD_DIR/base_linked.apk'
 dex_file = '$BUILD_DIR/dex/classes.dex'
-unsigned_apk = '$BUILD_DIR/app-unsigned.apk'
-
+aligned_unsigned_apk = '$BUILD_DIR/app-aligned-unsigned.apk'
 valid_date = (2026, 11, 23, 12, 0, 0)
+alignment = 4
 
-with zipfile.ZipFile(base_apk, 'r') as zin, zipfile.ZipFile(unsigned_apk, 'w') as zout:
+with zipfile.ZipFile(base_apk, 'r') as zin, zipfile.ZipFile(aligned_unsigned_apk, 'w') as zout:
     for item in zin.infolist():
         data = zin.read(item.filename)
         compress_type = zipfile.ZIP_STORED if item.filename == 'resources.arsc' else zipfile.ZIP_DEFLATED
-        item.date_time = valid_date
-        zout.writestr(item, data, compress_type=compress_type)
+        new_item = zipfile.ZipInfo(item.filename, valid_date)
+        new_item.compress_type = compress_type
+        
+        extra = b''
+        if compress_type == zipfile.ZIP_STORED:
+            current_pos = zout.fp.tell()
+            fn_len = len(new_item.filename.encode('utf-8'))
+            header_len = 30 + fn_len
+            data_offset = current_pos + header_len
+            padding = (alignment - (data_offset % alignment)) % alignment
+            if padding > 0:
+                extra = b'\x00' * padding
+        
+        new_item.extra = extra
+        zout.writestr(new_item, data, compress_type=compress_type)
     
+    # Append classes.dex (deflated)
     with open(dex_file, 'rb') as f:
         dex_data = f.read()
     dex_info = zipfile.ZipInfo('classes.dex', valid_date)
     dex_info.compress_type = zipfile.ZIP_DEFLATED
     zout.writestr(dex_info, dex_data)
+
+# Strictly verify 4-byte alignment of every STORED entry
+with open(aligned_unsigned_apk, 'rb') as f:
+    raw = f.read()
+
+p = 0
+while True:
+    idx = raw.find(b'PK\x03\x04', p)
+    if idx == -1:
+        break
+    compress = struct.unpack('<H', raw[idx+8:idx+10])[0]
+    fn_len = struct.unpack('<H', raw[idx+26:idx+28])[0]
+    extra_len = struct.unpack('<H', raw[idx+28:idx+30])[0]
+    filename = raw[idx+30:idx+30+fn_len].decode('utf-8', errors='ignore')
+    data_offset = idx + 30 + fn_len + extra_len
+    if compress == 0:
+        if data_offset % 4 != 0:
+            raise ValueError(f'CRITICAL: {filename} is NOT 4-byte aligned! offset={data_offset}')
+        print(f'Verified 4-byte alignment: {filename} at byte offset {data_offset} (offset % 4 == 0)')
+    p = idx + 4
 "
 
+# 6. Cryptographically Sign Release & Debug APKs with Google ApkSigner
+echo "==> [6/6] Cryptographically signing release and debug packages with Google ApkSigner..."
 cat << 'EOF' > "$BUILD_DIR/SignApk.kt"
 import java.io.File
 import java.io.FileInputStream
@@ -174,28 +225,69 @@ fun main(args: Array<String>) {
     val verifier = com.android.apksig.ApkVerifier.Builder(outApk).build()
     val result = verifier.verify()
     if (!result.isVerified) {
-        throw IllegalStateException("APK signature verification failed!")
+        throw IllegalStateException("APK signature verification failed for ${outApk.name}!")
     }
-    println("APK signature verification PASSED: V2=${result.isVerifiedUsingV2Scheme}, V3=${result.isVerifiedUsingV3Scheme}")
+    println("Signature verification PASSED for ${outApk.name}: V2=${result.isVerifiedUsingV2Scheme}, V3=${result.isVerifiedUsingV3Scheme}")
 }
 EOF
 
 kotlinc -cp "$BUNDLETOOL" "$BUILD_DIR/SignApk.kt" -include-runtime -d "$BUILD_DIR/SignApk.jar"
+
+# Sign Production Release APK
 java -cp "$BUNDLETOOL:$BUILD_DIR/SignApk.jar" SignApkKt \
-  "$BUILD_DIR/app-unsigned.apk" \
+  "$BUILD_DIR/app-aligned-unsigned.apk" \
   "$RELEASE_DIR/DetectiveGenius-release.apk" \
   "$KEYSTORE" \
   "$KEY_PASS" \
   "$KEY_ALIAS"
 
-# Create a copy in app/build/outputs/apk/release/
-mkdir -p "$ROOT_DIR/app/build/outputs/apk/release"
+# Create Testing Named Copy
+cp "$RELEASE_DIR/DetectiveGenius-release.apk" "$RELEASE_DIR/DetectiveGenius-Testing-1.0.1.apk"
+
+# Sign Debug APK with standard Android debug key
+java -cp "$BUNDLETOOL:$BUILD_DIR/SignApk.jar" SignApkKt \
+  "$BUILD_DIR/app-aligned-unsigned.apk" \
+  "$RELEASE_DIR/DetectiveGenius-debug.apk" \
+  "$DEBUG_KEYSTORE" \
+  "android" \
+  "androiddebugkey"
+
+# Mirror to standard Gradle output paths
+mkdir -p "$ROOT_DIR/app/build/outputs/apk/release" "$ROOT_DIR/app/build/outputs/apk/debug"
+cp "$RELEASE_DIR/DetectiveGenius-release.apk" "$ROOT_DIR/app/build/outputs/apk/release/app-release.apk"
 cp "$RELEASE_DIR/DetectiveGenius-release.apk" "$ROOT_DIR/app/build/outputs/apk/release/DetectiveGenius-release.apk"
+cp "$RELEASE_DIR/DetectiveGenius-debug.apk" "$ROOT_DIR/app/build/outputs/apk/debug/app-debug.apk"
+
+# Final Alignment Verification on Signed Production APK
+python3 -c "
+import struct
+
+with open('$RELEASE_DIR/DetectiveGenius-release.apk', 'rb') as f:
+    raw = f.read()
+
+p = 0
+while True:
+    idx = raw.find(b'PK\x03\x04', p)
+    if idx == -1:
+        break
+    compress = struct.unpack('<H', raw[idx+8:idx+10])[0]
+    fn_len = struct.unpack('<H', raw[idx+26:idx+28])[0]
+    extra_len = struct.unpack('<H', raw[idx+28:idx+30])[0]
+    filename = raw[idx+30:idx+30+fn_len].decode('utf-8', errors='ignore')
+    data_offset = idx + 30 + fn_len + extra_len
+    if compress == 0:
+        if data_offset % 4 != 0:
+            raise ValueError(f'CRITICAL: {filename} in signed APK is NOT 4-byte aligned! offset={data_offset}')
+        print(f'Final Signed APK Alignment Verified: {filename} offset={data_offset} (divisible by 4)')
+    p = idx + 4
+"
 
 echo "=============================================="
-echo " BUILD SUCCESSFUL!                            "
-echo " Output: $RELEASE_DIR/DetectiveGenius-release.apk"
-echo " Size: $(du -h "$RELEASE_DIR/DetectiveGenius-release.apk" | cut -f1)"
+echo " BUILD & VERIFICATION SUCCESSFUL!             "
+echo " Release: $RELEASE_DIR/DetectiveGenius-release.apk"
+echo " Testing: $RELEASE_DIR/DetectiveGenius-Testing-1.0.1.apk"
+echo " Debug:   $RELEASE_DIR/DetectiveGenius-debug.apk"
+echo " Size:    $(du -h "$RELEASE_DIR/DetectiveGenius-release.apk" | cut -f1)"
 echo " SHA-256: $(sha256sum "$RELEASE_DIR/DetectiveGenius-release.apk" | cut -d' ' -f1)"
 echo "=============================================="
 apkutils info "$RELEASE_DIR/DetectiveGenius-release.apk"
