@@ -26,10 +26,14 @@ KEY_PASS="DetectiveGeniusRelease2026!"
 # Ensure required build tools exist, or bootstrap automatically
 if ! command -v java &>/dev/null || ! command -v keytool &>/dev/null; then
     echo "==> Setting up Java & Keytool runtime..."
+    pip install --break-system-packages -q jdk4py apkutils 2>/dev/null || true
     python3 -c "import jdk4py, os; keytool = jdk4py.JAVA.parent / 'keytool'; os.system(f'sudo ln -sf {jdk4py.JAVA} /usr/local/bin/java'); os.system(f'sudo ln -sf {keytool} /usr/local/bin/keytool')" || true
 fi
 
 if ! command -v kotlinc &>/dev/null; then
+    if [ ! -f "/usr/local/lib/node_modules/kotlin-compiler/bin/kotlinc" ]; then
+        npm install -g kotlin-compiler 2>/dev/null || true
+    fi
     if [ -f "/usr/local/lib/node_modules/kotlin-compiler/bin/kotlinc" ]; then
         sudo ln -sf /usr/local/lib/node_modules/kotlin-compiler/bin/kotlinc /usr/local/bin/kotlinc
     fi
