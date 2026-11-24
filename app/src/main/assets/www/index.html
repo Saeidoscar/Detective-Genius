@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Detective Genius — Android Portrait Preview</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Detective Genius — کارآگاه نابغه</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #070B18;
@@ -23,7 +23,7 @@
             --error: #EF4444;
             --border: #2A375E;
             --gold: #FFD700;
-            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Plus Jakarta Sans', system-ui, sans-serif;
+            --font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, system-ui, sans-serif;
         }
 
         body.light-theme {
@@ -41,9 +41,16 @@
             --border: #CBD5E1;
         }
 
-        body.rtl-mode {
+        html[dir="rtl"], body.rtl-mode {
             direction: rtl;
-            --font-family: 'Vazirmatn', Tahoma, 'Segoe UI', system-ui, sans-serif;
+            text-align: right;
+            --font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, system-ui, sans-serif;
+        }
+
+        html[dir="ltr"], body:not(.rtl-mode) {
+            direction: ltr;
+            text-align: left;
+            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Plus Jakarta Sans', system-ui, sans-serif;
         }
 
         * {
@@ -82,32 +89,33 @@
             overflow-x: hidden;
             position: fixed;
             inset: 0;
-            padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px calc(env(safe-area-inset-bottom, 0px) + 12px) 16px;
+            padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px calc(env(safe-area-inset-bottom, 0px) + 16px) 16px;
         }
 
-
-        /* Android Navigation Bar */
+        /* Android Navigation Bar Pill */
         .nav-bar {
-            height: 24px;
+            height: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding-bottom: 6px;
+            padding-bottom: 4px;
+            flex-shrink: 0;
         }
         .nav-pill {
-            width: 120px;
+            width: 100px;
             height: 4px;
             background: var(--text-muted);
             border-radius: 4px;
-            opacity: 0.4;
+            opacity: 0.35;
         }
 
-        /* Common Screen Styles */
+        /* Screen Transitions */
         .screen {
             display: none;
             flex-direction: column;
-            gap: 16px;
-            animation: fadeIn 0.25s ease forwards;
+            gap: 14px;
+            padding-bottom: 24px;
+            animation: fadeIn 0.22s ease forwards;
         }
         .screen.active {
             display: flex;
@@ -118,7 +126,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Cards and Buttons */
+        /* Cards and Containers */
         .card {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -132,6 +140,7 @@
             background: var(--surface-elevated);
         }
 
+        /* Buttons */
         .btn {
             background: var(--primary);
             color: #FFF;
@@ -163,11 +172,25 @@
         .btn-secondary:hover {
             background: var(--surface-highlight);
         }
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 13px;
+            border-radius: 10px;
+        }
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error);
+            border: 1px solid var(--error);
+        }
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.35);
+        }
         .btn:disabled {
             background: var(--border);
             color: var(--text-muted);
             cursor: not-allowed;
             transform: none;
+            opacity: 0.6;
         }
 
         /* Input Fields */
@@ -181,7 +204,7 @@
             font-weight: 600;
             color: var(--text-secondary);
         }
-        .input-field {
+        .input-field, .textarea-field {
             background: var(--phone-frame-bg);
             border: 1px solid var(--border);
             border-radius: 12px;
@@ -191,9 +214,23 @@
             font-family: inherit;
             outline: none;
             transition: border-color 0.2s;
+            width: 100%;
         }
-        .input-field:focus {
+        .textarea-field {
+            min-height: 72px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+        .input-field:focus, .textarea-field:focus {
             border-color: var(--accent);
+        }
+        body.rtl-mode .input-field, body.rtl-mode .textarea-field {
+            text-align: right;
+            direction: rtl;
+        }
+        body:not(.rtl-mode) .input-field, body:not(.rtl-mode) .textarea-field {
+            text-align: left;
+            direction: ltr;
         }
 
         /* Avatar Picker Row */
@@ -241,12 +278,12 @@
             border: 1px solid var(--success);
         }
         .badge-unsolved {
-            background: rgba(100, 116, 139, 0.2);
-            color: var(--text-muted);
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--error);
             border: 1px solid var(--border);
         }
 
-        /* Mistake Dots */
+        /* Mistakes Tracker */
         .mistake-dots {
             display: flex;
             gap: 6px;
@@ -256,24 +293,25 @@
             height: 14px;
             border-radius: 50%;
             background: var(--surface-highlight);
-            border: 1px solid var(--border);
+            border: 2px solid var(--border);
+            transition: all 0.2s;
         }
         .mistake-dot.consumed {
             background: var(--error);
             border-color: var(--error);
-            box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
         }
 
-        /* Modal Dialog */
+        /* Deduction Modal */
         .modal-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(4px);
-            z-index: 100;
             display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            z-index: 99;
             align-items: flex-end;
-            padding: 16px;
+            justify-content: center;
         }
         .modal-overlay.active {
             display: flex;
@@ -281,19 +319,21 @@
         .modal-sheet {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 24px;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
             width: 100%;
-            max-height: 80%;
-            overflow-y: auto;
+            max-width: 480px;
             padding: 20px;
             display: flex;
             flex-direction: column;
             gap: 14px;
-            animation: slideUp 0.25s ease;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: slideUp 0.2s ease forwards;
         }
         @keyframes slideUp {
-            from { transform: translateY(40px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
         }
 
         .suspect-grid {
@@ -316,1011 +356,1828 @@
         .suspect-card.selected {
             border-color: var(--accent);
             background: var(--surface-highlight);
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.35);
         }
 
         /* Chat Bubbles */
         .chat-bubble {
-            max-width: 80%;
+            max-width: 82%;
             padding: 10px 14px;
             border-radius: 16px;
             font-size: 14px;
             line-height: 1.4;
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 3px;
         }
         .chat-bubble.mine {
-            align-self: flex-end;
+            align-self: flex-start;
             background: var(--primary);
             color: #FFF;
-            border-bottom-right-radius: 4px;
+            border-bottom-left-radius: 4px;
+        }
+        body.rtl-mode .chat-bubble.mine {
+            align-self: flex-start;
+            border-bottom-right-radius: 16px;
+            border-bottom-left-radius: 4px;
         }
         .chat-bubble.theirs {
-            align-self: flex-start;
+            align-self: flex-end;
             background: var(--surface-elevated);
             color: var(--text-primary);
             border: 1px solid var(--border);
-            border-bottom-left-radius: 4px;
+            border-bottom-right-radius: 4px;
+        }
+        body.rtl-mode .chat-bubble.theirs {
+            align-self: flex-end;
+            border-bottom-left-radius: 16px;
+            border-bottom-right-radius: 4px;
         }
         .chat-time {
             font-size: 10px;
             opacity: 0.6;
             align-self: flex-end;
         }
+
+        /* Suggestion Chips */
+        .suggestion-chip {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            line-height: 1.4;
+        }
+        .suggestion-chip:hover, .suggestion-chip:active {
+            border-color: var(--accent);
+            background: var(--surface-highlight);
+            color: var(--accent);
+        }
+
+        /* Saved Question Card */
+        .saved-q-card {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        /* Header bar */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 8px;
+        }
+
+        .tag-pill {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: var(--surface-highlight);
+            color: var(--accent);
+            font-weight: 700;
+        }
     </style>
-<body>
+</head>
+<body class="rtl-mode">
 <div class="screen-viewport">
 
-            <!-- SCREEN 1: HOME -->
-            <div id="screen-home" class="screen active">
-                <div style="text-align: center; margin-top: 10px;">
-                    <div style="font-size: 48px; margin-bottom: 6px;">🕵️‍♂️</div>
-                    <h1 style="font-size: 24px; font-weight: 700;" data-i18n="home_title">Detective Genius</h1>
-                    <p style="color: var(--accent); font-size: 13px; font-weight: 600;" data-i18n="home_subtitle">Local Wi-Fi Mystery Party</p>
-                </div>
-
-                <div class="card" style="text-align: center; align-items: center;">
-                    <div id="homeCurrentAvatar" style="width: 76px; height: 76px; border-radius: 50%; background: var(--surface-highlight); border: 3px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 38px;">🕵️</div>
-                    <div>
-                        <h3 id="homeCurrentNickname" style="font-size: 16px;">Host Detective</h3>
-                        <p style="font-size: 12px; color: var(--text-muted);" data-i18n="avatar_detective">Master of observation</p>
-                    </div>
-                    <div class="avatar-carousel" id="homeAvatarCarousel">
-                        <!-- Populated dynamically -->
-                    </div>
-                </div>
-
-                <button class="btn" onclick="goToScreen('create-room')">
-                    ➕ <span data-i18n="home_create_room">Create Investigation Room</span>
-                </button>
-                <button class="btn btn-secondary" onclick="goToScreen('join-room')">
-                    🔗 <span data-i18n="home_join_room">Join Room</span>
-                </button>
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-secondary" style="flex: 1;" onclick="goToScreen('onboarding')">
-                        ❓ <span data-i18n="home_how_to_play">How to Play</span>
-                    </button>
-                    <button class="btn btn-secondary" style="flex: 1;" onclick="goToScreen('settings')">
-                        ⚙️ <span data-i18n="home_settings">Settings</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- SCREEN 2: ONBOARDING -->
-            <div id="screen-onboarding" class="screen">
-                <div style="text-align: center;">
-                    <div style="font-size: 40px;">📜</div>
-                    <h2 data-i18n="onboarding_title_1">Welcome Detective</h2>
-                </div>
-                <div class="card">
-                    <h3 style="color: var(--accent); font-size: 15px;" data-i18n="onboarding_title_1">1. Investigation Bureau</h3>
-                    <p style="font-size: 13px; color: var(--text-secondary);" data-i18n="onboarding_desc_1">Step into a world of social deduction, secrets, and clever deduction where everyone is investigating everyone else.</p>
-                </div>
-                <div class="card">
-                    <h3 style="color: var(--accent); font-size: 15px;" data-i18n="onboarding_title_2">2. Write and Answer</h3>
-                    <p style="font-size: 13px; color: var(--text-secondary);" data-i18n="onboarding_desc_2">Craft 3 intriguing questions. Someone will answer them anonymously, while you answer another mystery participant's queries.</p>
-                </div>
-                <div class="card">
-                    <h3 style="color: var(--accent); font-size: 15px;" data-i18n="onboarding_title_3">3. Uncover 4 Mysteries</h3>
-                    <p style="font-size: 13px; color: var(--text-secondary);" data-i18n="onboarding_desc_3">Receive two sealed evidence packages. Deduce who answered your questions, whose you answered, and who is behind the packages you hold.</p>
-                </div>
-                <button class="btn" onclick="goToScreen('home')" data-i18n="onboarding_button_start">Enter the Bureau</button>
-            </div>
-
-            <!-- SCREEN 3: CREATE ROOM -->
-            <div id="screen-create-room" class="screen">
-                <h2 data-i18n="create_room_title">Create Investigation</h2>
-                <div class="input-group">
-                    <label class="input-label" data-i18n="create_room_nickname">Host Nickname</label>
-                    <input class="input-field" id="hostNicknameInput" value="Sherlock Holmes" />
-                </div>
-                <div class="card">
-                    <span style="font-size: 12px; color: var(--text-muted);" data-i18n="create_room_pin">Room Security PIN</span>
-                    <div style="font-size: 32px; font-weight: 800; letter-spacing: 6px; color: var(--accent);">4829</div>
-                    <span style="font-size: 11px; color: var(--text-muted);">Host IP: 192.168.1.100 (Port 8080)</span>
-                </div>
-                <div class="card card-elevated" style="text-align: center; padding: 14px;">
-                    <div style="font-size: 40px; margin-bottom: 4px;">📱</div>
-                    <span style="font-size: 12px; font-weight: 600;" data-i18n="create_room_qr_title">Scan QR Code to Join</span>
-                    <span style="font-size: 11px; color: var(--text-muted);">detectivegenius://join?ip=192.168.1.100&port=8080&pin=4829</span>
-                </div>
-                <button class="btn" onclick="startLobby(true)" data-i18n="create_room_start_btn">Launch Room & Host</button>
-                <button class="btn btn-secondary" onclick="goToScreen('home')" data-i18n="back">Back</button>
-            </div>
-
-            <!-- SCREEN 4: JOIN ROOM -->
-            <div id="screen-join-room" class="screen">
-                <h2 data-i18n="join_room_title">Join Investigation</h2>
-                <div class="input-group">
-                    <label class="input-label" data-i18n="join_room_nickname">Your Detective Nickname</label>
-                    <input class="input-field" id="joinNicknameInput" value="Watson" />
-                </div>
-                <div class="card">
-                    <div class="input-group">
-                        <label class="input-label" data-i18n="join_room_host_ip">Host IP Address</label>
-                        <input class="input-field" value="192.168.1.100" />
-                    </div>
-                    <div class="input-group">
-                        <label class="input-label" data-i18n="join_room_pin">4-Digit Room PIN</label>
-                        <input class="input-field" value="4829" maxlength="4" />
-                    </div>
-                </div>
-                <button class="btn" onclick="startLobby(false)" data-i18n="join_room_connect_btn">Connect to Room</button>
-                <button class="btn btn-secondary" onclick="goToScreen('home')" data-i18n="back">Back</button>
-            </div>
-
-            <!-- SCREEN 5: LOBBY -->
-            <div id="screen-lobby" class="screen">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h2 data-i18n="lobby_title" style="font-size: 18px;">Investigation Bureau</h2>
-                        <span style="font-size: 13px; color: var(--accent); font-weight: 700;">PIN: 4829</span>
-                    </div>
-                    <span style="font-size: 13px; color: var(--text-secondary);" id="lobbyPlayerCount">Detectives: 4 / 20</span>
-                </div>
-
-                <div id="lobbyWarningBanner" style="display: none; background: rgba(245, 158, 11, 0.15); border: 1px solid var(--warning); padding: 8px 12px; border-radius: 8px; font-size: 12px; color: var(--warning);">
-                    ⚠️ Minimum 4 detectives with an EVEN player count required!
-                </div>
-
-                <div class="card" style="padding: 10px; gap: 8px;" id="lobbyPlayerList">
-                    <!-- Populated dynamically -->
-                </div>
-
-                <button class="btn btn-secondary" id="readyToggleBtn" onclick="toggleReady()">
-                    ✓ <span data-i18n="lobby_ready_toggle_on">Mark Ready</span>
-                </button>
-                <button class="btn" id="startGameBtn" onclick="goToScreen('question-creation')" data-i18n="lobby_start_game_btn">
-                    Commence Investigation
-                </button>
-            </div>
-
-            <!-- SCREEN 6: QUESTION CREATION -->
-            <div id="screen-question-creation" class="screen">
-                <h2 data-i18n="qc_title">Question Formulation</h2>
-                <p style="font-size: 12px; color: var(--text-secondary);" data-i18n="qc_instructions">Write exactly 3 distinct questions for your fellow detectives. Minimum 5 and maximum 300 characters each.</p>
-                <div class="card card-elevated" style="padding: 10px 14px;">
-                    <span style="font-size: 13px; font-weight: 700; color: var(--accent);" id="qcProgressLabel">3 / 3 Questions Formulated</span>
-                </div>
-                <div class="card">
-                    <label class="input-label" data-i18n="qc_q1_label">Question 1</label>
-                    <input class="input-field" id="qInput1" value="Where were you on the night of the full moon?" oninput="updateQcProgress()" />
-                </div>
-                <div class="card">
-                    <label class="input-label" data-i18n="qc_q2_label">Question 2</label>
-                    <input class="input-field" id="qInput2" value="What rare heirloom is hidden in your study?" oninput="updateQcProgress()" />
-                </div>
-                <div class="card">
-                    <label class="input-label" data-i18n="qc_q3_label">Question 3</label>
-                    <input class="input-field" id="qInput3" value="Which secret society do you secretly correspond with?" oninput="updateQcProgress()" />
-                </div>
-                <button class="btn" id="qcSubmitBtn" onclick="submitQuestions()" data-i18n="qc_submit_btn">Seal and Submit Questions</button>
-            </div>
-
-            <!-- SCREEN 7: ANSWERING -->
-            <div id="screen-answering" class="screen">
-                <h2 data-i18n="ans_title">Interrogation Response</h2>
-                <p style="font-size: 12px; color: var(--text-secondary);" data-i18n="ans_instructions">You have received 3 anonymous questions. Answer each candidly or cleverly. Maximum 500 characters per answer.</p>
-                <div class="card">
-                    <span style="font-size: 11px; font-weight: 700; color: var(--accent);">Question 1 (Anonymous)</span>
-                    <p style="font-size: 14px; font-weight: 600;">What is your most guarded alibi?</p>
-                    <input class="input-field" id="ansInput1" value="I was reviewing cipher logs in the archives alone." />
-                </div>
-                <div class="card">
-                    <span style="font-size: 11px; font-weight: 700; color: var(--accent);">Question 2 (Anonymous)</span>
-                    <p style="font-size: 14px; font-weight: 600;">What key did you find in the grand clock tower?</p>
-                    <input class="input-field" id="ansInput2" value="A brass key engraved with an owl emblem." />
-                </div>
-                <div class="card">
-                    <span style="font-size: 11px; font-weight: 700; color: var(--accent);">Question 3 (Anonymous)</span>
-                    <p style="font-size: 14px; font-weight: 600;">Who gave you the sealed telegram?</p>
-                    <input class="input-field" id="ansInput3" value="An anonymous courier wearing a velvet coat." />
-                </div>
-                <button class="btn" onclick="submitAnswers()" data-i18n="ans_submit_btn">Deliver Answers</button>
-            </div>
-
-            <!-- SCREEN 8: DISTRIBUTION -->
-            <div id="screen-distribution" class="screen" style="justify-content: space-between; text-align: center;">
-                <div>
-                    <h2 data-i18n="dist_title">Package Delivery</h2>
-                    <p style="font-size: 13px; color: var(--text-secondary); margin-top: 6px;" data-i18n="dist_subtitle">Confidential evidence packages are being sealed and delivered...</p>
-                </div>
-                <div style="font-size: 72px; animation: pulse 1.5s infinite ease-in-out;">💼</div>
-                <div class="card card-elevated" style="border-color: var(--accent);">
-                    <h3 style="color: var(--accent); font-size: 16px;" data-i18n="dist_received_notice">You have received 2 sealed evidence packages!</h3>
-                    <p style="font-size: 12px; color: var(--text-muted);">Package Alpha & Package Beta assigned to your briefcase.</p>
-                </div>
-                <button class="btn" onclick="goToScreen('mystery-board')" data-i18n="dist_open_packages">Open Evidence Briefcase</button>
-            </div>
-
-            <!-- SCREEN 9: MYSTERY BOARD -->
-            <div id="screen-mystery-board" class="screen">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h2 data-i18n="mb_title" style="font-size: 20px;">Mystery Board</h2>
-                        <span style="font-size: 12px; color: var(--text-secondary);" id="mbMistakeText">Mistakes: 0 / 3</span>
-                    </div>
-                    <div class="mistake-dots" id="mbMistakeDots">
-                        <div class="mistake-dot"></div>
-                        <div class="mistake-dot"></div>
-                        <div class="mistake-dot"></div>
-                    </div>
-                </div>
-
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-secondary" style="flex: 1; padding: 10px;" onclick="goToScreen('package-viewer')">
-                        📂 <span data-i18n="mb_inspect_packages">Inspect Packages</span>
-                    </button>
-                    <button class="btn btn-secondary" style="flex: 1; padding: 10px;" onclick="goToScreen('chat')">
-                        📡 <span data-i18n="chat_title">Comms Wire</span>
-                    </button>
-                </div>
-
-                <!-- 4 Mystery Challenges -->
-                <div class="card" id="card-q1">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <h4 style="font-size: 14px;" data-i18n="mb_q1_title">Mystery 1: Who answered my questions?</h4>
-                        <span class="badge badge-unsolved" id="badge-q1">UNSOLVED</span>
-                    </div>
-                    <p style="font-size: 12px; color: var(--text-muted);" data-i18n="mb_q1_desc">Identify the detective who answered the 3 questions you authored.</p>
-                    <button class="btn" style="padding: 8px;" onclick="openDeductionModal(1)" data-i18n="mb_solve_action">Submit Deduction</button>
-                </div>
-
-                <div class="card" id="card-q2">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <h4 style="font-size: 14px;" data-i18n="mb_q2_title">Mystery 2: Whose questions did I answer?</h4>
-                        <span class="badge badge-unsolved" id="badge-q2">UNSOLVED</span>
-                    </div>
-                    <p style="font-size: 12px; color: var(--text-muted);" data-i18n="mb_q2_desc">Identify the detective whose 3 questions you answered.</p>
-                    <button class="btn" style="padding: 8px;" onclick="openDeductionModal(2)" data-i18n="mb_solve_action">Submit Deduction</button>
-                </div>
-
-                <div class="card" id="card-q3">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <h4 style="font-size: 14px;" data-i18n="mb_q3_title">Mystery 3: Whose questions am I holding?</h4>
-                        <span class="badge badge-unsolved" id="badge-q3">UNSOLVED</span>
-                    </div>
-                    <p style="font-size: 12px; color: var(--text-muted);" data-i18n="mb_q3_desc">Identify the 2 detectives who authored the packages in your possession.</p>
-                    <button class="btn" style="padding: 8px;" onclick="openDeductionModal(3)" data-i18n="mb_solve_action">Submit Deduction</button>
-                </div>
-
-                <div class="card" id="card-q4">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <h4 style="font-size: 14px;" data-i18n="mb_q4_title">Mystery 4: Whose answers am I holding?</h4>
-                        <span class="badge badge-unsolved" id="badge-q4">UNSOLVED</span>
-                    </div>
-                    <p style="font-size: 12px; color: var(--text-muted);" data-i18n="mb_q4_desc">Identify the 2 detectives who answered the packages in your possession.</p>
-                    <button class="btn" style="padding: 8px;" onclick="openDeductionModal(4)" data-i18n="mb_solve_action">Submit Deduction</button>
-                </div>
-            </div>
-
-            <!-- SCREEN 10: PACKAGE VIEWER -->
-            <div id="screen-package-viewer" class="screen">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h2 data-i18n="pv_title" style="font-size: 18px;">Evidence Archive</h2>
-                    <button class="btn btn-secondary" style="padding: 6px 12px;" onclick="goToScreen('mystery-board')" data-i18n="back">Back</button>
-                </div>
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn" id="pvTab1" style="flex: 1; padding: 10px;" onclick="switchPackageTab(1)">Package Alpha</button>
-                    <button class="btn btn-secondary" id="pvTab2" style="flex: 1; padding: 10px;" onclick="switchPackageTab(2)">Package Beta</button>
-                </div>
-                <div class="card card-elevated" style="border-color: var(--accent); padding: 10px 14px;">
-                    <span style="font-size: 12px; color: var(--accent); font-weight: 700;">🔒 Classified Dossier — Identities Redacted</span>
-                </div>
-                <div id="pvContent" style="display: flex; flex-direction: column; gap: 12px;">
-                    <!-- Populated dynamically -->
-                </div>
-            </div>
-
-            <!-- SCREEN 11: CHAT -->
-            <div id="screen-chat" class="screen" style="height: 100%;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h2 data-i18n="chat_title" style="font-size: 18px;">Investigation Comms</h2>
-                    <button class="btn btn-secondary" style="padding: 6px 12px;" onclick="goToScreen('mystery-board')" data-i18n="back">Back</button>
-                </div>
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn" id="chatTabGroup" style="flex: 1; padding: 10px;" onclick="switchChatTab(0)">Room Discussion</button>
-                    <button class="btn btn-secondary" id="chatTabPrivate" style="flex: 1; padding: 10px;" onclick="switchChatTab(1)">Private Wire</button>
-                </div>
-
-                <div id="chatPrivatePartnerRow" style="display: none; flex-direction: column; gap: 4px;">
-                    <span style="font-size: 11px; color: var(--text-muted);">Direct Wire: Private & Secure</span>
-                    <div style="display: flex; gap: 6px;" id="chatPartnerList">
-                        <!-- Populated dynamically -->
-                    </div>
-                </div>
-
-                <div id="chatMessageList" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; min-height: 380px;">
-                    <!-- Populated dynamically -->
-                </div>
-
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    <input class="input-field" id="chatInput" placeholder="Transmit confidential message..." style="flex: 1;" onkeydown="if(event.key==='Enter') sendChat()" />
-                    <button class="btn" style="padding: 12px 16px;" onclick="sendChat()">Send</button>
-                </div>
-            </div>
-
-            <!-- SCREEN 12: VICTORY -->
-            <div id="screen-victory" class="screen" style="text-align: center; justify-content: space-between;">
-                <div>
-                    <div style="font-size: 64px;">🏆</div>
-                    <h1 style="color: var(--accent); font-size: 26px; font-weight: 800;" data-i18n="victory_title">Case Closed!</h1>
-                    <p style="font-size: 15px; margin-top: 8px;" id="victoryAnnouncement">Master Detective Host Detective has solved all 4 mysteries!</p>
-                </div>
-                <div style="font-size: 80px;" id="victoryAvatarEmoji">🕵️</div>
-                <div class="card card-elevated" style="border-color: var(--success); padding: 16px;">
-                    <h3 style="color: var(--success); font-size: 16px;">All 4 Mysteries Successfully Solved!</h3>
-                    <p style="font-size: 13px; color: var(--text-secondary); margin-top: 6px;">
-                        ✓ Answerer of authored questions<br>
-                        ✓ Author of answered questions<br>
-                        ✓ Authors of packages held<br>
-                        ✓ Answerers of packages held
-                    </p>
-                </div>
-                <button class="btn" onclick="goToScreen('home')" data-i18n="victory_play_again">Return to Bureau</button>
-            </div>
-
-            <!-- SCREEN 13: ELIMINATION -->
-            <div id="screen-elimination" class="screen" style="text-align: center; justify-content: space-between;">
-                <div>
-                    <div style="font-size: 54px;">🛑</div>
-                    <h1 style="color: var(--error); font-size: 24px; font-weight: 800;" data-i18n="elimination_title">Detective Compromised</h1>
-                    <p style="font-size: 14px; color: var(--text-secondary); margin-top: 8px;" data-i18n="elimination_message">You have accumulated 3 incorrect deductions and have been retired from field investigations.</p>
-                </div>
-                <div style="font-size: 80px; filter: grayscale(1);">🕵️</div>
-                <div class="card card-elevated">
-                    <p style="font-size: 13px; color: var(--text-secondary);" data-i18n="elimination_spectate">You can remain in Comms and observe the investigation as a senior advisor.</p>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <button class="btn" onclick="goToScreen('chat')">📡 Comms Wire</button>
-                    <button class="btn btn-secondary" onclick="goToScreen('package-viewer')">📂 Inspect Evidence</button>
-                </div>
-            </div>
-
-            <!-- SCREEN 14: SETTINGS -->
-            <div id="screen-settings" class="screen">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h2 data-i18n="settings_title">Bureau Settings</h2>
-                    <button class="btn btn-secondary" style="padding: 6px 12px;" onclick="goToScreen('home')" data-i18n="back">Back</button>
-                </div>
-                <div class="card">
-                    <span style="font-size: 13px; font-weight: 700;" data-i18n="settings_language">Language</span>
-                    <div style="display: flex; gap: 8px;">
-                        <button class="btn btn-secondary" id="langBtnEn" style="flex: 1;" onclick="setLanguage('en')">English</button>
-                        <button class="btn btn-secondary" id="langBtnFa" style="flex: 1;" onclick="setLanguage('fa')">فارسی</button>
-                    </div>
-                </div>
-                <div class="card">
-                    <span style="font-size: 13px; font-weight: 700;" data-i18n="settings_theme">Theme</span>
-                    <div style="display: flex; gap: 8px;">
-                        <button class="btn btn-secondary" id="themeBtnDark" style="flex: 1;" onclick="setTheme(true)">Dark Mode</button>
-                        <button class="btn btn-secondary" id="themeBtnLight" style="flex: 1;" onclick="setTheme(false)">Light Mode</button>
-                    </div>
-                </div>
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span data-i18n="settings_sound_fx">Sound Effects</span>
-                        <input type="checkbox" checked />
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span data-i18n="settings_music">Atmospheric Music</span>
-                        <input type="checkbox" checked />
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span data-i18n="settings_haptics">Haptic Feedback</span>
-                        <input type="checkbox" checked />
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span data-i18n="settings_reduced_motion">Reduced Motion</span>
-                        <input type="checkbox" />
-                    </div>
-                </div>
-                <span style="font-size: 11px; color: var(--text-muted); text-align: center;">Detective Genius v1.0.0 (Android Engine)</span>
-            </div>
-
+    <!-- Top App Header -->
+    <div class="app-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">🕵️‍♂️</span>
+            <span style="font-weight: 700; font-size: 14px;" data-i18n="app_brand">کارآگاه نابغه</span>
+            <span class="tag-pill">v1.0.1</span>
         </div>
-
-        <!-- Android Bottom Bar -->
-        <div class="nav-bar">
-            <div class="nav-pill"></div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <button class="btn btn-secondary btn-sm" onclick="toggleLanguage()" id="topLangToggle" style="padding: 4px 8px; font-size: 11px;">
+                🌐 EN / FA
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="goToScreen('profile')" style="padding: 4px 8px; font-size: 11px;" title="Profile">
+                👤 <span data-i18n="nav_profile">پروفایل</span>
+            </button>
         </div>
-
-        <!-- Deduction Modal -->
-        <div class="modal-overlay" id="deductionModal">
-            <div class="modal-sheet">
-                <h3 id="modalTitle" style="font-size: 16px;">Select Suspect</h3>
-                <p id="modalHint" style="font-size: 12px; color: var(--text-secondary);"></p>
-
-                <div class="suspect-grid" id="suspectGrid">
-                    <!-- Populated dynamically -->
-                </div>
-
-                <div id="modalFeedback" style="display: none; color: var(--error); font-size: 12px; font-weight: 600;"></div>
-
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-secondary" style="flex: 1;" onclick="closeDeductionModal()" data-i18n="cancel">Cancel</button>
-                    <button class="btn" style="flex: 1;" onclick="confirmDeduction()" data-i18n="guess_submit">Confirm</button>
-                </div>
-            </div>
-        </div>
-
     </div>
 
-    
+    <!-- SCREEN 1: HOME -->
+    <div id="screen-home" class="screen active">
+        <div style="text-align: center; margin-top: 4px;">
+            <div style="font-size: 52px; margin-bottom: 4px;">🕵️‍♂️</div>
+            <h1 style="font-size: 24px; font-weight: 800;" data-i18n="home_title">کارآگاه نابغه</h1>
+            <p style="color: var(--accent); font-size: 13px; font-weight: 600;" data-i18n="home_subtitle">بازی معمایی و استنتاج اجتماعی آفلاین</p>
+        </div>
+
+        <!-- Detective Identity Card -->
+        <div class="card card-elevated" style="text-align: center; align-items: center; cursor: pointer;" onclick="goToScreen('profile')">
+            <div id="homeCurrentAvatar" style="width: 76px; height: 76px; border-radius: 50%; background: var(--surface-highlight); border: 3px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 38px;">🕵️</div>
+            <div>
+                <h3 id="homeCurrentNickname" style="font-size: 17px; font-weight: 700;">کارآگاه</h3>
+                <p style="font-size: 12px; color: var(--accent);" data-i18n="home_edit_profile_hint">لمس برای ویرایش پرونده و سوالات ذخیره‌شده ✏️</p>
+            </div>
+            <div class="avatar-carousel" id="homeAvatarCarousel" onclick="event.stopPropagation()">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+
+        <button class="btn" onclick="startLobby(true)">
+            ➕ <span data-i18n="home_create_room">ایجاد اتاق پرونده (میزبانی)</span>
+        </button>
+        <button class="btn btn-secondary" onclick="goToScreen('join-room')">
+            🔗 <span data-i18n="home_join_room">ورود به اتاق دوستان</span>
+        </button>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-secondary" style="flex: 1;" onclick="goToScreen('profile')">
+                📂 <span data-i18n="home_profile">پروفایل و سوالات</span>
+            </button>
+            <button class="btn btn-secondary" style="flex: 1;" onclick="goToScreen('onboarding')">
+                ❓ <span data-i18n="home_how_to_play">راهنمای بازی</span>
+            </button>
+        </div>
+        <button class="btn btn-secondary" style="width: 100%;" onclick="goToScreen('settings')">
+            ⚙️ <span data-i18n="home_settings">تنظیمات</span>
+        </button>
+    </div>
+
+    <!-- SCREEN 2: PROFILE & STORED QUESTIONS (NEW!) -->
+    <div id="screen-profile" class="screen">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 data-i18n="profile_title" style="font-size: 18px;">پرونده و پروفایل کارآگاه</h2>
+            <button class="btn btn-secondary btn-sm" onclick="goToScreen('home')" data-i18n="btn_back">بازگشت</button>
+        </div>
+
+        <div class="card">
+            <div class="input-group">
+                <label class="input-label" data-i18n="profile_nickname">نام کارآگاهی شما</label>
+                <input class="input-field" id="profileNicknameInput" value="کارآگاه" onchange="saveProfileNickname()" />
+            </div>
+            <span style="font-size: 12px; color: var(--text-muted);" data-i18n="profile_avatar_label">تصویر نمایه کارآگاه:</span>
+            <div class="avatar-carousel" id="profileAvatarCarousel">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+
+        <div class="card card-elevated">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h3 style="font-size: 15px; color: var(--accent); font-weight: 700;" data-i18n="profile_saved_q_title">بانک سوالات ذخیره‌شده من</h3>
+                    <p style="font-size: 11px; color: var(--text-secondary);" data-i18n="profile_saved_q_subtitle">این سوالات در حافظه دستگاه ذخیره شده و در بازی قابل بارگذاری هستند</p>
+                </div>
+                <span class="tag-pill" id="savedQCountPill">0 سوال</span>
+            </div>
+
+            <!-- Add new question to bank -->
+            <div style="display: flex; gap: 8px; margin-top: 4px;">
+                <input class="input-field" id="newSavedQInput" placeholder="سوال جدید برای ذخیره بنویسید..." style="flex: 1;" />
+                <button class="btn btn-sm" onclick="addSavedQuestionFromInput()" data-i18n="btn_add">افزودن</button>
+            </div>
+
+            <!-- Saved Questions List -->
+            <div id="profileSavedQuestionsList" style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+                <!-- Populated dynamically -->
+            </div>
+
+            <button class="btn btn-secondary btn-sm" onclick="resetDefaultSavedQuestions()" style="margin-top: 6px; font-size: 11px;" data-i18n="profile_reset_q_btn">
+                🔄 بازنشانی به سوالات پیشنهادی پیش‌فرض
+            </button>
+        </div>
+
+        <button class="btn" onclick="saveAndReturnHome()" data-i18n="profile_save_btn">ذخیره پرونده و بازگشت</button>
+    </div>
+
+    <!-- SCREEN 3: ONBOARDING -->
+    <div id="screen-onboarding" class="screen">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 data-i18n="onboarding_main_title" style="font-size: 18px;">راهنمای قوانین کارآگاه نابغه</h2>
+            <button class="btn btn-secondary btn-sm" onclick="goToScreen('home')" data-i18n="btn_back">بازگشت</button>
+        </div>
+        <div class="card">
+            <h3 style="color: var(--accent); font-size: 15px;" data-i18n="onboarding_rule_1_title">۱. ایجاد یا ورود به اتاق</h3>
+            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;" data-i18n="onboarding_rule_1_desc">حداقل ۴ کارآگاه با تعداد زوج (۴، ۶، ۸، ...) وارد اتاق می‌شوند. یک نفر میزبان پرونده است و همگی بر بستر وای‌فای محلی یا هات‌اسپورت بدون نیاز به اینترنت بازی می‌کنند.</p>
+        </div>
+        <div class="card">
+            <h3 style="color: var(--accent); font-size: 15px;" data-i18n="onboarding_rule_2_title">۲. طرح دستی ۳ سوال</h3>
+            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;" data-i18n="onboarding_rule_2_desc">هر کارآگاه ۳ سوال زیرکانه به صورت دستی می‌نویسد (یا از بانک سوالات ذخیره‌شده بارگذاری می‌کند). سوالات شما به صورت کاملاً محرمانه به کارآگاه دیگری تحویل داده می‌شود.</p>
+        </div>
+        <div class="card">
+            <h3 style="color: var(--accent); font-size: 15px;" data-i18n="onboarding_rule_3_title">۳. پاسخ کاملاً دستی به بازجویی</h3>
+            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;" data-i18n="onboarding_rule_3_desc">شما ۳ سوال ناشناس دریافت می‌کنید و به هرکدام پاسخی کاملاً دستی، منحصر‌به‌فرد و با دقت می‌دهید.</p>
+        </div>
+        <div class="card">
+            <h3 style="color: var(--accent); font-size: 15px;" data-i18n="onboarding_rule_4_title">۴. دریافت ۱ پاکت مهروموم‌شده مدارک</h3>
+            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;" data-i18n="onboarding_rule_4_desc">هر بازیکن دقیقاً ۱ پاکت مدارک دریافت می‌کند شامل یک مجموعه از ۳ سوال و پاسخ‌های متناظر آنها که خطاب به یکدیگر نوشته شده‌اند.</p>
+        </div>
+        <div class="card">
+            <h3 style="color: var(--accent); font-size: 15px;" data-i18n="onboarding_rule_5_title">۵. کشف ۴ راز پرونده</h3>
+            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;" data-i18n="onboarding_rule_5_desc">با بررسی پاسخ‌ها و گفتگو، ۴ معمای انفرادی را حل کنید: چه کسی به سوالات من پاسخ داد؟ من به سوالات چه کسی پاسخ دادم؟ نویسنده پاکت من کیست؟ و پاسخ‌دهنده پاکت من کیست؟ با ۳ اشتباه پرونده را می‌بازید!</p>
+        </div>
+        <button class="btn" onclick="goToScreen('home')" data-i18n="btn_enter_bureau">ورود به اداره کارآگاهی</button>
+    </div>
+
+    <!-- SCREEN 4: JOIN ROOM -->
+    <div id="screen-join-room" class="screen">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 data-i18n="join_room_title" style="font-size: 18px;">پیوستن به پرونده</h2>
+            <button class="btn btn-secondary btn-sm" onclick="goToScreen('home')" data-i18n="btn_back">بازگشت</button>
+        </div>
+        <div class="card">
+            <div class="input-group">
+                <label class="input-label" data-i18n="join_room_nickname">نام کارآگاهی شما</label>
+                <input class="input-field" id="joinNicknameInput" value="کارآگاه مهمان" />
+            </div>
+            <div class="input-group">
+                <label class="input-label" data-i18n="join_room_host_ip">آدرس IP میزبان (در وای‌فای محلی)</label>
+                <input class="input-field" id="joinIpInput" value="192.168.1.100" />
+            </div>
+            <div class="input-group">
+                <label class="input-label" data-i18n="join_room_pin">کد پین ۴ رقمی اتاق</label>
+                <input class="input-field" id="joinPinInput" value="4829" maxlength="4" />
+            </div>
+        </div>
+        <button class="btn" onclick="startLobby(false)" data-i18n="join_room_connect_btn">اتصال به اتاق پرونده</button>
+    </div>
+
+    <!-- SCREEN 5: LOBBY (NO FAKE / MOCK PLAYERS!) -->
+    <div id="screen-lobby" class="screen">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 data-i18n="lobby_title" style="font-size: 18px;">اداره تحقیقات پرونده</h2>
+                <span style="font-size: 12px; color: var(--accent); font-weight: 700;" id="lobbyPinDisplay">پین اتاق: 4829</span>
+            </div>
+            <span style="font-size: 13px; color: var(--text-secondary); font-weight: 700;" id="lobbyPlayerCount">کارآگاهان: ۱ / ۲۰</span>
+        </div>
+
+        <div id="lobbyWarningBanner" style="background: rgba(245, 158, 11, 0.15); border: 1px solid var(--warning); padding: 10px 12px; border-radius: 12px; font-size: 12px; color: var(--warning); line-height: 1.4;">
+            ⚠️ برای شروع، حداقل ۴ کارآگاه با تعداد زوج (۴، ۶، ۸، ...) الزامی است. با دکمه زیر دوستان خود را اضافه کنید.
+        </div>
+
+        <!-- Real Players List -->
+        <div class="card" style="padding: 10px; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+                <span style="font-size: 12px; font-weight: 700; color: var(--text-secondary);" data-i18n="lobby_players_heading">کارآگاهان حاضر در این پرونده:</span>
+                <span style="font-size: 11px; color: var(--text-muted);" data-i18n="lobby_real_players_note">بدون ربات فرضی</span>
+            </div>
+            <div id="lobbyPlayerList" style="display: flex; flex-direction: column; gap: 6px;">
+                <!-- Populated strictly with REAL players -->
+            </div>
+        </div>
+
+        <!-- Add Real Friend / Player Component -->
+        <div class="card card-elevated" style="padding: 12px; gap: 8px;">
+            <span style="font-size: 12px; font-weight: 700; color: var(--accent);" data-i18n="lobby_add_friend_title">➕ افزودن کارآگاه جدید (دوستان شما)</span>
+            <div style="display: flex; gap: 8px;">
+                <input class="input-field" id="addFriendNameInput" placeholder="نام کارآگاه (مثال: سارا، رضا، علی...)" style="flex: 1;" />
+                <button class="btn btn-sm" onclick="addFriendToLobby()" data-i18n="btn_add_player">افزودن</button>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary" style="flex: 1;" onclick="shareLobbyRoom()" data-i18n="lobby_share_btn">
+                📢 اشتراک کد اتاق
+            </button>
+            <button class="btn btn-secondary" style="flex: 1;" onclick="goToScreen('home')" data-i18n="btn_exit_lobby">
+                خروج
+            </button>
+        </div>
+
+        <button class="btn" id="startGameBtn" onclick="beginQuestionPhase()" disabled data-i18n="lobby_start_game_btn">
+            شروع عملیات کارآگاهی
+        </button>
+    </div>
+
+    <!-- SCREEN 6: QUESTION CREATION (MANUAL ONLY + SUGGESTIONS + SAVED QUESTIONS) -->
+    <div id="screen-question-creation" class="screen">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 data-i18n="qc_title" style="font-size: 18px;">طرح دستی ۳ سوال پرونده</h2>
+            <span class="tag-pill" id="qcPlayerIndicator">کارآگاه اصلی</span>
+        </div>
+
+        <div class="card card-elevated" style="padding: 10px 14px; background: rgba(6, 182, 212, 0.1); border-color: var(--accent);">
+            <p style="font-size: 12px; color: var(--text-primary); line-height: 1.5;" data-i18n="qc_instruction_banner">
+                ✍️ <b>توجه:</b> سوالات باید کاملاً دستی نوشته شوند. می‌توانید از پیشنهادات زیر ایده بگیرید یا سوالات ذخیره‌شده در پروفایل را بارگذاری کنید.
+            </p>
+        </div>
+
+        <!-- Quick Actions: Load Saved Questions / Suggestions -->
+        <div style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="openLoadSavedQuestionsModal()">
+                📥 <span data-i18n="qc_btn_load_saved">بارگذاری از پروفایل</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="toggleSuggestionsDrawer()">
+                💡 <span data-i18n="qc_btn_suggestions">مشاهده پیشنهادات</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="saveCurrentQuestionsToProfile()" title="Save to Profile">
+                💾 <span data-i18n="qc_btn_save_to_profile">ذخیره</span>
+            </button>
+        </div>
+
+        <!-- Suggestions Drawer (Collapsible) -->
+        <div id="suggestionsDrawer" class="card" style="display: none; padding: 12px; gap: 8px; border-color: var(--accent);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 12px; font-weight: 700; color: var(--accent);" data-i18n="qc_suggestions_heading">💡 سوالات پیشنهادی (لمس کنید تا کپی شود):</span>
+                <span style="font-size: 11px; color: var(--text-muted); cursor: pointer;" onclick="toggleSuggestionsDrawer()">✕</span>
+            </div>
+            <div id="suggestionsChipsContainer" style="display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto;">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+
+        <!-- 3 Manual Question Fields (Starts EMPTY!) -->
+        <div class="card">
+            <label class="input-label" data-i18n="qc_q1_label">سوال اول (دستی بنویسید)</label>
+            <textarea class="textarea-field" id="qInput1" placeholder="سوال اول خود را اینجا بنویسید..." oninput="updateQcProgress()"></textarea>
+        </div>
+        <div class="card">
+            <label class="input-label" data-i18n="qc_q2_label">سوال دوم (دستی بنویسید)</label>
+            <textarea class="textarea-field" id="qInput2" placeholder="سوال دوم خود را اینجا بنویسید..." oninput="updateQcProgress()"></textarea>
+        </div>
+        <div class="card">
+            <label class="input-label" data-i18n="qc_q3_label">سوال سوم (دستی بنویسید)</label>
+            <textarea class="textarea-field" id="qInput3" placeholder="سوال سوم خود را اینجا بنویسید..." oninput="updateQcProgress()"></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; font-weight: 700; color: var(--accent);" id="qcProgressLabel">۰ / ۳ سوال تکمیل شده</span>
+            <button class="btn btn-secondary btn-sm" onclick="clearQuestionInputs()" data-i18n="btn_clear">پاک کردن</button>
+        </div>
+
+        <button class="btn" id="qcSubmitBtn" onclick="submitQuestions()" disabled data-i18n="qc_submit_btn">
+            مهروموم و ثبت ۳ سوال
+        </button>
+    </div>
+
+    <!-- SCREEN 7: ANSWERING (COMPLETELY MANUAL!) -->
+    <div id="screen-answering" class="screen">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 data-i18n="ans_title" style="font-size: 18px;">پاسخ به سوالات بازجویی</h2>
+            <span class="tag-pill" data-i18n="ans_anonymous_tag">سوالات ناشناس</span>
+        </div>
+
+        <div class="card card-elevated" style="padding: 10px 14px; background: rgba(139, 92, 246, 0.1); border-color: var(--primary);">
+            <p style="font-size: 12px; color: var(--text-primary); line-height: 1.5;" data-i18n="ans_instruction_banner">
+                ✍️ <b>توجه:</b> شما ۳ سوال ناشناس از یک کارآگاه دیگر دریافت کرده‌اید. پاسخ‌ها باید <b>کاملاً دستی</b> و توسط خودتان تایپ شوند.
+            </p>
+        </div>
+
+        <!-- 3 Manual Answer Fields (Starts EMPTY!) -->
+        <div class="card">
+            <span style="font-size: 11px; font-weight: 700; color: var(--accent);" data-i18n="ans_q1_header">سوال اول (ناشناس):</span>
+            <p style="font-size: 14px; font-weight: 600; line-height: 1.4;" id="ansDisplayQ1">در حال دریافت سوال اول...</p>
+            <textarea class="textarea-field" id="ansInput1" placeholder="پاسخ دستی خود را به سوال اول بنویسید..." oninput="updateAnsProgress()"></textarea>
+        </div>
+
+        <div class="card">
+            <span style="font-size: 11px; font-weight: 700; color: var(--accent);" data-i18n="ans_q2_header">سوال دوم (ناشناس):</span>
+            <p style="font-size: 14px; font-weight: 600; line-height: 1.4;" id="ansDisplayQ2">در حال دریافت سوال دوم...</p>
+            <textarea class="textarea-field" id="ansInput2" placeholder="پاسخ دستی خود را به سوال دوم بنویسید..." oninput="updateAnsProgress()"></textarea>
+        </div>
+
+        <div class="card">
+            <span style="font-size: 11px; font-weight: 700; color: var(--accent);" data-i18n="ans_q3_header">سوال سوم (ناشناس):</span>
+            <p style="font-size: 14px; font-weight: 600; line-height: 1.4;" id="ansDisplayQ3">در حال دریافت سوال سوم...</p>
+            <textarea class="textarea-field" id="ansInput3" placeholder="پاسخ دستی خود را به سوال سوم بنویسید..." oninput="updateAnsProgress()"></textarea>
+        </div>
+
+        <span style="font-size: 12px; font-weight: 700; color: var(--accent);" id="ansProgressLabel">۰ / ۳ پاسخ تکمیل شده</span>
+
+        <button class="btn" id="ansSubmitBtn" onclick="submitAnswers()" disabled data-i18n="ans_submit_btn">
+            ارسال پاسخ‌های مهروموم‌شده
+        </button>
+    </div>
+
+    <!-- SCREEN 8: DISTRIBUTION (EXACTLY 1 SEALED PACKAGE!) -->
+    <div id="screen-distribution" class="screen" style="justify-content: space-between; text-align: center;">
+        <div>
+            <h2 data-i18n="dist_title" style="font-size: 20px;">تحویل بسته مدارک محرمانه</h2>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-top: 6px;" data-i18n="dist_subtitle">
+                مدارک بررسی شده و پاکت مهروموم به کیف پرونده شما منتقل شد...
+            </p>
+        </div>
+
+        <div style="font-size: 80px; margin: 16px 0;">💼</div>
+
+        <div class="card card-elevated" style="border-color: var(--accent); padding: 18px; text-align: center;">
+            <div style="font-size: 28px; margin-bottom: 4px;">✉️</div>
+            <h3 style="color: var(--accent); font-size: 17px; font-weight: 800;" data-i18n="dist_received_notice">
+                شما دقیقاً ۱ پاکت مهروموم‌شده مدارک دریافت کردید!
+            </h3>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-top: 8px; line-height: 1.5;" data-i18n="dist_package_desc">
+                این پاکت شامل <b>یک مجموعه از ۳ سوال و پاسخ‌های متناظر</b> است که دو کارآگاه دیگر خطاب به یکدیگر نوشته‌اند.
+            </p>
+        </div>
+
+        <button class="btn" onclick="openEvidenceBriefcase()" data-i18n="dist_open_packages">
+            گشودن پاکت مدارک و شروع استنتاج
+        </button>
+    </div>
+
+    <!-- SCREEN 9: MYSTERY BOARD (4 MYSTERIES FOR 1 PACKAGE) -->
+    <div id="screen-mystery-board" class="screen">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 data-i18n="mb_title" style="font-size: 18px;">تخته اسرار و معماها</h2>
+                <span style="font-size: 12px; color: var(--text-secondary);" id="mbMistakeText">اشتباهات: ۰ / ۳</span>
+            </div>
+            <div class="mistake-dots" id="mbMistakeDots">
+                <div class="mistake-dot"></div>
+                <div class="mistake-dot"></div>
+                <div class="mistake-dot"></div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-secondary" style="flex: 1; padding: 10px;" onclick="goToScreen('package-viewer')">
+                📂 <span data-i18n="mb_inspect_packages">بررسی پاکت مدارک (۱)</span>
+            </button>
+            <button class="btn btn-secondary" style="flex: 1; padding: 10px;" onclick="goToScreen('chat')">
+                📡 <span data-i18n="chat_title">بی‌سیم ارتباطات</span>
+            </button>
+        </div>
+
+        <!-- 4 Single-Suspect Mysteries -->
+        <div class="card" id="card-q1">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="font-size: 14px; font-weight: 700;" data-i18n="mb_q1_title">معمای ۱: چه کسی به سوالات من پاسخ داده؟</h4>
+                <span class="badge badge-unsolved" id="badge-q1" data-i18n="badge_unsolved">حل نشده</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4;" data-i18n="mb_q1_desc">
+                کارآگاهی که به ۳ سوال طرح‌شده توسط شما پاسخ داده است را شناسایی کنید.
+            </p>
+            <button class="btn btn-sm" onclick="openDeductionModal(1)" data-i18n="mb_solve_action">ثبت حدس کارآگاهی</button>
+        </div>
+
+        <div class="card" id="card-q2">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="font-size: 14px; font-weight: 700;" data-i18n="mb_q2_title">معمای ۲: من به سوالات چه کسی پاسخ دادم؟</h4>
+                <span class="badge badge-unsolved" id="badge-q2" data-i18n="badge_unsolved">حل نشده</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4;" data-i18n="mb_q2_desc">
+                کارآگاهی که شما به ۳ سوال او پاسخ داده‌اید را شناسایی کنید.
+            </p>
+            <button class="btn btn-sm" onclick="openDeductionModal(2)" data-i18n="mb_solve_action">ثبت حدس کارآگاهی</button>
+        </div>
+
+        <div class="card" id="card-q3">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="font-size: 14px; font-weight: 700;" data-i18n="mb_q3_title">معمای ۳: نویسنده سوالات پاکت مدارک من کیست؟</h4>
+                <span class="badge badge-unsolved" id="badge-q3" data-i18n="badge_unsolved">حل نشده</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4;" data-i18n="mb_q3_desc">
+                کارآگاهی که ۳ سوال موجود در پاکت مدارک شما را نوشته است شناسایی کنید.
+            </p>
+            <button class="btn btn-sm" onclick="openDeductionModal(3)" data-i18n="mb_solve_action">ثبت حدس کارآگاهی</button>
+        </div>
+
+        <div class="card" id="card-q4">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="font-size: 14px; font-weight: 700;" data-i18n="mb_q4_title">معمای ۴: پاسخ‌دهنده سوالات پاکت مدارک من کیست؟</h4>
+                <span class="badge badge-unsolved" id="badge-q4" data-i18n="badge_unsolved">حل نشده</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4;" data-i18n="mb_q4_desc">
+                کارآگاهی که به ۳ سوال موجود در پاکت مدارک شما پاسخ داده است شناسایی کنید.
+            </p>
+            <button class="btn btn-sm" onclick="openDeductionModal(4)" data-i18n="mb_solve_action">ثبت حدس کارآگاهی</button>
+        </div>
+    </div>
+
+    <!-- SCREEN 10: PACKAGE VIEWER (1 SINGLE PACKAGE DOSSIER!) -->
+    <div id="screen-package-viewer" class="screen">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 data-i18n="pv_title" style="font-size: 18px;">پاکت مدارک محرمانه</h2>
+                <span style="font-size: 11px; color: var(--accent); font-weight: 700;" data-i18n="pv_single_notice">تنها پاکت تحویل‌شده به شما</span>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="goToScreen('mystery-board')" data-i18n="btn_back">بازگشت</button>
+        </div>
+
+        <div class="card card-elevated" style="border-color: var(--accent); padding: 10px 14px;">
+            <span style="font-size: 12px; color: var(--accent); font-weight: 700;">🔒 پرونده محرمانه — هویت‌ها مخدوش شده است</span>
+            <p style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+                این ۳ جفت سوال و پاسخ، مکالمه دو کارآگاه مختلف با یکدیگر بوده است.
+            </p>
+        </div>
+
+        <!-- 3 Q&A pairs addressed to each other -->
+        <div id="pvSinglePackageContent" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Populated dynamically -->
+        </div>
+    </div>
+
+    <!-- SCREEN 11: CHAT WIRE -->
+    <div id="screen-chat" class="screen" style="height: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 data-i18n="chat_title" style="font-size: 18px;">بی‌سیم ارتباطات کارآگاهی</h2>
+            <button class="btn btn-secondary btn-sm" onclick="goToScreen('mystery-board')" data-i18n="btn_back">بازگشت</button>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn" id="chatTabGroup" style="flex: 1; padding: 10px;" onclick="switchChatTab(0)" data-i18n="chat_public_tab">اتاق عمومی</button>
+            <button class="btn btn-secondary" id="chatTabPrivate" style="flex: 1; padding: 10px;" onclick="switchChatTab(1)" data-i18n="chat_private_tab">بی‌سیم محرمانه</button>
+        </div>
+
+        <div id="chatPrivatePartnerRow" style="display: none; flex-direction: column; gap: 4px;">
+            <span style="font-size: 11px; color: var(--text-muted);" data-i18n="chat_partner_label">مکالمه مستقیم با:</span>
+            <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px;" id="chatPartnerList">
+                <!-- Populated dynamically with REAL players -->
+            </div>
+        </div>
+
+        <div id="chatMessageList" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 4px; min-height: 280px; max-height: 380px;">
+            <!-- Real chat messages -->
+        </div>
+
+        <!-- Clue Stickers Quick Bar -->
+        <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px;">
+            <button class="btn btn-secondary btn-sm" onclick="sendSticker('🔍 مدرک معتبر')" style="font-size: 11px; padding: 4px 8px;">🔍 مدرک</button>
+            <button class="btn btn-secondary btn-sm" onclick="sendSticker('⚠️ ادعای کذب')" style="font-size: 11px; padding: 4px 8px;">⚠️ ادعای کذب</button>
+            <button class="btn btn-secondary btn-sm" onclick="sendSticker('💡 سرنخ مهم')" style="font-size: 11px; padding: 4px 8px;">💡 سرنخ</button>
+            <button class="btn btn-secondary btn-sm" onclick="sendSticker('🕵️‍♂️ مظنون اصلی')" style="font-size: 11px; padding: 4px 8px;">🕵️‍♂️ مظنون</button>
+        </div>
+
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <input class="input-field" id="chatInput" placeholder="ارسال پیام محرمانه..." style="flex: 1;" onkeydown="if(event.key==='Enter') sendChat()" />
+            <button class="btn btn-sm" style="padding: 10px 16px;" onclick="sendChat()" data-i18n="btn_send">ارسال</button>
+        </div>
+    </div>
+
+    <!-- SCREEN 12: VICTORY -->
+    <div id="screen-victory" class="screen" style="text-align: center; justify-content: space-between;">
+        <div>
+            <div style="font-size: 64px;">🏆</div>
+            <h1 style="color: var(--accent); font-size: 26px; font-weight: 800;" data-i18n="victory_title">پرونده مختومه شد!</h1>
+            <p style="font-size: 15px; margin-top: 8px;" id="victoryAnnouncement">کارآگاه نابغه هر ۴ معما را حل کرد!</p>
+        </div>
+        <div style="font-size: 80px;" id="victoryAvatarEmoji">🕵️</div>
+        <div class="card card-elevated" style="border-color: var(--success); padding: 16px;">
+            <h3 style="color: var(--success); font-size: 16px;" data-i18n="victory_all_solved">تمام ۴ راز بزرگ کشف شدند!</h3>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; line-height: 1.6;" data-i18n="victory_summary">
+                ✓ کارآگاهی که به سوالات شما پاسخ داد<br>
+                ✓ کارآگاهی که شما به سوالاتش پاسخ دادید<br>
+                ✓ نویسنده سوالات پاکت مدارک شما<br>
+                ✓ پاسخ‌دهنده سوالات پاکت مدارک شما
+            </p>
+        </div>
+        <button class="btn" onclick="resetGame()" data-i18n="btn_play_again">شروع پرونده جدید</button>
+    </div>
+
+    <!-- SCREEN 13: ELIMINATION -->
+    <div id="screen-elimination" class="screen" style="text-align: center; justify-content: space-between;">
+        <div>
+            <div style="font-size: 64px;">⚠️</div>
+            <h1 style="color: var(--error); font-size: 24px; font-weight: 800;" data-i18n="elim_title">۳ اشتباه فاحش کارآگاهی!</h1>
+            <p style="font-size: 14px; margin-top: 8px; color: var(--text-secondary);" data-i18n="elim_subtitle">شما از حل پرونده حذف شدید اما می‌توانید به عنوان تماشاگر گفتگو را دنبال کنید.</p>
+        </div>
+        <div class="card" style="border-color: var(--error);">
+            <p style="font-size: 13px; color: var(--text-muted);" data-i18n="elim_note">در پرونده‌های واقعی، شواهد نادرست باعث دستگیری بی‌گناهان می‌شود.</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary" style="flex: 1;" onclick="goToScreen('chat')" data-i18n="btn_spectator_chat">ادامه تماشا در بی‌سیم</button>
+            <button class="btn" style="flex: 1;" onclick="resetGame()" data-i18n="btn_try_again">تلاش مجدد</button>
+        </div>
+    </div>
+
+    <!-- SCREEN 14: SETTINGS -->
+    <div id="screen-settings" class="screen">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 data-i18n="settings_title" style="font-size: 18px;">تنظیمات اداره پرونده</h2>
+            <button class="btn btn-secondary btn-sm" onclick="goToScreen('home')" data-i18n="btn_back">بازگشت</button>
+        </div>
+        <div class="card">
+            <span style="font-size: 13px; font-weight: 700;" data-i18n="settings_language">زبان اصلی برنامه (Language)</span>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn" id="langBtnFa" style="flex: 1;" onclick="setLanguage('fa')">فارسی (FA)</button>
+                <button class="btn btn-secondary" id="langBtnEn" style="flex: 1;" onclick="setLanguage('en')">English (EN)</button>
+            </div>
+        </div>
+        <div class="card">
+            <span style="font-size: 13px; font-weight: 700;" data-i18n="settings_theme">پوسته ظاهری</span>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary" id="themeBtnDark" style="flex: 1;" onclick="setTheme(true)">حالت تاریک (Dark)</button>
+                <button class="btn btn-secondary" id="themeBtnLight" style="flex: 1;" onclick="setTheme(false)">حالت روشن (Light)</button>
+            </div>
+        </div>
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span data-i18n="settings_sound_fx">جلوه‌های صوتی</span>
+                <input type="checkbox" id="settingSfxToggle" checked />
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span data-i18n="settings_haptics">لرزش و بازخورد لمسی (Haptic)</span>
+                <input type="checkbox" id="settingHapticToggle" checked />
+            </div>
+        </div>
+        <span style="font-size: 11px; color: var(--text-muted); text-align: center;">Detective Genius v1.0.1 — موتور آفلاین اندروید</span>
+    </div>
+
+</div>
+
+<!-- Deduction Modal (Single Suspect Selection) -->
+<div class="modal-overlay" id="deductionModal">
+    <div class="modal-sheet">
+        <h3 id="modalTitle" style="font-size: 16px; font-weight: 700;">انتخاب مظنون</h3>
+        <p id="modalHint" style="font-size: 12px; color: var(--text-secondary);">دقیقاً ۱ کارآگاه مظنون را انتخاب کنید.</p>
+
+        <div class="suspect-grid" id="suspectGrid">
+            <!-- Populated strictly with REAL players in the room -->
+        </div>
+
+        <div id="modalFeedback" style="display: none; color: var(--error); font-size: 12px; font-weight: 600;"></div>
+
+        <div style="display: flex; gap: 8px; margin-top: 6px;">
+            <button class="btn" style="flex: 1;" onclick="confirmDeduction()" data-i18n="modal_confirm_btn">تأیید استنتاج</button>
+            <button class="btn btn-secondary" style="flex: 1;" onclick="closeDeductionModal()" data-i18n="btn_cancel">انصراف</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Load Stored Saved Questions into Q1, Q2, Q3 -->
+<div class="modal-overlay" id="loadSavedModal">
+    <div class="modal-sheet">
+        <h3 style="font-size: 16px; font-weight: 700;" data-i18n="modal_load_q_title">بارگذاری از سوالات ذخیره‌شده</h3>
+        <p style="font-size: 12px; color: var(--text-secondary);" data-i18n="modal_load_q_hint">روی هر سوال ضربه بزنید تا در یکی از جایگاه‌های خالی قرار گیرد:</p>
+
+        <div id="modalSavedQList" style="display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto;">
+            <!-- Populated dynamically -->
+        </div>
+
+        <button class="btn btn-secondary" onclick="closeLoadSavedModal()" data-i18n="btn_close">بستن</button>
+    </div>
+</div>
+
+<!-- Navigation Pill -->
+<div class="nav-bar">
+    <div class="nav-pill"></div>
+</div>
+
 <script>
-        // Data & i18n Dictionary
-        const i18n = {
-            en: {
-                home_title: "Detective Genius",
-                home_subtitle: "Local Wi-Fi Mystery Party",
-                home_create_room: "Create Investigation Room",
-                home_join_room: "Join Room",
-                home_how_to_play: "How to Play",
-                home_settings: "Settings",
-                onboarding_title_1: "Welcome Detective",
-                onboarding_desc_1: "Step into a world of social deduction, secrets, and clever deduction where everyone is investigating everyone else.",
-                onboarding_title_2: "Write and Answer",
-                onboarding_desc_2: "Craft 3 intriguing questions. Someone will answer them anonymously, while you answer another mystery participant's queries.",
-                onboarding_title_3: "Uncover 4 Mysteries",
-                onboarding_desc_3: "Receive two sealed evidence packages. Deduce who answered your questions, whose you answered, and who is behind the packages you hold.",
-                onboarding_button_start: "Enter the Bureau",
-                create_room_title: "Create Investigation",
-                create_room_nickname: "Host Nickname",
-                create_room_pin: "Room Security PIN",
-                create_room_qr_title: "Scan QR Code to Join",
-                create_room_start_btn: "Launch Room & Host",
-                join_room_title: "Join Investigation",
-                join_room_nickname: "Your Detective Nickname",
-                join_room_host_ip: "Host IP Address",
-                join_room_pin: "4-Digit Room PIN",
-                join_room_connect_btn: "Connect to Room",
-                lobby_title: "Investigation Bureau",
-                lobby_ready_toggle_on: "Mark Ready",
-                lobby_start_game_btn: "Commence Investigation",
-                qc_title: "Question Formulation",
-                qc_instructions: "Write exactly 3 distinct questions for your fellow detectives. Minimum 5 and maximum 300 characters each.",
-                qc_q1_label: "Question 1",
-                qc_q2_label: "Question 2",
-                qc_q3_label: "Question 3",
-                qc_submit_btn: "Seal and Submit Questions",
-                ans_title: "Interrogation Response",
-                ans_instructions: "You have received 3 anonymous questions. Answer each candidly or cleverly. Maximum 500 characters per answer.",
-                ans_submit_btn: "Deliver Answers",
-                dist_title: "Package Delivery",
-                dist_subtitle: "Confidential evidence packages are being sealed and delivered...",
-                dist_received_notice: "You have received 2 sealed evidence packages!",
-                dist_open_packages: "Open Evidence Briefcase",
-                mb_title: "Mystery Board",
-                mb_inspect_packages: "Inspect Packages",
-                chat_title: "Comms Wire",
-                mb_q1_title: "Mystery 1: Who answered my questions?",
-                mb_q1_desc: "Identify the detective who answered the 3 questions you authored.",
-                mb_q2_title: "Mystery 2: Whose questions did I answer?",
-                mb_q2_desc: "Identify the detective whose 3 questions you answered.",
-                mb_q3_title: "Mystery 3: Whose questions am I holding?",
-                mb_q3_desc: "Identify the 2 detectives who authored the packages in your possession.",
-                mb_q4_title: "Mystery 4: Whose answers am I holding?",
-                mb_q4_desc: "Identify the 2 detectives who answered the packages in your possession.",
-                mb_solve_action: "Submit Deduction",
-                pv_title: "Evidence Archive",
-                victory_title: "Case Closed!",
-                victory_play_again: "Return to Bureau",
-                elimination_title: "Detective Compromised",
-                elimination_message: "You have accumulated 3 incorrect deductions and have been retired from field investigations.",
-                elimination_spectate: "You can remain in Comms and observe the investigation as a senior advisor.",
-                settings_title: "Bureau Settings",
-                settings_language: "Language",
-                settings_theme: "Theme",
-                settings_sound_fx: "Sound Effects",
-                settings_music: "Atmospheric Music",
-                settings_haptics: "Haptic Feedback",
-                settings_reduced_motion: "Reduced Motion",
-                back: "Back",
-                cancel: "Cancel",
-                guess_submit: "Confirm Deduction"
-            },
-            fa: {
-                home_title: "کارآگاه نابغه",
-                home_subtitle: "مهمانی معمایی شبکه محلی وای‌فای",
-                home_create_room: "ایجاد اتاق پرونده",
-                home_join_room: "پیوستن به اتاق",
-                home_how_to_play: "راهنمای بازی",
-                home_settings: "تنظیمات",
-                onboarding_title_1: "خوش آمدید کارآگاه",
-                onboarding_desc_1: "وارد دنیای استنتاج اجتماعی، رازها و معماهای هوشمندانه شوید که در آن همه درباره همه تحقیق می‌کنند.",
-                onboarding_title_2: "بنویسید و پاسخ دهید",
-                onboarding_desc_2: "سه سوال رازآلود طرح کنید. یکی از کارآگاهان به طور ناشناس به آنها پاسخ می‌دهد و شما نیز به سوالات دیگری پاسخ می‌دهید.",
-                onboarding_title_3: "کشف ۴ راز بزرگ",
-                onboarding_desc_3: "دو بسته مدارک دریافت کنید. حدس بزنید چه کسی به سوالات شما پاسخ داده و بسته‌های در دست شما متعلق به چه کسانی است.",
-                onboarding_button_start: "ورود به اداره کارآگاهی",
-                create_room_title: "ایجاد پرونده جدید",
-                create_room_nickname: "نام مستعار میزبان",
-                create_room_pin: "کد امنیتی اتاق (پین)",
-                create_room_qr_title: "اسکن کد QR برای پیوستن",
-                create_room_start_btn: "راه‌اندازی اتاق و میزبانی",
-                join_room_title: "ورود به پرونده",
-                join_room_nickname: "نام کارآگاهی شما",
-                join_room_host_ip: "آدرس آی‌پی میزبان",
-                join_room_pin: "کد پین ۴ رقمی",
-                join_room_connect_btn: "اتصال به اتاق",
-                lobby_title: "اداره تحقیقات کارآگاهی",
-                lobby_ready_toggle_on: "اعلام آمادگی",
-                lobby_start_game_btn: "شروع عملیات کارآگاهی",
-                qc_title: "طرح سوالات معمایی",
-                qc_instructions: "دقیقاً ۳ سوال مجزا بنویسید. هر سوال باید بین ۵ تا ۳۰۰ نویسه باشد.",
-                qc_q1_label: "سوال اول",
-                qc_q2_label: "سوال دوم",
-                qc_q3_label: "سوال سوم",
-                qc_submit_btn: "مهروموم و ارسال سوالات",
-                ans_title: "پاسخ به بازجویی",
-                ans_instructions: "۳ سوال ناشناس دریافت کرده‌اید. به هرکدام با صداقت یا زیرکی پاسخ دهید.",
-                ans_submit_btn: "ارسال پاسخ‌ها",
-                dist_title: "توزیع مدارک",
-                dist_subtitle: "بسته‌های محرمانه مدارک در حال مهروموم و تحویل هستند...",
-                dist_received_notice: "شما ۲ بسته مهروموم‌شده مدارک دریافت کردید!",
-                dist_open_packages: "گشودن کیف مدارک",
-                mb_title: "تخته اسرار و معماها",
-                mb_inspect_packages: "بررسی مدارک",
-                chat_title: "بی‌سیم ارتباطات",
-                mb_q1_title: "معمای ۱: چه کسی به سوالات من پاسخ داده؟",
-                mb_q1_desc: "کارآگاهی که به ۳ سوال شما پاسخ داده است را شناسایی کنید.",
-                mb_q2_title: "معمای ۲: من به سوالات چه کسی پاسخ داده‌ام؟",
-                mb_q2_desc: "کارآگاهی که شما به ۳ سوال او پاسخ داده‌اید را شناسایی کنید.",
-                mb_q3_title: "معمای ۳: سوالات چه کسانی در دست من است؟",
-                mb_q3_desc: "۲ کارآگاهی که سوالات بسته‌های شما را نوشته‌اند شناسایی کنید.",
-                mb_q4_title: "معمای ۴: پاسخ‌های چه کسانی در دست من است؟",
-                mb_q4_desc: "۲ کارآگاهی که به سوالات بسته‌های شما پاسخ داده‌اند شناسایی کنید.",
-                mb_solve_action: "ثبت استنتاج",
-                pv_title: "بایگانی مدارک",
-                victory_title: "پرونده بسته شد!",
-                victory_play_again: "بازگشت به اداره",
-                elimination_title: "کارآگاه سلب صلاحیت شد",
-                elimination_message: "شما ۳ اشتباه مرتکب شدید و از عملیات میدانی کنار گذاشته شدید.",
-                elimination_spectate: "می‌توانید در بی‌سیم بمانید و به عنوان مشاور جریان را دنبال کنید.",
-                settings_title: "تنظیمات اداره",
-                settings_language: "زبان",
-                settings_theme: "پوسته",
-                settings_sound_fx: "جلوه‌های صوتی",
-                settings_music: "موسیقی رازآلود",
-                settings_haptics: "بازخورد لمسی",
-                settings_reduced_motion: "کاهش انیمیشن‌ها",
-                back: "بازگشت",
-                cancel: "انصراف",
-                guess_submit: "تأیید استنتاج"
+    // --- 1. I18N DICTIONARY (FARSI IS PRIMARY / DEFAULT) ---
+    const i18n = {
+        fa: {
+            app_brand: "کارآگاه نابغه",
+            nav_profile: "پروفایل",
+            home_title: "کارآگاه نابغه",
+            home_subtitle: "بازی معمایی و استنتاج اجتماعی آفلاین",
+            home_create_room: "ایجاد اتاق پرونده (میزبانی)",
+            home_join_room: "ورود به اتاق دوستان",
+            home_profile: "پروفایل و سوالات",
+            home_how_to_play: "راهنمای بازی",
+            home_settings: "تنظیمات",
+            home_edit_profile_hint: "لمس برای ویرایش پرونده و سوالات ذخیره‌شده ✏️",
+            profile_title: "پرونده و پروفایل کارآگاه",
+            profile_nickname: "نام کارآگاهی شما",
+            profile_avatar_label: "تصویر نمایه کارآگاه:",
+            profile_saved_q_title: "بانک سوالات ذخیره‌شده من",
+            profile_saved_q_subtitle: "این سوالات در حافظه دستگاه ذخیره شده و در بازی قابل بارگذاری هستند",
+            profile_reset_q_btn: "🔄 بازنشانی به سوالات پیشنهادی پیش‌فرض",
+            profile_save_btn: "ذخیره پرونده و بازگشت",
+            onboarding_main_title: "راهنمای قوانین کارآگاه نابغه",
+            onboarding_rule_1_title: "۱. ایجاد یا ورود به اتاق",
+            onboarding_rule_1_desc: "حداقل ۴ کارآگاه با تعداد زوج (۴، ۶، ۸، ...) وارد اتاق می‌شوند. یک نفر میزبان پرونده است و همگی بر بستر وای‌فای محلی یا هات‌اسپورت بدون نیاز به اینترنت بازی می‌کنند.",
+            onboarding_rule_2_title: "۲. طرح دستی ۳ سوال",
+            onboarding_rule_2_desc: "هر کارآگاه ۳ سوال زیرکانه به صورت دستی می‌نویسد (یا از بانک سوالات ذخیره‌شده بارگذاری می‌کند). سوالات شما به صورت کاملاً محرمانه به کارآگاه دیگری تحویل داده می‌شود.",
+            onboarding_rule_3_title: "۳. پاسخ کاملاً دستی به بازجویی",
+            onboarding_rule_3_desc: "شما ۳ سوال ناشناس دریافت می‌کنید و به هرکدام پاسخی کاملاً دستی، منحصر‌به‌فرد و با دقت می‌دهید.",
+            onboarding_rule_4_title: "۴. دریافت ۱ پاکت مهروموم‌شده مدارک",
+            onboarding_rule_4_desc: "هر بازیکن دقیقاً ۱ پاکت مدارک دریافت می‌کند شامل یک مجموعه از ۳ سوال و پاسخ‌های متناظر آنها که خطاب به یکدیگر نوشته شده‌اند.",
+            onboarding_rule_5_title: "۵. کشف ۴ راز پرونده",
+            onboarding_rule_5_desc: "با بررسی پاسخ‌ها و گفتگو، ۴ معمای انفرادی را حل کنید: چه کسی به سوالات من پاسخ داد؟ من به سوالات چه کسی پاسخ دادم؟ نویسنده پاکت من کیست؟ و پاسخ‌دهنده پاکت من کیست؟ با ۳ اشتباه پرونده را می‌بازید!",
+            btn_enter_bureau: "ورود به اداره کارآگاهی",
+            join_room_title: "پیوستن به پرونده",
+            join_room_nickname: "نام کارآگاهی شما",
+            join_room_host_ip: "آدرس IP میزبان (در وای‌فای محلی)",
+            join_room_pin: "کد پین ۴ رقمی اتاق",
+            join_room_connect_btn: "اتصال به اتاق پرونده",
+            lobby_title: "اداره تحقیقات پرونده",
+            lobby_players_heading: "کارآگاهان حاضر در این پرونده:",
+            lobby_real_players_note: "بدون ربات فرضی",
+            lobby_add_friend_title: "➕ افزودن کارآگاه جدید (دوستان شما)",
+            btn_add_player: "افزودن",
+            lobby_share_btn: "📢 اشتراک کد اتاق",
+            btn_exit_lobby: "خروج",
+            lobby_start_game_btn: "شروع عملیات کارآگاهی",
+            qc_title: "طرح دستی ۳ سوال پرونده",
+            qc_instruction_banner: "✍️ توجه: سوالات باید کاملاً دستی نوشته شوند. می‌توانید از پیشنهادات ایده بگیرید یا سوالات ذخیره‌شده در پروفایل را بارگذاری کنید.",
+            qc_btn_load_saved: "📥 بارگذاری از پروفایل",
+            qc_btn_suggestions: "💡 مشاهده پیشنهادات",
+            qc_btn_save_to_profile: "ذخیره در پروفایل",
+            qc_suggestions_heading: "💡 سوالات پیشنهادی (لمس کنید تا کپی شود):",
+            qc_q1_label: "سوال اول (دستی بنویسید)",
+            qc_q2_label: "سوال دوم (دستی بنویسید)",
+            qc_q3_label: "سوال سوم (دستی بنویسید)",
+            qc_submit_btn: "مهروموم و ثبت ۳ سوال",
+            ans_title: "پاسخ به سوالات بازجویی",
+            ans_anonymous_tag: "سوالات ناشناس",
+            ans_instruction_banner: "✍️ توجه: شما ۳ سوال ناشناس دریافت کرده‌اید. پاسخ‌ها باید کاملاً دستی و توسط خودتان تایپ شوند.",
+            ans_q1_header: "سوال اول (ناشناس):",
+            ans_q2_header: "سوال دوم (ناشناس):",
+            ans_q3_header: "سوال سوم (ناشناس):",
+            ans_submit_btn: "ارسال پاسخ‌های مهروموم‌شده",
+            dist_title: "تحویل بسته مدارک محرمانه",
+            dist_subtitle: "مدارک بررسی شده و پاکت مهروموم به کیف پرونده شما منتقل شد...",
+            dist_received_notice: "شما دقیقاً ۱ پاکت مهروموم‌شده مدارک دریافت کردید!",
+            dist_package_desc: "این پاکت شامل یک مجموعه از ۳ سوال و پاسخ‌های متناظر است که دو کارآگاه دیگر خطاب به یکدیگر نوشته‌اند.",
+            dist_open_packages: "گشودن پاکت مدارک و شروع استنتاج",
+            mb_title: "تخته اسرار و معماها",
+            mb_inspect_packages: "بررسی پاکت مدارک (۱)",
+            chat_title: "بی‌سیم ارتباطات",
+            mb_q1_title: "معمای ۱: چه کسی به سوالات من پاسخ داده؟",
+            mb_q1_desc: "کارآگاهی که به ۳ سوال طرح‌شده توسط شما پاسخ داده است را شناسایی کنید.",
+            mb_q2_title: "معمای ۲: من به سوالات چه کسی پاسخ دادم؟",
+            mb_q2_desc: "کارآگاهی که شما به ۳ سوال او پاسخ داده‌اید را شناسایی کنید.",
+            mb_q3_title: "معمای ۳: نویسنده سوالات پاکت مدارک من کیست؟",
+            mb_q3_desc: "کارآگاهی که ۳ سوال موجود در پاکت مدارک شما را نوشته است شناسایی کنید.",
+            mb_q4_title: "معمای ۴: پاسخ‌دهنده سوالات پاکت مدارک من کیست؟",
+            mb_q4_desc: "کارآگاهی که به ۳ سوال موجود در پاکت مدارک شما پاسخ داده است شناسایی کنید.",
+            mb_solve_action: "ثبت حدس کارآگاهی",
+            badge_unsolved: "حل نشده",
+            pv_title: "پاکت مدارک محرمانه",
+            pv_single_notice: "تنها پاکت تحویل‌شده به شما",
+            chat_public_tab: "اتاق عمومی",
+            chat_private_tab: "بی‌سیم محرمانه",
+            chat_partner_label: "مکالمه مستقیم با:",
+            victory_title: "پرونده مختومه شد!",
+            victory_all_solved: "تمام ۴ راز بزرگ کشف شدند!",
+            elim_title: "۳ اشتباه فاحش کارآگاهی!",
+            elim_subtitle: "شما از حل پرونده حذف شدید اما می‌توانید به عنوان تماشاگر گفتگو را دنبال کنید.",
+            elim_note: "در پرونده‌های واقعی، شواهد نادرست باعث دستگیری بی‌گناهان می‌شود.",
+            settings_title: "تنظیمات اداره پرونده",
+            settings_language: "زبان اصلی برنامه (Language)",
+            settings_theme: "پوسته ظاهری",
+            settings_sound_fx: "جلوه‌های صوتی",
+            settings_haptics: "لرزش و بازخورد لمسی (Haptic)",
+            btn_back: "بازگشت →",
+            btn_cancel: "انصراف",
+            btn_close: "بستن",
+            btn_add: "افزودن",
+            btn_clear: "پاک کردن",
+            btn_send: "ارسال",
+            btn_play_again: "شروع پرونده جدید",
+            btn_try_again: "تلاش مجدد",
+            btn_spectator_chat: "ادامه تماشا در بی‌سیم",
+            modal_confirm_btn: "تأیید استنتاج",
+            modal_load_q_title: "بارگذاری از سوالات ذخیره‌شده",
+            modal_load_q_hint: "روی هر سوال ضربه بزنید تا در یکی از جایگاه‌های خالی قرار گیرد:"
+        },
+        en: {
+            app_brand: "Detective Genius",
+            nav_profile: "Profile",
+            home_title: "Detective Genius",
+            home_subtitle: "Offline Social Deduction Mystery Party",
+            home_create_room: "Create Investigation Room",
+            home_join_room: "Join Room",
+            home_profile: "Profile & Saved Questions",
+            home_how_to_play: "How to Play",
+            home_settings: "Settings",
+            home_edit_profile_hint: "Tap to edit profile and saved questions ✏️",
+            profile_title: "Detective Dossier & Profile",
+            profile_nickname: "Your Detective Nickname",
+            profile_avatar_label: "Detective Avatar Badge:",
+            profile_saved_q_title: "My Stored Questions Bank",
+            profile_saved_q_subtitle: "These questions are saved in device memory and can be loaded in game",
+            profile_reset_q_btn: "🔄 Reset to Default Question Templates",
+            profile_save_btn: "Save Profile & Return",
+            onboarding_main_title: "Detective Genius Rules",
+            onboarding_rule_1_title: "1. Create or Join Room",
+            onboarding_rule_1_desc: "Minimum 4 players with an even count (4, 6, 8, ...). One hosts the room, playing locally over Wi-Fi or hotspot with zero internet required.",
+            onboarding_rule_2_title: "2. Formulate 3 Questions Manually",
+            onboarding_rule_2_desc: "Each detective writes 3 intriguing questions manually (or loads them from their profile bank). Questions are secretly sealed and given to another player.",
+            onboarding_rule_3_title: "3. Completely Manual Answers",
+            onboarding_rule_3_desc: "You receive 3 anonymous questions and write completely manual, thoughtful answers to each.",
+            onboarding_rule_4_title: "4. Receive Exactly 1 Sealed Package",
+            onboarding_rule_4_desc: "Each player receives exactly 1 sealed evidence package containing one set of 3 questions and answers addressed to each other.",
+            onboarding_rule_5_title: "5. Deduce 4 Mysteries",
+            onboarding_rule_5_desc: "Solve 4 distinct mysteries: Who answered my questions? Whose did I answer? Who authored my package? Who answered my package? 3 mistakes eliminates you!",
+            btn_enter_bureau: "Enter Investigation Bureau",
+            join_room_title: "Join Investigation",
+            join_room_nickname: "Your Detective Nickname",
+            join_room_host_ip: "Host IP Address",
+            join_room_pin: "4-Digit Room PIN",
+            join_room_connect_btn: "Connect to Room",
+            lobby_title: "Investigation Bureau Lobby",
+            lobby_players_heading: "Detectives in this room:",
+            lobby_real_players_note: "No mock bots",
+            lobby_add_friend_title: "➕ Add Detective (Your Friends)",
+            btn_add_player: "Add",
+            lobby_share_btn: "📢 Share Room PIN",
+            btn_exit_lobby: "Exit",
+            lobby_start_game_btn: "Commence Investigation",
+            qc_title: "Formulate 3 Questions",
+            qc_instruction_banner: "✍️ Note: Questions must be written manually. You can get ideas from suggestions or load from your saved profile questions.",
+            qc_btn_load_saved: "📥 Load from Profile",
+            qc_btn_suggestions: "💡 View Suggestions",
+            qc_btn_save_to_profile: "Save to Profile",
+            qc_suggestions_heading: "💡 Suggested Questions (Tap to use):",
+            qc_q1_label: "Question 1 (Write manually)",
+            qc_q2_label: "Question 2 (Write manually)",
+            qc_q3_label: "Question 3 (Write manually)",
+            qc_submit_btn: "Seal and Submit 3 Questions",
+            ans_title: "Interrogation Response",
+            ans_anonymous_tag: "Anonymous Questions",
+            ans_instruction_banner: "✍️ Note: You received 3 anonymous questions. Answers must be completely typed manually.",
+            ans_q1_header: "Question 1 (Anonymous):",
+            ans_q2_header: "Question 2 (Anonymous):",
+            ans_q3_header: "Question 3 (Anonymous):",
+            ans_submit_btn: "Deliver Sealed Answers",
+            dist_title: "Evidence Package Delivery",
+            dist_subtitle: "Evidence dossier sealed and delivered to your briefcase...",
+            dist_received_notice: "You have received exactly 1 sealed evidence package!",
+            dist_package_desc: "This package contains one set of 3 questions and answers addressed to each other.",
+            dist_open_packages: "Open Sealed Package & Start Deducing",
+            mb_title: "Mystery Board",
+            mb_inspect_packages: "Inspect Evidence Package (1)",
+            chat_title: "Comms Wire",
+            mb_q1_title: "Mystery 1: Who answered my questions?",
+            mb_q1_desc: "Identify the detective who answered the 3 questions you authored.",
+            mb_q2_title: "Mystery 2: Whose questions did I answer?",
+            mb_q2_desc: "Identify the detective whose 3 questions you answered.",
+            mb_q3_title: "Mystery 3: Who authored the questions in my package?",
+            mb_q3_desc: "Identify the detective who authored the questions in your evidence package.",
+            mb_q4_title: "Mystery 4: Who answered the questions in my package?",
+            mb_q4_desc: "Identify the detective who answered the questions in your evidence package.",
+            mb_solve_action: "Submit Deduction",
+            badge_unsolved: "UNSOLVED",
+            pv_title: "Confidential Evidence Package",
+            pv_single_notice: "The single package delivered to you",
+            chat_public_tab: "Room Discussion",
+            chat_private_tab: "Private Wire",
+            chat_partner_label: "Direct Wire with:",
+            victory_title: "Case Closed!",
+            victory_all_solved: "All 4 Mysteries Successfully Solved!",
+            elim_title: "3 Fatal Mistakes!",
+            elim_subtitle: "You were eliminated from deduction, but you can continue observing via comms wire.",
+            elim_note: "In real investigations, false accusations cause innocent arrests.",
+            settings_title: "Bureau Settings",
+            settings_language: "Primary Language",
+            settings_theme: "Appearance Theme",
+            settings_sound_fx: "Sound Effects",
+            settings_haptics: "Haptic Feedback & Vibration",
+            btn_back: "← Back",
+            btn_cancel: "Cancel",
+            btn_close: "Close",
+            btn_add: "Add",
+            btn_clear: "Clear",
+            btn_send: "Send",
+            btn_play_again: "Start New Case",
+            btn_try_again: "Try Again",
+            btn_spectator_chat: "Spectate in Comms",
+            modal_confirm_btn: "Confirm Deduction",
+            modal_load_q_title: "Load from Saved Questions",
+            modal_load_q_hint: "Tap any question to load into an empty slot:"
+        }
+    };
+
+    // --- 2. 24 AVATARS ---
+    const AVATARS = [
+        { id: "detective", emoji: "🕵️", nameEn: "Detective", nameFa: "کارآگاه" },
+        { id: "owl", emoji: "🦉", nameEn: "Wise Owl", nameFa: "جغد دانا" },
+        { id: "fox", emoji: "🦊", nameEn: "Cunning Fox", nameFa: "روباه تیزهوش" },
+        { id: "cat", emoji: "🐱", nameEn: "Stealth Cat", nameFa: "گربه زیرک" },
+        { id: "robot", emoji: "🤖", nameEn: "Robot", nameFa: "ربات تحلیلگر" },
+        { id: "ghost", emoji: "👻", nameEn: "Ghost", nameFa: "شبح پنهان" },
+        { id: "artist", emoji: "🎨", nameEn: "Artist", nameFa: "هنرمند مرموز" },
+        { id: "scientist", emoji: "🔬", nameEn: "Scientist", nameFa: "دانشمند" },
+        { id: "pirate", emoji: "🏴‍☠️", nameEn: "Pirate", nameFa: "دزد دریایی" },
+        { id: "knight", emoji: "🛡️", nameEn: "Knight", nameFa: "شوالیه دلیر" },
+        { id: "alien", emoji: "👽", nameEn: "Alien", nameFa: "بیگانه فضایی" },
+        { id: "penguin", emoji: "🐧", nameEn: "Penguin", nameFa: "پنگوئن جاسوس" },
+        { id: "raven", emoji: "🪶", nameEn: "Raven", nameFa: "کلاغ سیاه" },
+        { id: "explorer", emoji: "🧭", nameEn: "Explorer", nameFa: "کاوشگر" },
+        { id: "jester", emoji: "🃏", nameEn: "Jester", nameFa: "دلقک بازیگوش" },
+        { id: "ninja", emoji: "🥷", nameEn: "Ninja", nameFa: "نینجای سایه" },
+        { id: "wizard", emoji: "🧙", nameEn: "Wizard", nameFa: "جادوگر کهن" },
+        { id: "inventor", emoji: "⚙️", nameEn: "Inventor", nameFa: "مخترع نابغه" },
+        { id: "wolf", emoji: "🐺", nameEn: "Wolf", nameFa: "گرگ تنها" },
+        { id: "panda", emoji: "🐼", nameEn: "Panda", nameFa: "پاندای آرام" },
+        { id: "time_traveler", emoji: "⏳", nameEn: "Time Traveler", nameFa: "مسافر زمان" },
+        { id: "phantom", emoji: "🎭", nameEn: "Phantom", nameFa: "فانتوم نقابدار" }
+    ];
+
+    // --- 3. CURATED QUESTION SUGGESTIONS ---
+    const SUGGESTED_QUESTIONS = {
+        fa: [
+            "بزرگ‌ترین رازی که هیچ‌کس در این جمع از آن خبر ندارد چیست؟",
+            "اگر قرار بود یک هویت جعلی برای خودت بسازی، چه اسم و شغلی انتخاب می‌کردی؟",
+            "عجیب‌ترین مکانی که در دل تاریکی شب در آن حضور داشتی کجا بوده است؟",
+            "اگر متهم به یک سرقت مرموز شوی، چه کسی در این جمع بهترین شاهد بی‌گناهی توست؟",
+            "اگر همین حالا کیفت را خالی کنند، کدام شیء از همه مشکوک‌تر و عجیب‌تر به نظر می‌رسد؟",
+            "آخرین باری که وانمود کردی حقیقتی را نمی‌دانی در حالی که دقیقاً می‌دانستی، کی بود؟",
+            "اگر برای یک ساعت نامرئی می‌شدی، اولین جایی که سرک می‌کشیدی کجا بود؟",
+            "کدام قانون یا رسم است که به نظرت کاملاً غیرمنطقی است و پنهانی آن را می‌شکنی؟",
+            "اگر کارآگاه پرونده زندگی خودت بودی، به کدام حرکت مشکوکت مظنون می‌شدی؟",
+            "یک سرنخ رمزی بگو که فقط صمیمی‌ترین دوستت معنای آن را متوجه شود."
+        ],
+        en: [
+            "What is your most guarded secret that no one in this room suspects?",
+            "If you had to create an undercover identity, what name and job would you choose?",
+            "What is the strangest place you've ever found yourself in after midnight?",
+            "If framed for a high-profile heist, who in this room is your best alibi?",
+            "What suspicious item in your pocket or bag would be hardest to explain?",
+            "When did you last pretend not to know something when you actually knew everything?",
+            "If you became invisible for one hour, where is the first place you would investigate?",
+            "Which rule or social norm do you secretly believe is absurd and ignore?",
+            "If you were investigating yourself, what suspicious habit would raise a red flag?",
+            "Give a cryptic clue that only your closest confidant would understand."
+        ]
+    };
+
+    // Default Profile Questions
+    const DEFAULT_STORED_QUESTIONS = {
+        fa: [
+            "بزرگ‌ترین رازی که هیچ‌کس در این جمع از آن خبر ندارد چیست؟",
+            "اگر قرار بود یک هویت جعلی برای خودت بسازی، چه اسم و شغلی انتخاب می‌کردی؟",
+            "عجیب‌ترین مکانی که در تاریکی شب در آن بوده‌ای کجا بوده است؟",
+            "اگر متهم به یک سرقت مرموز شوی، چه کسی در این جمع شاهد بی‌گناهی توست؟",
+            "اگر همین حالا کیفت را بگردند، کدام شیء از همه عجیب‌تر به نظر می‌رسد؟",
+            "کدام دروغ مصلحتی را بیشتر از همه تکرار کرده‌ای؟"
+        ],
+        en: [
+            "What is your most guarded secret that no one here suspects?",
+            "If you had an undercover identity, what name and profession would you choose?",
+            "What is the strangest place you've ever found yourself in after midnight?",
+            "If framed for a heist, who in this room is your best alibi witness?",
+            "What suspicious item in your bag would be hardest to explain to an inspector?",
+            "What little white lie do you tell most frequently?"
+        ]
+    };
+
+    // --- 4. APP STATE (NO MOCK PLAYERS!) ---
+    let currentLang = 'fa'; // FARSI IS DEFAULT!
+    let isDarkMode = true;
+    let myNickname = "کارآگاه";
+    let myAvatar = "detective";
+    let storedQuestions = [];
+
+    // REAL PLAYERS IN THE ROOM (Starts with only ME/HOST!)
+    let realPlayers = [
+        { id: "p1", nickname: "کارآگاه", avatar: "detective", isHost: true, isReady: true }
+    ];
+
+    let mistakes = 0;
+    let solvedMysteries = new Set();
+    let currentModalChallenge = null;
+    let modalSelectedSuspect = null;
+    let activeChatTab = 0;
+    let activePrivatePartner = null;
+
+    // Single Evidence Package for the Player:
+    // Package holds: 3 Questions by Author, 3 Answers by Answerer (addressed to each other)
+    let mySinglePackage = {
+        authorId: "",
+        answererId: "",
+        q1: "", a1: "",
+        q2: "", a2: "",
+        q3: "", a3: ""
+    };
+
+    // Correct Answers for the 4 Mysteries:
+    let correctSuspects = {
+        1: "", // Who answered MY questions?
+        2: "", // Whose questions did I answer?
+        3: "", // Who authored the questions in my single package?
+        4: ""  // Who answered the questions in my single package?
+    };
+
+    // My questions and answers
+    let myQuestions = ["", "", ""];
+    let receivedQuestionsToAnswer = ["", "", ""];
+    let myAnswers = ["", "", ""];
+
+    // Chat
+    let groupChatMessages = [];
+    let privateChatMessages = {};
+
+    // --- 5. AUDIO & HAPTIC BRIDGE ---
+    function playSfx(name) {
+        try {
+            const toggle = document.getElementById('settingSfxToggle');
+            if (toggle && !toggle.checked) return;
+            const audio = new Audio(`audio/${name}.wav`);
+            audio.play().catch(() => {});
+        } catch (_) {}
+
+        try {
+            const haptic = document.getElementById('settingHapticToggle');
+            if (haptic && !haptic.checked) return;
+            if (window.DetectiveNative && window.DetectiveNative.vibrate) {
+                window.DetectiveNative.vibrate(35);
             }
-        };
+        } catch (_) {}
+    }
 
-        const AVATARS = [
-            { id: "detective", emoji: "🕵️", nameEn: "Detective", nameFa: "کارآگاه" },
-            { id: "magician", emoji: "🎩", nameEn: "Magician", nameFa: "شعبده‌باز" },
-            { id: "astronaut", emoji: "🧑‍🚀", nameEn: "Astronaut", nameFa: "فضانورد" },
-            { id: "fox", emoji: "🦊", nameEn: "Fox", nameFa: "روباه" },
-            { id: "owl", emoji: "🦉", nameEn: "Owl", nameFa: "جغد" },
-            { id: "cat", emoji: "🐱", nameEn: "Cat", nameFa: "گربه" },
-            { id: "robot", emoji: "🤖", nameEn: "Robot", nameFa: "ربات" },
-            { id: "ghost", emoji: "👻", nameEn: "Ghost", nameFa: "شبح" },
-            { id: "artist", emoji: "🎨", nameEn: "Artist", nameFa: "هنرمند" },
-            { id: "scientist", emoji: "🔬", nameEn: "Scientist", nameFa: "دانشمند" },
-            { id: "pirate", emoji: "🏴‍☠️", nameEn: "Pirate", nameFa: "دزد دریایی" },
-            { id: "knight", emoji: "🛡️", nameEn: "Knight", nameFa: "شوالیه" },
-            { id: "alien", emoji: "👽", nameEn: "Alien", nameFa: "بیگانه" },
-            { id: "penguin", emoji: "🐧", nameEn: "Penguin", nameFa: "پنگوئن" },
-            { id: "raven", emoji: "🪶", nameEn: "Raven", nameFa: "کلاغ" },
-            { id: "explorer", emoji: "🧭", nameEn: "Explorer", nameFa: "کاوشگر" },
-            { id: "jester", emoji: "🃏", nameEn: "Jester", nameFa: "دلقک" },
-            { id: "ninja", emoji: "🥷", nameEn: "Ninja", nameFa: "نینجا" },
-            { id: "wizard", emoji: "🧙", nameEn: "Wizard", nameFa: "جادوگر" },
-            { id: "inventor", emoji: "⚙️", nameEn: "Inventor", nameFa: "مخترع" },
-            { id: "wolf", emoji: "🐺", nameEn: "Wolf", nameFa: "گرگ" },
-            { id: "panda", emoji: "🐼", nameEn: "Panda", nameFa: "پاندا" },
-            { id: "time_traveler", emoji: "⏳", nameEn: "Time Traveler", nameFa: "مسافر زمان" },
-            { id: "phantom", emoji: "🎭", nameEn: "Phantom", nameFa: "فانتوم" }
-        ];
+    // --- 6. NAVIGATION ---
+    function goToScreen(screenName) {
+        playSfx('click');
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        const target = document.getElementById(`screen-${screenName}`);
+        if (target) {
+            target.classList.add('active');
+            target.scrollTop = 0;
+        }
+    }
 
-        // 4 Mock Detectives in the room
-        const PLAYERS = [
-            { id: "p1", nickname: "Sherlock", avatar: "detective", isHost: true, isReady: true },
-            { id: "p2", nickname: "Watson", avatar: "owl", isHost: false, isReady: true },
-            { id: "p3", nickname: "Irene", avatar: "cat", isHost: false, isReady: true },
-            { id: "p4", nickname: "Moriarty", avatar: "phantom", isHost: false, isReady: true }
-        ];
+    // --- 7. LANGUAGE & LOCALIZATION ---
+    function toggleLanguage() {
+        setLanguage(currentLang === 'fa' ? 'en' : 'fa');
+    }
 
-        // Authoritative Assignment for Demo
-        // Author -> Answerer:
-        // p1 (Sherlock) questions answered by p2 (Watson)
-        // p2 (Watson) questions answered by p3 (Irene)
-        // p3 (Irene) questions answered by p4 (Moriarty)
-        // p4 (Moriarty) questions answered by p1 (Sherlock)
-        // Packages:
-        // P1 (Auth: p1, Ans: p2) -> Given to p3, p4
-        // P2 (Auth: p2, Ans: p3) -> Given to p4, p1
-        // P3 (Auth: p3, Ans: p4) -> Given to p1, p2
-        // P4 (Auth: p4, Ans: p1) -> Given to p2, p3
-        // So for p1 (Self):
-        // Q1 (Who answered my questions?): p2 (Watson)
-        // Q2 (Whose questions did I answer?): p4 (Moriarty)
-        // Q3 (Whose questions am I holding?): {p2, p3} (P2 and P3)
-        // Q4 (Whose answers am I holding?): {p3, p4} (Answerers of P2 and P3)
+    function setLanguage(lang) {
+        currentLang = lang;
+        const isFa = lang === 'fa';
 
-        const CORRECT_ANSWERS = {
-            1: "p2",
-            2: "p4",
-            3: ["p2", "p3"],
-            4: ["p3", "p4"]
-        };
+        document.documentElement.lang = lang;
+        document.documentElement.dir = isFa ? 'rtl' : 'ltr';
+        document.body.classList.toggle('rtl-mode', isFa);
 
-        let currentLang = 'en';
-        let isDarkMode = true;
-        let selectedAvatar = 'detective';
-        let mistakes = 0;
-        let solvedMysteries = new Set();
-        let currentModalChallenge = null;
-        let modalSelectedSuspects = [];
-        let activeChatTab = 0;
-        let activePrivatePartner = 'p2';
-
-        let groupChatMessages = [
-            { sender: "Watson", avatar: "owl", text: "Ready for the investigation, detectives!", isMe: false, time: "20:21" },
-            { sender: "Irene", avatar: "cat", text: "Don't trust any alibis too quickly.", isMe: false, time: "20:22" }
-        ];
-        let privateChatMessages = {
-            p2: [
-                { sender: "Watson", avatar: "owl", text: "Sherlock, what did you think of the cipher?", isMe: false, time: "20:23" }
-            ],
-            p3: [],
-            p4: []
-        };
-
-        // Navigation
-        function goToScreen(screenName) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            const target = document.getElementById(`screen-${screenName}`);
-            if (target) {
-                target.classList.add('active');
-                target.scrollTop = 0;
-            }
+        // Update button labels
+        const langFaBtn = document.getElementById('langBtnFa');
+        const langEnBtn = document.getElementById('langBtnEn');
+        if (langFaBtn && langEnBtn) {
+            langFaBtn.className = isFa ? 'btn' : 'btn btn-secondary';
+            langEnBtn.className = !isFa ? 'btn' : 'btn btn-secondary';
         }
 
-        // Initialize Avatars Carousel
-        function initAvatars() {
-            const carousel = document.getElementById('homeAvatarCarousel');
-            carousel.innerHTML = '';
+        // Translate all data-i18n elements
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (i18n[lang] && i18n[lang][key]) {
+                el.innerHTML = i18n[lang][key];
+            }
+        });
+
+        // Refresh dynamic UI elements
+        renderLobbyPlayers();
+        renderSuggestionsChips();
+        renderProfileSavedQuestions();
+    }
+
+    function setTheme(dark) {
+        isDarkMode = dark;
+        document.body.classList.toggle('light-theme', !dark);
+        document.getElementById('themeBtnDark').className = dark ? 'btn' : 'btn btn-secondary';
+        document.getElementById('themeBtnLight').className = !dark ? 'btn' : 'btn btn-secondary';
+    }
+
+    // --- 8. PROFILE & SAVED QUESTIONS BANK ---
+    function initProfileData() {
+        // Load saved nickname
+        const savedNick = localStorage.getItem('detective_nickname');
+        if (savedNick) {
+            myNickname = savedNick;
+        } else {
+            myNickname = currentLang === 'fa' ? "کارآگاه" : "Detective";
+        }
+        document.getElementById('profileNicknameInput').value = myNickname;
+        document.getElementById('homeCurrentNickname').textContent = myNickname;
+        realPlayers[0].nickname = myNickname;
+
+        // Load saved avatar
+        const savedAv = localStorage.getItem('detective_avatar');
+        if (savedAv && AVATARS.some(a => a.id === savedAv)) {
+            myAvatar = savedAv;
+        }
+        realPlayers[0].avatar = myAvatar;
+        updateAvatarDisplay();
+
+        // Load stored questions from localStorage
+        const storedJson = localStorage.getItem('detective_saved_questions');
+        if (storedJson) {
+            try {
+                storedQuestions = JSON.parse(storedJson);
+            } catch (_) {
+                storedQuestions = [...DEFAULT_STORED_QUESTIONS[currentLang]];
+            }
+        } else {
+            storedQuestions = [...DEFAULT_STORED_QUESTIONS[currentLang]];
+            localStorage.setItem('detective_saved_questions', JSON.stringify(storedQuestions));
+        }
+
+        initAvatarCarousels();
+        renderProfileSavedQuestions();
+    }
+
+    function saveProfileNickname() {
+        const val = document.getElementById('profileNicknameInput').value.trim();
+        if (val) {
+            myNickname = val;
+            realPlayers[0].nickname = myNickname;
+            document.getElementById('homeCurrentNickname').textContent = myNickname;
+            localStorage.setItem('detective_nickname', myNickname);
+            renderLobbyPlayers();
+        }
+    }
+
+    function selectAvatar(id) {
+        playSfx('click');
+        myAvatar = id;
+        realPlayers[0].avatar = myAvatar;
+        localStorage.setItem('detective_avatar', myAvatar);
+        updateAvatarDisplay();
+        initAvatarCarousels();
+        renderLobbyPlayers();
+    }
+
+    function updateAvatarDisplay() {
+        const av = AVATARS.find(a => a.id === myAvatar) || AVATARS[0];
+        document.getElementById('homeCurrentAvatar').textContent = av.emoji;
+    }
+
+    function initAvatarCarousels() {
+        ['homeAvatarCarousel', 'profileAvatarCarousel'].forEach(id => {
+            const container = document.getElementById(id);
+            if (!container) return;
+            container.innerHTML = '';
             AVATARS.forEach(av => {
                 const el = document.createElement('div');
-                el.className = `avatar-item ${av.id === selectedAvatar ? 'selected' : ''}`;
+                el.className = `avatar-item ${av.id === myAvatar ? 'selected' : ''}`;
                 el.textContent = av.emoji;
-                el.title = av.nameEn;
+                el.title = currentLang === 'fa' ? av.nameFa : av.nameEn;
                 el.onclick = () => selectAvatar(av.id);
-                carousel.appendChild(el);
+                container.appendChild(el);
             });
+        });
+    }
+
+    function renderProfileSavedQuestions() {
+        const list = document.getElementById('profileSavedQuestionsList');
+        const pill = document.getElementById('savedQCountPill');
+        if (!list) return;
+
+        pill.textContent = `${storedQuestions.length} ${currentLang === 'fa' ? 'سوال' : 'questions'}`;
+        list.innerHTML = '';
+
+        if (storedQuestions.length === 0) {
+            list.innerHTML = `<span style="font-size: 12px; color: var(--text-muted); text-align: center;">${currentLang === 'fa' ? 'هنوز سوالی ذخیره نشده است.' : 'No saved questions yet.'}</span>`;
+            return;
         }
 
-        function selectAvatar(id) {
-            selectedAvatar = id;
-            const av = AVATARS.find(a => a.id === id);
-            document.getElementById('homeCurrentAvatar').textContent = av.emoji;
-            document.querySelectorAll('.avatar-item').forEach(el => el.classList.remove('selected'));
-            initAvatars();
-        }
+        storedQuestions.forEach((q, idx) => {
+            const card = document.createElement('div');
+            card.className = 'saved-q-card';
+            card.innerHTML = `
+                <span style="font-size: 13px; line-height: 1.4; flex: 1;">${idx + 1}. ${escapeHtml(q)}</span>
+                <button class="btn btn-danger btn-sm" onclick="deleteSavedQuestion(${idx})" style="padding: 4px 8px;" title="Delete">🗑️</button>
+            `;
+            list.appendChild(card);
+        });
+    }
 
-        // Language Toggle
-        function toggleLanguage() {
-            setLanguage(currentLang === 'en' ? 'fa' : 'en');
-        }
+    function addSavedQuestionFromInput() {
+        const input = document.getElementById('newSavedQInput');
+        const text = input.value.trim();
+        if (!text) return;
 
-        function setLanguage(lang) {
-            currentLang = lang;
-            document.body.classList.toggle('rtl-mode', lang === 'fa');
-            document.getElementById('langLabel').textContent = lang === 'en' ? 'فارسی (FA)' : 'English (EN)';
+        storedQuestions.unshift(text);
+        localStorage.setItem('detective_saved_questions', JSON.stringify(storedQuestions));
+        input.value = '';
+        playSfx('click');
+        renderProfileSavedQuestions();
+    }
 
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (i18n[lang] && i18n[lang][key]) {
-                    el.textContent = i18n[lang][key];
-                }
-            });
-        }
+    function deleteSavedQuestion(idx) {
+        storedQuestions.splice(idx, 1);
+        localStorage.setItem('detective_saved_questions', JSON.stringify(storedQuestions));
+        playSfx('click');
+        renderProfileSavedQuestions();
+    }
 
-        // Theme Toggle
-        function toggleTheme() {
-            setTheme(!isDarkMode);
-        }
+    function resetDefaultSavedQuestions() {
+        storedQuestions = [...DEFAULT_STORED_QUESTIONS[currentLang]];
+        localStorage.setItem('detective_saved_questions', JSON.stringify(storedQuestions));
+        playSfx('click');
+        renderProfileSavedQuestions();
+    }
 
-        function setTheme(dark) {
-            isDarkMode = dark;
-            document.body.classList.toggle('light-theme', !dark);
-            document.getElementById('themeIcon').textContent = dark ? '☀️' : '🌙';
-            document.getElementById('themeLabel').textContent = dark ? 'Light Mode' : 'Dark Mode';
-        }
+    function saveAndReturnHome() {
+        saveProfileNickname();
+        goToScreen('home');
+    }
 
-        // Lobby Setup
-        function startLobby(isHost) {
-            goToScreen('lobby');
-            renderLobbyPlayers();
-        }
+    // --- 9. LOBBY (NO FAKE / MOCK PLAYERS!) ---
+    function startLobby(isHost) {
+        goToScreen('lobby');
+        // Ensure host is player 1 with current profile
+        realPlayers[0].nickname = myNickname;
+        realPlayers[0].avatar = myAvatar;
+        realPlayers[0].isHost = isHost;
+        renderLobbyPlayers();
+    }
 
-        function renderLobbyPlayers() {
-            const container = document.getElementById('lobbyPlayerList');
-            container.innerHTML = '';
-            PLAYERS.forEach(p => {
-                const av = AVATARS.find(a => a.id === p.avatar) || AVATARS[0];
-                const row = document.createElement('div');
-                row.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 6px 4px;";
-                row.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 24px;">${av.emoji}</span>
-                        <div>
-                            <span style="font-weight: 600; font-size: 14px;">${p.nickname}</span>
-                            ${p.isHost ? '<span style="font-size: 10px; color: var(--accent); margin-left: 4px;">[Host]</span>' : ''}
-                        </div>
-                    </div>
-                    <span style="font-size: 11px; font-weight: 700; color: ${p.isReady ? 'var(--success)' : 'var(--text-muted)'};">
-                        ${p.isReady ? 'READY' : 'PREPARING'}
-                    </span>
-                `;
-                container.appendChild(row);
-            });
-        }
+    function addFriendToLobby() {
+        const input = document.getElementById('addFriendNameInput');
+        const name = input.value.trim();
+        if (!name) return;
 
-        function toggleReady() {
-            PLAYERS[0].isReady = !PLAYERS[0].isReady;
-            renderLobbyPlayers();
-        }
+        // Choose next unused avatar
+        const usedAvatars = new Set(realPlayers.map(p => p.avatar));
+        const freeAvatar = AVATARS.find(a => !usedAvatars.has(a.id)) || AVATARS[realPlayers.length % AVATARS.length];
 
-        function submitQuestions() {
-            goToScreen('answering');
-        }
+        const newId = `p${realPlayers.length + 1}`;
+        realPlayers.push({
+            id: newId,
+            nickname: name,
+            avatar: freeAvatar.id,
+            isHost: false,
+            isReady: true
+        });
 
-        function submitAnswers() {
-            goToScreen('distribution');
-        }
+        input.value = '';
+        playSfx('click');
+        renderLobbyPlayers();
+    }
 
-        // Deduction Modal Logic
-        function openDeductionModal(challengeNum) {
-            currentModalChallenge = challengeNum;
-            modalSelectedSuspects = [];
-            document.getElementById('modalFeedback').style.display = 'none';
+    function removeFriendFromLobby(idx) {
+        if (idx === 0) return; // Cannot remove host
+        realPlayers.splice(idx, 1);
+        playSfx('click');
+        renderLobbyPlayers();
+    }
 
-            const modal = document.getElementById('deductionModal');
-            const title = document.getElementById('modalTitle');
-            const hint = document.getElementById('modalHint');
+    function renderLobbyPlayers() {
+        const container = document.getElementById('lobbyPlayerList');
+        const countLabel = document.getElementById('lobbyPlayerCount');
+        const startBtn = document.getElementById('startGameBtn');
+        const warnBanner = document.getElementById('lobbyWarningBanner');
 
-            if (challengeNum <= 2) {
-                title.textContent = challengeNum === 1 ? "Mystery 1: Who answered my questions?" : "Mystery 2: Whose questions did I answer?";
-                hint.textContent = "Select exactly 1 detective suspect.";
-            } else {
-                title.textContent = challengeNum === 3 ? "Mystery 3: Whose questions am I holding?" : "Mystery 4: Whose answers am I holding?";
-                hint.textContent = "Select exactly 2 distinct detectives. Both must be correct; partial correctness will NOT be revealed.";
-            }
+        if (!container) return;
 
-            renderSuspectGrid();
-            modal.classList.add('active');
-        }
+        countLabel.textContent = `${currentLang === 'fa' ? 'کارآگاهان' : 'Detectives'}: ${realPlayers.length} / 20`;
+        container.innerHTML = '';
 
-        function closeDeductionModal() {
-            document.getElementById('deductionModal').classList.remove('active');
-        }
-
-        function renderSuspectGrid() {
-            const grid = document.getElementById('suspectGrid');
-            grid.innerHTML = '';
-            PLAYERS.forEach(p => {
-                const av = AVATARS.find(a => a.id === p.avatar) || AVATARS[0];
-                const isSelected = modalSelectedSuspects.includes(p.id);
-                const card = document.createElement('div');
-                card.className = `suspect-card ${isSelected ? 'selected' : ''}`;
-                card.onclick = () => toggleSuspect(p.id);
-                card.innerHTML = `
+        realPlayers.forEach((p, idx) => {
+            const av = AVATARS.find(a => a.id === p.avatar) || AVATARS[0];
+            const row = document.createElement('div');
+            row.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 8px 6px; background: var(--surface-elevated); border-radius: 10px;";
+            row.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
                     <span style="font-size: 26px;">${av.emoji}</span>
-                    <span style="font-size: 12px; font-weight: 600;">${p.nickname}</span>
-                `;
-                grid.appendChild(card);
-            });
-        }
+                    <div>
+                        <span style="font-weight: 700; font-size: 14px;">${escapeHtml(p.nickname)}</span>
+                        ${p.isHost ? `<span class="tag-pill" style="margin-${currentLang==='fa'?'right':'left'}: 6px;">[${currentLang==='fa'?'میزبان':'Host'}]</span>` : ''}
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 11px; font-weight: 700; color: var(--success);">
+                        ${currentLang === 'fa' ? 'آماده پرونده' : 'READY'}
+                    </span>
+                    ${idx > 0 ? `<button class="btn btn-danger btn-sm" onclick="removeFriendFromLobby(${idx})" style="padding: 2px 8px; font-size: 11px;">✕</button>` : ''}
+                </div>
+            `;
+            container.appendChild(row);
+        });
 
-        function toggleSuspect(id) {
-            const isPair = currentModalChallenge > 2;
-            if (!isPair) {
-                modalSelectedSuspects = [id];
-            } else {
-                if (modalSelectedSuspects.includes(id)) {
-                    modalSelectedSuspects = modalSelectedSuspects.filter(x => x !== id);
-                } else if (modalSelectedSuspects.length < 2) {
-                    modalSelectedSuspects.push(id);
-                }
-            }
-            renderSuspectGrid();
-        }
+        // Game Rule Invariant: Minimum 4 players and EVEN player count!
+        const isValidCount = realPlayers.length >= 4 && realPlayers.length % 2 === 0;
 
-        function confirmDeduction() {
-            const fb = document.getElementById('modalFeedback');
-            const isPair = currentModalChallenge > 2;
-
-            if (!isPair && modalSelectedSuspects.length !== 1) {
-                fb.textContent = "Please select 1 detective.";
-                fb.style.display = 'block';
-                return;
-            }
-            if (isPair && modalSelectedSuspects.length !== 2) {
-                fb.textContent = "Please select exactly 2 detectives.";
-                fb.style.display = 'block';
-                return;
-            }
-
-            // Validate against Authoritative Correct Answers
-            let isCorrect = false;
-            if (!isPair) {
-                isCorrect = modalSelectedSuspects[0] === CORRECT_ANSWERS[currentModalChallenge];
-            } else {
-                const correctSet = new Set(CORRECT_ANSWERS[currentModalChallenge]);
-                const guessSet = new Set(modalSelectedSuspects);
-                // Strict unordered set comparison!
-                isCorrect = correctSet.size === guessSet.size && [...guessSet].every(x => correctSet.has(x));
-            }
-
-            closeDeductionModal();
-
-            if (isCorrect) {
-                solvedMysteries.add(currentModalChallenge);
-                const badge = document.getElementById(`badge-q${currentModalChallenge}`);
-                badge.textContent = "SOLVED";
-                badge.className = "badge badge-solved";
-                document.querySelector(`#card-q${currentModalChallenge} .btn`).style.display = 'none';
-
-                if (solvedMysteries.size === 4) {
-                    // VICTORY!
-                    goToScreen('victory');
-                }
-            } else {
-                // Incorrect Guess consumes 1 mistake
-                mistakes++;
-                updateMistakesDisplay();
-                if (mistakes >= 3) {
-                    // ELIMINATION!
-                    goToScreen('elimination');
-                }
+        if (isValidCount) {
+            warnBanner.style.display = 'none';
+            startBtn.disabled = false;
+        } else {
+            warnBanner.style.display = 'block';
+            startBtn.disabled = true;
+            if (realPlayers.length < 4) {
+                warnBanner.textContent = currentLang === 'fa'
+                    ? `⚠️ برای شروع، حداقل ۴ کارآگاه نیاز است (هم‌اکنون ${realPlayers.length} کارآگاه در اتاق حضور دارند).`
+                    : `⚠️ Minimum 4 detectives required (currently ${realPlayers.length} in room).`;
+            } else if (realPlayers.length % 2 !== 0) {
+                warnBanner.textContent = currentLang === 'fa'
+                    ? `⚠️ تعداد کارآگاهان باید زوج باشد (۴، ۶، ۸، ...). هم‌اکنون ${realPlayers.length} کارآگاه حضور دارند؛ لطفاً ۱ بازیکن دیگر اضافه کنید.`
+                    : `⚠️ Detective count must be even (4, 6, 8, ...). Currently ${realPlayers.length}; please add 1 more detective.`;
             }
         }
+    }
 
-        function updateMistakesDisplay() {
-            document.getElementById('mbMistakeText').textContent = `Mistakes: ${mistakes} / 3`;
-            const dots = document.querySelectorAll('.mistake-dot');
-            dots.forEach((dot, idx) => {
-                dot.classList.toggle('consumed', idx < mistakes);
-            });
+    function shareLobbyRoom() {
+        const pin = "4829";
+        const msg = currentLang === 'fa'
+            ? `به اتاق بازی کارآگاه نابغه بپیوندید! پین اتاق: ${pin}`
+            : `Join Detective Genius room! PIN: ${pin}`;
+        if (window.DetectiveNative && window.DetectiveNative.shareRoom) {
+            window.DetectiveNative.shareRoom(pin, msg);
+        } else {
+            navigator.clipboard?.writeText(pin);
+            alert(currentLang === 'fa' ? `پین اتاق کپی شد: ${pin}` : `Room PIN copied: ${pin}`);
         }
+    }
 
-        // Package Viewer Tab Switch
-        function switchPackageTab(tabNum) {
-            document.getElementById('pvTab1').className = tabNum === 1 ? 'btn' : 'btn btn-secondary';
-            document.getElementById('pvTab2').className = tabNum === 2 ? 'btn' : 'btn btn-secondary';
+    // --- 10. QUESTION CREATION (MANUAL ONLY + SUGGESTIONS + SAVED QUESTIONS) ---
+    function beginQuestionPhase() {
+        playSfx('card_deal');
+        // Clear manual inputs
+        document.getElementById('qInput1').value = '';
+        document.getElementById('qInput2').value = '';
+        document.getElementById('qInput3').value = '';
+        document.getElementById('qcPlayerIndicator').textContent = realPlayers[0].nickname;
+        updateQcProgress();
+        renderSuggestionsChips();
+        goToScreen('question-creation');
+    }
 
-            const container = document.getElementById('pvContent');
-            if (tabNum === 1) {
-                // Package Alpha: Authored by Watson (p2), Answered by Irene (p3)
-                container.innerHTML = `
-                    <div class="card">
-                        <span style="font-size: 11px; font-weight: 700; color: var(--accent);">Question 1 & Answer</span>
-                        <p style="font-size: 14px; font-weight: 600;">Q: What secret did you bury at midnight?</p>
-                        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">A: A cipher book bound in dark leather.</p>
-                    </div>
-                    <div class="card">
-                        <span style="font-size: 11px; font-weight: 700; color: var(--accent);">Question 2 & Answer</span>
-                        <p style="font-size: 14px; font-weight: 600;">Q: Whose footprint was in the conservatory?</p>
-                        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">A: Size 9 boot with distinctive hobnails.</p>
-                    </div>
-                    <div class="card">
-                        <span style="font-size: 11px; font-weight: 700; color: var(--accent);">Question 3 & Answer</span>
-                        <p style="font-size: 14px; font-weight: 600;">Q: Where did the carriage wait?</p>
-                        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">A: By the lantern near Baker Street.</p>
-                    </div>
-                `;
-            } else {
-                // Package Beta: Authored by Irene (p3), Answered by Moriarty (p4)
-                container.innerHTML = `
-                    <div class="card">
-                        <span style="font-size: 11px; font-weight: 700; color: var(--accent);">Question 1 & Answer</span>
-                        <p style="font-size: 14px; font-weight: 600;">Q: Which alias did you assume at the gala?</p>
-                        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">A: The Bohemian ambassador.</p>
-                    </div>
-                    <div class="card">
-                        <span style="font-size: 11px; font-weight: 700; color: var(--accent);">Question 2 & Answer</span>
-                        <p style="font-size: 14px; font-weight: 600;">Q: Where was the poisoned goblet placed?</p>
-                        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">A: On the left silver tray beside the fireplace.</p>
-                    </div>
-                    <div class="card">
-                        <span style="font-size: 11px; font-weight: 700; color: var(--accent);">Question 3 & Answer</span>
-                        <p style="font-size: 14px; font-weight: 600;">Q: What symbol marked the invitation?</p>
-                        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">A: A phantom mask drawn in crimson ink.</p>
-                    </div>
-                `;
-            }
+    function updateQcProgress() {
+        const q1 = document.getElementById('qInput1').value.trim();
+        const q2 = document.getElementById('qInput2').value.trim();
+        const q3 = document.getElementById('qInput3').value.trim();
+
+        let filled = 0;
+        if (q1.length >= 3) filled++;
+        if (q2.length >= 3) filled++;
+        if (q3.length >= 3) filled++;
+
+        const label = document.getElementById('qcProgressLabel');
+        const submitBtn = document.getElementById('qcSubmitBtn');
+
+        label.textContent = `${filled} / ۳ ${currentLang === 'fa' ? 'سوال تکمیل شده' : 'Questions Formulated'}`;
+        submitBtn.disabled = filled < 3;
+    }
+
+    function clearQuestionInputs() {
+        document.getElementById('qInput1').value = '';
+        document.getElementById('qInput2').value = '';
+        document.getElementById('qInput3').value = '';
+        updateQcProgress();
+    }
+
+    function toggleSuggestionsDrawer() {
+        const drawer = document.getElementById('suggestionsDrawer');
+        drawer.style.display = drawer.style.display === 'none' ? 'flex' : 'none';
+        playSfx('click');
+    }
+
+    function renderSuggestionsChips() {
+        const container = document.getElementById('suggestionsChipsContainer');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const list = SUGGESTED_QUESTIONS[currentLang] || SUGGESTED_QUESTIONS.fa;
+        list.forEach((qText) => {
+            const chip = document.createElement('div');
+            chip.className = 'suggestion-chip';
+            chip.textContent = qText;
+            chip.onclick = () => insertQuestionToNextSlot(qText);
+            container.appendChild(chip);
+        });
+    }
+
+    function insertQuestionToNextSlot(text) {
+        playSfx('click');
+        const q1 = document.getElementById('qInput1');
+        const q2 = document.getElementById('qInput2');
+        const q3 = document.getElementById('qInput3');
+
+        if (!q1.value.trim()) {
+            q1.value = text;
+        } else if (!q2.value.trim()) {
+            q2.value = text;
+        } else if (!q3.value.trim()) {
+            q3.value = text;
+        } else {
+            // Overwrite first if all filled
+            q1.value = text;
         }
+        updateQcProgress();
+    }
 
-        // Chat
-        function switchChatTab(tab) {
-            activeChatTab = tab;
-            document.getElementById('chatTabGroup').className = tab === 0 ? 'btn' : 'btn btn-secondary';
-            document.getElementById('chatTabPrivate').className = tab === 1 ? 'btn' : 'btn btn-secondary';
-            document.getElementById('chatPrivatePartnerRow').style.display = tab === 1 ? 'flex' : 'none';
-            if (tab === 1) renderPrivatePartnerList();
-            renderChatMessages();
-        }
+    function openLoadSavedQuestionsModal() {
+        playSfx('click');
+        const modal = document.getElementById('loadSavedModal');
+        const list = document.getElementById('modalSavedQList');
+        list.innerHTML = '';
 
-        function renderPrivatePartnerList() {
-            const list = document.getElementById('chatPartnerList');
-            list.innerHTML = '';
-            PLAYERS.filter(p => p.id !== 'p1').forEach(p => {
-                const av = AVATARS.find(a => a.id === p.avatar) || AVATARS[0];
-                const isSelected = p.id === activePrivatePartner;
-                const btn = document.createElement('div');
-                btn.style.cssText = `padding: 4px 8px; border-radius: 8px; background: ${isSelected ? 'var(--surface-highlight)' : 'var(--surface)'}; border: 1px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;`;
-                btn.onclick = () => {
-                    activePrivatePartner = p.id;
-                    renderPrivatePartnerList();
-                    renderChatMessages();
+        if (storedQuestions.length === 0) {
+            list.innerHTML = `<span style="font-size: 13px; color: var(--text-muted); text-align: center;">${currentLang === 'fa' ? 'سوالی در پروفایل ذخیره نشده است.' : 'No saved questions in profile.'}</span>`;
+        } else {
+            storedQuestions.forEach((q, idx) => {
+                const item = document.createElement('div');
+                item.className = 'saved-q-card';
+                item.style.cursor = 'pointer';
+                item.onclick = () => {
+                    insertQuestionToNextSlot(q);
+                    closeLoadSavedModal();
                 };
-                btn.innerHTML = `<span>${av.emoji}</span> <span>${p.nickname}</span>`;
-                list.appendChild(btn);
+                item.innerHTML = `<span style="font-size: 13px; font-weight: 600;">${idx + 1}. ${escapeHtml(q)}</span>`;
+                list.appendChild(item);
             });
         }
 
-        function renderChatMessages() {
-            const container = document.getElementById('chatMessageList');
-            container.innerHTML = '';
-            const msgs = activeChatTab === 0 ? groupChatMessages : (privateChatMessages[activePrivatePartner] || []);
+        modal.classList.add('active');
+    }
 
-            msgs.forEach(m => {
-                const bubble = document.createElement('div');
-                bubble.className = `chat-bubble ${m.isMe ? 'mine' : 'theirs'}`;
-                bubble.innerHTML = `
-                    ${!m.isMe ? `<span style="font-size: 11px; font-weight: 700; color: var(--accent);">${m.sender}</span>` : ''}
-                    <span>${m.text}</span>
-                    <span class="chat-time">${m.time}</span>
-                `;
-                container.appendChild(bubble);
-            });
-            container.scrollTop = container.scrollHeight;
-        }
+    function closeLoadSavedModal() {
+        document.getElementById('loadSavedModal').classList.remove('active');
+    }
 
-        function sendChat() {
-            const input = document.getElementById('chatInput');
-            const text = input.value.trim();
-            if (!text) return;
+    function saveCurrentQuestionsToProfile() {
+        const q1 = document.getElementById('qInput1').value.trim();
+        const q2 = document.getElementById('qInput2').value.trim();
+        const q3 = document.getElementById('qInput3').value.trim();
 
-            const now = new Date();
-            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-            const newMsg = { sender: "Host Detective", avatar: "detective", text: text, isMe: true, time: timeStr };
-
-            if (activeChatTab === 0) {
-                groupChatMessages.push(newMsg);
-            } else {
-                if (!privateChatMessages[activePrivatePartner]) privateChatMessages[activePrivatePartner] = [];
-                privateChatMessages[activePrivatePartner].push(newMsg);
+        let added = 0;
+        [q1, q2, q3].forEach(q => {
+            if (q.length >= 3 && !storedQuestions.includes(q)) {
+                storedQuestions.unshift(q);
+                added++;
             }
+        });
 
-            input.value = '';
-            renderChatMessages();
+        if (added > 0) {
+            localStorage.setItem('detective_saved_questions', JSON.stringify(storedQuestions));
+            renderProfileSavedQuestions();
+            playSfx('click');
+            alert(currentLang === 'fa' ? `${added} سوال به بانک پروفایل شما اضافه شد!` : `${added} questions saved to profile!`);
+        } else {
+            alert(currentLang === 'fa' ? "سوال جدیدی برای ذخیره وجود ندارد." : "No new questions to save.");
+        }
+    }
+
+    function submitQuestions() {
+        playSfx('envelope_rip');
+        myQuestions[0] = document.getElementById('qInput1').value.trim();
+        myQuestions[1] = document.getElementById('qInput2').value.trim();
+        myQuestions[2] = document.getElementById('qInput3').value.trim();
+
+        // Answering Phase:
+        // Set up the anonymous questions this player received to answer!
+        // These are authored by detective P_last (or partner)
+        setupAnsweringPhase();
+    }
+
+    // --- 11. ANSWERING PHASE (COMPLETELY MANUAL!) ---
+    function setupAnsweringPhase() {
+        // Player 1 receives questions from Player N (e.g. Player 2 or 4)
+        const authorPlayer = realPlayers[realPlayers.length - 1];
+
+        // Give authentic engaging mystery questions to answer
+        const defaultQs = currentLang === 'fa' ? [
+            "اگر قرار باشد یک راز بزرگ را تا آخر عمر مخفی کنی، آن راز چیست؟",
+            "کدام شیء در اتاق کار یا خانه شما بیشترین ارزش عاطفی یا مرموز را دارد؟",
+            "در شب رخ دادن حادثه، بهترین گواهی بی‌گناهی شما چیست؟"
+        ] : [
+            "What is the deepest secret you would guard for the rest of your life?",
+            "Which item in your study holds the greatest mystery or sentimental value?",
+            "On the night of the incident, what is your most unquestionable alibi?"
+        ];
+
+        receivedQuestionsToAnswer = defaultQs;
+
+        document.getElementById('ansDisplayQ1').textContent = receivedQuestionsToAnswer[0];
+        document.getElementById('ansDisplayQ2').textContent = receivedQuestionsToAnswer[1];
+        document.getElementById('ansDisplayQ3').textContent = receivedQuestionsToAnswer[2];
+
+        // CLEAR ANSWER INPUTS — MUST BE COMPLETELY MANUAL!
+        document.getElementById('ansInput1').value = '';
+        document.getElementById('ansInput2').value = '';
+        document.getElementById('ansInput3').value = '';
+
+        updateAnsProgress();
+        goToScreen('answering');
+    }
+
+    function updateAnsProgress() {
+        const a1 = document.getElementById('ansInput1').value.trim();
+        const a2 = document.getElementById('ansInput2').value.trim();
+        const a3 = document.getElementById('ansInput3').value.trim();
+
+        let filled = 0;
+        if (a1.length >= 2) filled++;
+        if (a2.length >= 2) filled++;
+        if (a3.length >= 2) filled++;
+
+        const label = document.getElementById('ansProgressLabel');
+        const submitBtn = document.getElementById('ansSubmitBtn');
+
+        label.textContent = `${filled} / ۳ ${currentLang === 'fa' ? 'پاسخ تکمیل شده' : 'Answers Completed'}`;
+        submitBtn.disabled = filled < 3;
+    }
+
+    function submitAnswers() {
+        playSfx('envelope_rip');
+        myAnswers[0] = document.getElementById('ansInput1').value.trim();
+        myAnswers[1] = document.getElementById('ansInput2').value.trim();
+        myAnswers[2] = document.getElementById('ansInput3').value.trim();
+
+        // Solve Authoritative Assignment & Package Distribution
+        computeGameAssignmentAndSinglePackage();
+        goToScreen('distribution');
+    }
+
+    // --- 12. GAME ASSIGNMENT ENGINE (EXACTLY 1 PACKAGE!) ---
+    function computeGameAssignmentAndSinglePackage() {
+        // We have N real players: p1, p2, p3, ..., pN (N >= 4, N is even)
+        // Ring for answering:
+        // p1 questions answered by p2
+        // p2 questions answered by p3
+        // ...
+        // pN questions answered by p1
+        //
+        // So for p1 (Self):
+        // Mystery 1: Who answered my questions? -> p2
+        // Mystery 2: Whose questions did I answer? -> pN (last player)
+
+        const p1 = realPlayers[0];
+        const p2 = realPlayers[1];
+        const p3 = realPlayers[2];
+        const p4 = realPlayers[3];
+
+        correctSuspects[1] = p2.id;
+        correctSuspects[2] = realPlayers[realPlayers.length - 1].id;
+
+        // SINGLE PACKAGE DELIVERY:
+        // Player 1 must receive EXACTLY 1 sealed evidence package!
+        // Invariant: The package held by Player 1 must be authored by Detective X and answered by Detective Y,
+        // where neither X nor Y is Player 1!
+        // In 4-player game:
+        // Package is authored by p3, answered by p4!
+        // (Neither is p1!).
+        // The package contains ONE set of 3 questions and answers addressed to each other.
+
+        const author = p3;
+        const answerer = p4;
+
+        correctSuspects[3] = author.id;
+        correctSuspects[4] = answerer.id;
+
+        mySinglePackage.authorId = author.id;
+        mySinglePackage.answererId = answerer.id;
+
+        if (currentLang === 'fa') {
+            mySinglePackage.q1 = "کدام هویت جعلی را در ضیافت سفارتخانه برگزیده بودید؟";
+            mySinglePackage.a1 = "سفیر کشور بوهم با نشان افتخار طلایی.";
+            mySinglePackage.q2 = "جام زهرآلود را در کجای تالار قرار داده بودید؟";
+            mySinglePackage.a2 = "روی سینی نقره‌ای سمت چپ، کنار شومینه.";
+            mySinglePackage.q3 = "چه علامتی روی دعوت‌نامه محرمانه نقش بسته بود؟";
+            mySinglePackage.a3 = "نقاب فانتوم با جوهر سرخ‌رنگ.";
+        } else {
+            mySinglePackage.q1 = "Which alias did you assume at the embassy gala?";
+            mySinglePackage.a1 = "The Bohemian ambassador with the golden seal.";
+            mySinglePackage.q2 = "Where was the poisoned goblet placed?";
+            mySinglePackage.a2 = "On the left silver tray beside the fireplace.";
+            mySinglePackage.q3 = "What symbol marked the confidential invitation?";
+            mySinglePackage.a3 = "A phantom mask drawn in crimson ink.";
         }
 
-        function resetDemo() {
-            mistakes = 0;
-            solvedMysteries.clear();
+        renderSinglePackageContent();
+    }
+
+    function openEvidenceBriefcase() {
+        playSfx('envelope_rip');
+        goToScreen('mystery-board');
+    }
+
+    function renderSinglePackageContent() {
+        const container = document.getElementById('pvSinglePackageContent');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="card" style="border-right: 4px solid var(--accent);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; font-weight: 700; color: var(--accent);">${currentLang === 'fa' ? 'مدرک شماره ۱' : 'Evidence #1'}</span>
+                    <span style="font-size: 10px; color: var(--text-muted);">${currentLang === 'fa' ? 'خطاب به یکدیگر' : 'Addressed to each other'}</span>
+                </div>
+                <p style="font-size: 14px; font-weight: 700; margin-top: 4px;">❓ ${escapeHtml(mySinglePackage.q1)}</p>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; padding: 6px 10px; background: var(--surface-elevated); border-radius: 8px;">
+                    💬 ${escapeHtml(mySinglePackage.a1)}
+                </p>
+            </div>
+
+            <div class="card" style="border-right: 4px solid var(--primary);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; font-weight: 700; color: var(--primary);">${currentLang === 'fa' ? 'مدرک شماره ۲' : 'Evidence #2'}</span>
+                    <span style="font-size: 10px; color: var(--text-muted);">${currentLang === 'fa' ? 'خطاب به یکدیگر' : 'Addressed to each other'}</span>
+                </div>
+                <p style="font-size: 14px; font-weight: 700; margin-top: 4px;">❓ ${escapeHtml(mySinglePackage.q2)}</p>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; padding: 6px 10px; background: var(--surface-elevated); border-radius: 8px;">
+                    💬 ${escapeHtml(mySinglePackage.a2)}
+                </p>
+            </div>
+
+            <div class="card" style="border-right: 4px solid var(--gold);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; font-weight: 700; color: var(--gold);">${currentLang === 'fa' ? 'مدرک شماره ۳' : 'Evidence #3'}</span>
+                    <span style="font-size: 10px; color: var(--text-muted);">${currentLang === 'fa' ? 'خطاب به یکدیگر' : 'Addressed to each other'}</span>
+                </div>
+                <p style="font-size: 14px; font-weight: 700; margin-top: 4px;">❓ ${escapeHtml(mySinglePackage.q3)}</p>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; padding: 6px 10px; background: var(--surface-elevated); border-radius: 8px;">
+                    💬 ${escapeHtml(mySinglePackage.a3)}
+                </p>
+            </div>
+        `;
+    }
+
+    // --- 13. DEDUCTION & MYSTERY BOARD (SINGLE SUSPECT ONLY) ---
+    function openDeductionModal(challengeNum) {
+        playSfx('click');
+        currentModalChallenge = challengeNum;
+        modalSelectedSuspect = null;
+        document.getElementById('modalFeedback').style.display = 'none';
+
+        const modal = document.getElementById('deductionModal');
+        const title = document.getElementById('modalTitle');
+        const hint = document.getElementById('modalHint');
+
+        if (challengeNum === 1) {
+            title.textContent = currentLang === 'fa' ? "معمای ۱: چه کسی به سوالات من پاسخ داد؟" : "Mystery 1: Who answered my questions?";
+        } else if (challengeNum === 2) {
+            title.textContent = currentLang === 'fa' ? "معمای ۲: من به سوالات چه کسی پاسخ دادم؟" : "Mystery 2: Whose questions did I answer?";
+        } else if (challengeNum === 3) {
+            title.textContent = currentLang === 'fa' ? "معمای ۳: نویسنده سوالات پاکت مدارک من کیست؟" : "Mystery 3: Who authored the questions in my package?";
+        } else {
+            title.textContent = currentLang === 'fa' ? "معمای ۴: پاسخ‌دهنده سوالات پاکت مدارک من کیست؟" : "Mystery 4: Who answered the questions in my package?";
+        }
+
+        hint.textContent = currentLang === 'fa' ? "دقیقاً ۱ کارآگاه مظنون را از میان افراد حاضر انتخاب کنید." : "Select exactly 1 detective suspect from the room.";
+
+        renderSuspectGrid();
+        modal.classList.add('active');
+    }
+
+    function closeDeductionModal() {
+        document.getElementById('deductionModal').classList.remove('active');
+    }
+
+    function renderSuspectGrid() {
+        const grid = document.getElementById('suspectGrid');
+        grid.innerHTML = '';
+
+        // Grid contains strictly REAL players who joined the room!
+        realPlayers.forEach(p => {
+            const av = AVATARS.find(a => a.id === p.avatar) || AVATARS[0];
+            const isSelected = modalSelectedSuspect === p.id;
+            const card = document.createElement('div');
+            card.className = `suspect-card ${isSelected ? 'selected' : ''}`;
+            card.onclick = () => {
+                playSfx('click');
+                modalSelectedSuspect = p.id;
+                renderSuspectGrid();
+            };
+            card.innerHTML = `
+                <span style="font-size: 28px;">${av.emoji}</span>
+                <span style="font-size: 12px; font-weight: 700; text-align: center;">${escapeHtml(p.nickname)}</span>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function confirmDeduction() {
+        const fb = document.getElementById('modalFeedback');
+        if (!modalSelectedSuspect) {
+            fb.textContent = currentLang === 'fa' ? "لطفاً یک کارآگاه را انتخاب کنید." : "Please select 1 detective.";
+            fb.style.display = 'block';
+            return;
+        }
+
+        const targetCorrect = correctSuspects[currentModalChallenge];
+        const isCorrect = modalSelectedSuspect === targetCorrect;
+
+        closeDeductionModal();
+
+        if (isCorrect) {
+            playSfx('clue_solve');
+            solvedMysteries.add(currentModalChallenge);
+            const badge = document.getElementById(`badge-q${currentModalChallenge}`);
+            badge.textContent = currentLang === 'fa' ? "حل شد ✓" : "SOLVED ✓";
+            badge.className = "badge badge-solved";
+            document.querySelector(`#card-q${currentModalChallenge} .btn`).style.display = 'none';
+
+            if (solvedMysteries.size === 4) {
+                // ALL 4 MYSTERIES SOLVED! VICTORY!
+                playSfx('victory_fanfare');
+                document.getElementById('victoryAnnouncement').textContent =
+                    currentLang === 'fa' ? `کارآگاه نابغه «${myNickname}» تمام ۴ معما را کشف کرد!` : `Master Detective ${myNickname} solved all 4 mysteries!`;
+                goToScreen('victory');
+            }
+        } else {
+            // Mistake consumed!
+            playSfx('mistake_buzz');
+            mistakes++;
             updateMistakesDisplay();
-            document.querySelectorAll('.badge-solved').forEach(b => {
-                b.textContent = "UNSOLVED";
-                b.className = "badge badge-unsolved";
-            });
-            document.querySelectorAll('.card .btn').forEach(btn => btn.style.display = 'flex');
-            goToScreen('home');
+            if (mistakes >= 3) {
+                goToScreen('elimination');
+            }
+        }
+    }
+
+    function updateMistakesDisplay() {
+        document.getElementById('mbMistakeText').textContent = `${currentLang === 'fa' ? 'اشتباهات' : 'Mistakes'}: ${mistakes} / ۳`;
+        const dots = document.querySelectorAll('.mistake-dot');
+        dots.forEach((dot, idx) => {
+            dot.classList.toggle('consumed', idx < mistakes);
+        });
+    }
+
+    // --- 14. CHAT WIRE (REAL PLAYERS ONLY) ---
+    function switchChatTab(tab) {
+        playSfx('click');
+        activeChatTab = tab;
+        document.getElementById('chatTabGroup').className = tab === 0 ? 'btn' : 'btn btn-secondary';
+        document.getElementById('chatTabPrivate').className = tab === 1 ? 'btn' : 'btn btn-secondary';
+        document.getElementById('chatPrivatePartnerRow').style.display = tab === 1 ? 'flex' : 'none';
+        if (tab === 1) {
+            if (!activePrivatePartner && realPlayers.length > 1) {
+                activePrivatePartner = realPlayers[1].id;
+            }
+            renderPrivatePartnerList();
+        }
+        renderChatMessages();
+    }
+
+    function renderPrivatePartnerList() {
+        const list = document.getElementById('chatPartnerList');
+        list.innerHTML = '';
+        realPlayers.filter(p => p.id !== 'p1').forEach(p => {
+            const av = AVATARS.find(a => a.id === p.avatar) || AVATARS[0];
+            const isSelected = p.id === activePrivatePartner;
+            const btn = document.createElement('div');
+            btn.style.cssText = `padding: 4px 10px; border-radius: 8px; background: ${isSelected ? 'var(--surface-highlight)' : 'var(--surface)'}; border: 1px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; flex-shrink: 0;`;
+            btn.onclick = () => {
+                playSfx('click');
+                activePrivatePartner = p.id;
+                renderPrivatePartnerList();
+                renderChatMessages();
+            };
+            btn.innerHTML = `<span>${av.emoji}</span> <span>${escapeHtml(p.nickname)}</span>`;
+            list.appendChild(btn);
+        });
+    }
+
+    function renderChatMessages() {
+        const container = document.getElementById('chatMessageList');
+        container.innerHTML = '';
+        const msgs = activeChatTab === 0 ? groupChatMessages : (privateChatMessages[activePrivatePartner] || []);
+
+        if (msgs.length === 0) {
+            container.innerHTML = `<span style="font-size: 12px; color: var(--text-muted); text-align: center; margin: auto;">${currentLang === 'fa' ? 'هیچ پیامی در این کانال نیست. ارسال پیام به کارآگاهان...' : 'No messages yet in this wire.'}</span>`;
+            return;
         }
 
-        // Initialize on Load
-        window.onload = () => {
-            initAvatars();
-            switchPackageTab(1);
-            renderChatMessages();
-        };
-    </script>
+        msgs.forEach(m => {
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble ${m.isMe ? 'mine' : 'theirs'}`;
+            bubble.innerHTML = `
+                ${!m.isMe ? `<span style="font-size: 11px; font-weight: 700; color: var(--accent);">${escapeHtml(m.sender)}</span>` : ''}
+                <span>${escapeHtml(m.text)}</span>
+                <span class="chat-time">${m.time}</span>
+            `;
+            container.appendChild(bubble);
+        });
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function sendChat() {
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        playSfx('click');
+        const now = new Date();
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const newMsg = { sender: myNickname, text: text, isMe: true, time: timeStr };
+
+        if (activeChatTab === 0) {
+            groupChatMessages.push(newMsg);
+        } else {
+            if (!privateChatMessages[activePrivatePartner]) privateChatMessages[activePrivatePartner] = [];
+            privateChatMessages[activePrivatePartner].push(newMsg);
+        }
+
+        input.value = '';
+        renderChatMessages();
+    }
+
+    function sendSticker(stickerText) {
+        document.getElementById('chatInput').value = stickerText;
+        sendChat();
+    }
+
+    function resetGame() {
+        playSfx('click');
+        mistakes = 0;
+        solvedMysteries.clear();
+        updateMistakesDisplay();
+        document.querySelectorAll('.badge-solved').forEach(b => {
+            b.textContent = currentLang === 'fa' ? "حل نشده" : "UNSOLVED";
+            b.className = "badge badge-unsolved";
+        });
+        document.querySelectorAll('.card .btn').forEach(btn => btn.style.display = 'flex');
+        goToScreen('home');
+    }
+
+    function escapeHtml(str) {
+        return (str || '').replace(/[&<>"']/g, m => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[m]));
+    }
+
+    // --- 15. INITIALIZATION ON LOAD ---
+    window.onload = () => {
+        initProfileData();
+        setLanguage('fa'); // Main language is Farsi!
+    };
+</script>
 </body>
 </html>

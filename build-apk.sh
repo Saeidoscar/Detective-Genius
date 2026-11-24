@@ -24,6 +24,17 @@ KEY_ALIAS="detectivegenius"
 KEY_PASS="DetectiveGeniusRelease2026!"
 
 # Ensure required build tools exist, or bootstrap automatically
+if ! command -v java &>/dev/null || ! command -v keytool &>/dev/null; then
+    echo "==> Setting up Java & Keytool runtime..."
+    python3 -c "import jdk4py, os; keytool = jdk4py.JAVA.parent / 'keytool'; os.system(f'sudo ln -sf {jdk4py.JAVA} /usr/local/bin/java'); os.system(f'sudo ln -sf {keytool} /usr/local/bin/keytool')" || true
+fi
+
+if ! command -v kotlinc &>/dev/null; then
+    if [ -f "/usr/local/lib/node_modules/kotlin-compiler/bin/kotlinc" ]; then
+        sudo ln -sf /usr/local/lib/node_modules/kotlin-compiler/bin/kotlinc /usr/local/bin/kotlinc
+    fi
+fi
+
 if [ ! -f "$AAPT2" ] || [ ! -f "$BUNDLETOOL" ]; then
     echo "==> Bootstrapping AAPT2 and Bundletool..."
     mkdir -p "$ROOT_DIR/tools"
