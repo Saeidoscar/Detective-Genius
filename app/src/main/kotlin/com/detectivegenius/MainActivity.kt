@@ -171,4 +171,35 @@ class DetectiveNativeBridge(private val context: Context) {
     fun getAppVersion(): String {
         return "1.0.1"
     }
+
+    @JavascriptInterface
+    fun getDeviceIp(): String {
+        try {
+            val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
+            val candidateIps = mutableListOf<String>()
+            while (interfaces.hasMoreElements()) {
+                val networkInterface = interfaces.nextElement()
+                if (!networkInterface.isUp || networkInterface.isLoopback) continue
+                val name = networkInterface.name.lowercase()
+                val addresses = networkInterface.inetAddresses
+                while (addresses.hasMoreElements()) {
+                    val address = addresses.nextElement()
+                    if (!address.isLoopbackAddress && address is java.net.Inet4Address) {
+                        val host = address.hostAddress ?: ""
+                        if (host.isNotEmpty() && !host.startsWith("127.")) {
+                            // Prioritize hotspot/wlan interfaces
+                            if (name.contains("wlan") || name.contains("ap") || name.contains("swlan") || name.contains("hotspot")) {
+                                return host
+                            }
+                            candidateIps.add(host)
+                        }
+                    }
+                }
+            }
+            if (candidateIps.isNotEmpty()) {
+                return candidateIps.first()
+            }
+        } catch (_: Throwable) {}
+        return "192.168.43.1"
+    }
 }

@@ -1,9 +1,29 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const PORT = 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
+
+// In-memory room store for LAN peer synchronization
+const rooms = new Map();
+
+function getHostLanIp() {
+    try {
+        const interfaces = os.networkInterfaces();
+        for (const devName in interfaces) {
+            const iface = interfaces[devName];
+            for (let i = 0; i < iface.length; i++) {
+                const alias = iface[i];
+                if (alias.family === 'IPv4' && !alias.internal && alias.address !== '127.0.0.1') {
+                    return alias.address;
+                }
+            }
+        }
+    } catch (e) {}
+    return '192.168.43.1';
+}
 
 const mimeTypes = {
     '.html': 'text/html; charset=utf-8',
@@ -11,7 +31,9 @@ const mimeTypes = {
     '.css': 'text/css; charset=utf-8',
     '.json': 'application/json',
     '.png': 'image/png',
-    '.svg': 'image/svg+xml'
+    '.svg': 'image/svg+xml',
+    '.wav': 'audio/wav',
+    '.mp3': 'audio/mpeg'
 };
 
 const server = http.createServer((req, res) => {
@@ -25,7 +47,57 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    let filePath = path.join(PUBLIC_DIR, req.url === '/' ? 'index.html' : req.url.split('?')[0]);
+    const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    const pathname = urlObj.pathname;
+
+    // API: Host info
+    if (pathname === '/api/host-info') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            hostIp: getHostLanIp(),
+            defaultHotspotIp: '192.168.43.1',
+            port: PORT,
+            timestamp: Date.now()
+        }));
+        return;
+    }
+
+    // API: Room Sync
+    if (pathname === '/api/room/sync' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            try {
+                const payload = JSON.parse(body);
+                if (payload && payload.roomId) {
+                    rooms.set(payload.roomId, {
+                        ...payload,
+                        updatedAt: Date.now()
+                    });
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ status: 'ok', roomId: payload.roomId }));
+                    return;
+                }
+            } catch (err) {}
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'invalid_payload' }));
+        });
+        return;
+    }
+
+    if (pathname === '/api/room/state') {
+        const roomId = urlObj.searchParams.get('roomId');
+        if (roomId && rooms.has(roomId)) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(rooms.get(roomId)));
+            return;
+        }
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'room_not_found' }));
+        return;
+    }
+
+    let filePath = path.join(PUBLIC_DIR, pathname === '/' ? 'index.html' : pathname);
     if (!fs.existsSync(filePath)) {
         filePath = path.join(PUBLIC_DIR, 'index.html');
     }
