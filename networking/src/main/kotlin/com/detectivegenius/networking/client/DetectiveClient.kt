@@ -109,6 +109,9 @@ class DetectiveClient(
             is ServerPacket.Error -> {
                 _connectionStatus.value = ConnectionStatus.Error(packet.message)
             }
+            is ServerPacket.WillPublished -> {
+                // Will published to all players
+            }
             is ServerPacket.HeartbeatAck -> {
                 // Keep-alive received
             }
@@ -202,6 +205,45 @@ class DetectiveClient(
                 timestamp = System.currentTimeMillis(),
                 recipientId = recipientId,
                 isTyping = isTyping
+            )
+        )
+    }
+
+    fun submitWill(willType: String, targetPlayerId: String? = null, payloadText: String, isSelfInference: Boolean = false) {
+        sendPacket(
+            ClientPacket.SubmitWill(
+                messageId = UUID.randomUUID().toString(),
+                sessionId = sessionToken ?: "",
+                playerId = playerId,
+                timestamp = System.currentTimeMillis(),
+                willType = willType,
+                targetPlayerId = targetPlayerId,
+                payloadText = payloadText,
+                isSelfInference = isSelfInference
+            )
+        )
+    }
+
+    fun answerWillQuestion(willId: String, answerText: String) {
+        sendPacket(
+            ClientPacket.AnswerWillQuestion(
+                messageId = UUID.randomUUID().toString(),
+                sessionId = sessionToken ?: "",
+                playerId = playerId,
+                timestamp = System.currentTimeMillis(),
+                willId = willId,
+                answerText = answerText
+            )
+        )
+    }
+
+    fun skipWill() {
+        sendPacket(
+            ClientPacket.SkipWill(
+                messageId = UUID.randomUUID().toString(),
+                sessionId = sessionToken ?: "",
+                playerId = playerId,
+                timestamp = System.currentTimeMillis()
             )
         )
     }

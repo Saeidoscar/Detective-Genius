@@ -70,6 +70,36 @@ sealed class ClientPacket {
     ) : ClientPacket()
 
     @Serializable
+    data class SubmitWill(
+        override val messageId: String,
+        override val sessionId: String,
+        override val playerId: String,
+        override val timestamp: Long,
+        val willType: String,
+        val targetPlayerId: String? = null,
+        val payloadText: String,
+        val isSelfInference: Boolean = false
+    ) : ClientPacket()
+
+    @Serializable
+    data class AnswerWillQuestion(
+        override val messageId: String,
+        override val sessionId: String,
+        override val playerId: String,
+        override val timestamp: Long,
+        val willId: String,
+        val answerText: String
+    ) : ClientPacket()
+
+    @Serializable
+    data class SkipWill(
+        override val messageId: String,
+        override val sessionId: String,
+        override val playerId: String,
+        override val timestamp: Long
+    ) : ClientPacket()
+
+    @Serializable
     data class SendChat(
         override val messageId: String,
         override val sessionId: String,
@@ -129,6 +159,13 @@ sealed class ServerPacket {
         val currentMistakes: Int,
         val isEliminated: Boolean,
         val message: String
+    ) : ServerPacket()
+
+    @Serializable
+    data class WillPublished(
+        override val messageId: String,
+        override val timestamp: Long,
+        val will: WillRecordDto
     ) : ServerPacket()
 
     @Serializable

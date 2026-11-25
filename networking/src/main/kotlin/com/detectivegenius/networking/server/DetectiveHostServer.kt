@@ -295,6 +295,82 @@ class DetectiveHostServer(
                 null
             }
 
+            is ClientPacket.SubmitWill -> {
+                val willType = try {
+                    com.detectivegenius.core.model.WillType.valueOf(packet.willType)
+                } catch (_: Throwable) {
+                    return ServerPacket.Error(
+                        messageId = UUID.randomUUID().toString(),
+                        timestamp = now,
+                        code = "INVALID_WILL_TYPE",
+                        message = "Invalid will type: ${packet.willType}"
+                    )
+                }
+
+                val result = engine.submitWill(
+                    playerId = packet.playerId,
+                    willType = willType,
+                    targetPlayerId = packet.targetPlayerId,
+                    payloadText = packet.payloadText,
+                    isSelfInference = packet.isSelfInference
+                )
+
+                if (result.isSuccess) {
+                    val will = result.getOrThrow()
+                    val willDto = com.detectivegenius.core.protocol.WillRecordDto(
+                        id = will.id,
+                        playerId = will.playerId,
+                        playerNickname = will.playerNickname,
+                        playerAvatarId = will.playerAvatarId,
+                        willType = will.willType.name,
+                        targetPlayerId = will.targetPlayerId,
+                        targetPlayerNickname = will.targetPlayerNickname,
+                        payloadText = will.payloadText,
+                        answerText = will.answerText,
+                        isSelfInference = will.isSelfInference,
+                        timestamp = will.submittedAt
+                    )
+                    broadcastStateUpdate()
+                    ServerPacket.WillPublished(
+                        messageId = UUID.randomUUID().toString(),
+                        timestamp = now,
+                        will = willDto
+                    )
+                } else {
+                    ServerPacket.Error(
+                        messageId = UUID.randomUUID().toString(),
+                        timestamp = now,
+                        code = "WILL_SUBMISSION_FAILED",
+                        message = result.exceptionOrNull()?.message ?: "Failed to submit will"
+                    )
+                }
+            }
+
+            is ClientPacket.AnswerWillQuestion -> {
+                val result = engine.answerWillQuestion(
+                    playerId = packet.playerId,
+                    willId = packet.willId,
+                    answerText = packet.answerText
+                )
+                if (result.isSuccess) {
+                    broadcastStateUpdate()
+                } else {
+                    return ServerPacket.Error(
+                        messageId = UUID.randomUUID().toString(),
+                        timestamp = now,
+                        code = "WILL_ANSWER_FAILED",
+                        message = result.exceptionOrNull()?.message ?: "Failed to answer will question"
+                    )
+                }
+                null
+            }
+
+            is ClientPacket.SkipWill -> {
+                engine.skipWill(packet.playerId)
+                broadcastStateUpdate()
+                null
+            }
+
             is ClientPacket.Heartbeat -> {
                 ServerPacket.HeartbeatAck(
                     messageId = UUID.randomUUID().toString(),

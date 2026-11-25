@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Detective Genius — کارآگاه نابغه (Live Preview)</title>
+    <title>Detective Genius — کارآگاه نابغه</title>
     <link rel="icon" type="image/png" href="images/logo_thumb.png">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -69,48 +69,28 @@
         }
 
         html, body {
-            background-color: #030611;
+            background-color: var(--bg-color);
             font-family: var(--font-family);
             color: var(--text-primary);
             width: 100vw;
             height: 100vh;
+            height: 100dvh;
             overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .phone-wrapper {
-            width: 100%;
-            max-width: 440px;
-            height: 100%;
-            max-height: 920px;
-            background: var(--bg-color);
-            border-radius: 28px;
-            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--border);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
-        }
-
-        @media (max-width: 480px) {
-            .phone-wrapper {
-                max-width: 100vw;
-                max-height: 100vh;
-                border-radius: 0;
-                box-shadow: none;
-            }
+            position: fixed;
+            inset: 0;
         }
 
         .screen-viewport {
-            flex: 1;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             overflow-y: auto;
             overflow-x: hidden;
-            padding: 14px 16px 20px 16px;
-            box-sizing: border-box;
+            position: fixed;
+            inset: 0;
+            padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px calc(env(safe-area-inset-bottom, 0px) + 16px) 16px;
         }
 
         /* Android Navigation Bar Pill */
@@ -518,6 +498,51 @@
             color: var(--accent);
         }
 
+        
+        /* Joker & Will System Styles */
+        .joker-gradient-card {
+            background: linear-gradient(135deg, rgba(88, 28, 135, 0.45), rgba(15, 23, 42, 0.85));
+            border: 1.5px solid #A855F7;
+            border-radius: 14px;
+            padding: 12px 14px;
+        }
+        .will-tab-bar {
+            display: flex;
+            gap: 6px;
+            background: var(--surface-highlight);
+            padding: 4px;
+            border-radius: 10px;
+        }
+        .will-tab-btn {
+            flex: 1;
+            padding: 8px 4px;
+            font-size: 11.5px;
+            font-weight: 700;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            text-align: center;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+        .will-tab-btn.active {
+            background: var(--surface);
+            color: var(--gold);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .will-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(234, 179, 8, 0.35);
+            border-radius: 12px;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+        }
+
         /* Saved Question Card */
         .saved-q-card {
             background: var(--surface-elevated);
@@ -551,7 +576,6 @@
     </style>
 </head>
 <body class="rtl-mode">
-<div class="phone-wrapper">
 <div class="screen-viewport">
 
     <!-- Top App Header -->
@@ -1031,12 +1055,27 @@
             </p>
         </div>
 
-        <div style="display: flex; gap: 10px;">
-            <button class="btn btn-secondary" style="flex: 1; padding: 10px;" onclick="goToScreen('package-viewer')">
-                📂 <span data-i18n="mb_inspect_packages">بررسی پاکت مدارک (۱)</span>
+        <!-- Joker Confidential Tracker (Visible ONLY to the secret Joker!) -->
+        <div id="jokerTrackerCard" class="joker-gradient-card" style="display: none; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 26px;">🃏</span>
+                <div>
+                    <span style="font-size: 10px; color: #D8B4FE; font-weight: 800; text-transform: uppercase;">ماموریت محرمانه: جوکر پرونده</span>
+                    <div style="font-size: 13px; font-weight: 800; color: #FFF;" id="jokerProgressText">حذف‌های واجد شرایط: ۰ / ۳</div>
+                </div>
+            </div>
+            <span class="tag-pill" style="background: rgba(147, 51, 234, 0.35); color: #E9D5FF; border: 1px solid #C084FC;" id="jokerTargetBadge">هدف: ۳ حذف</span>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary" style="flex: 1.2; padding: 8px;" onclick="goToScreen('package-viewer')">
+                📂 <span data-i18n="mb_inspect_packages" style="font-size: 12px;">پاکت مدارک (۱)</span>
             </button>
-            <button class="btn btn-secondary" style="flex: 1; padding: 10px;" onclick="goToScreen('chat')">
-                📡 <span data-i18n="chat_title">بی‌سیم ارتباطات</span>
+            <button class="btn btn-secondary" style="flex: 1; padding: 8px;" onclick="openPublishedWillsModal()">
+                📜 <span data-i18n="will_feed_btn" style="font-size: 12px;">وصیت‌ها (<span id="mbWillCount">۰</span>)</span>
+            </button>
+            <button class="btn btn-secondary" style="flex: 1; padding: 8px;" onclick="goToScreen('chat')">
+                📡 <span data-i18n="chat_title" style="font-size: 12px;">بی‌سیم</span>
             </button>
         </div>
 
@@ -1153,13 +1192,30 @@
             <p style="font-size: 14px; margin-top: 2px;" id="victoryAnnouncement">کارآگاه نابغه هر ۴ معما را حل کرد!</p>
         </div>
         <div style="font-size: 80px;" id="victoryAvatarEmoji">🕵️</div>
-        <div class="card card-elevated" style="border-color: var(--success); padding: 16px;">
+        <div class="card card-elevated" style="border-color: var(--success); padding: 14px;">
             <h3 style="color: var(--success); font-size: 15px;" id="victorySubheading" data-i18n="victory_all_solved">تمام ۴ راز بزرگ کشف شدند!</h3>
-            <div style="font-size: 12.5px; color: var(--text-secondary); margin-top: 6px; line-height: 1.6;" id="victorySummaryDesc" data-i18n="victory_summary">
+            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.6;" id="victorySummaryDesc" data-i18n="victory_summary">
                 ✓ کارآگاهی که به سوالات شما پاسخ داد<br>
                 ✓ کارآگاهی که شما به سوالاتش پاسخ دادید<br>
                 ✓ نویسنده سوالات پاکت مدارک شما<br>
                 ✓ پاسخ‌دهنده سوالات پاکت مدارک شما
+            </div>
+        </div>
+
+        <!-- Joker Identity & Target Reveal Dossier -->
+        <div class="joker-gradient-card" id="jokerRevealCard" style="display: none; padding: 12px 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 26px;">🃏</span>
+                    <div>
+                        <span style="font-size: 11px; color: #D8B4FE; font-weight: 700;" data-i18n="joker_reveal_label">افشای هویت جوکر این پرونده:</span>
+                        <h4 style="font-size: 15px; font-weight: 800; color: #FFF;" id="jokerRevealName">کارآگاه ...</h4>
+                    </div>
+                </div>
+                <span class="tag-pill" id="jokerOutcomeBadge" style="background: rgba(147, 51, 234, 0.4); color: #E9D5FF; border: 1px solid #C084FC;">پیروز</span>
+            </div>
+            <div style="font-size: 11.5px; color: #E2E8F0; margin-top: 6px; line-height: 1.5;" id="jokerRevealStats">
+                هدف جوکر: ۳ حذف | حذف‌های واجد شرایط: ۲
             </div>
         </div>
         <button class="btn" onclick="resetGame()" data-i18n="btn_play_again">شروع پرونده جدید</button>
@@ -1214,22 +1270,127 @@
 
         <!-- Testing & Demonstration Tools -->
         <div class="card" style="border-color: var(--accent);">
-            <span style="font-size: 12px; font-weight: 700; color: var(--accent);">🧪 ابزار آزمایش و دمو زمان بازی:</span>
-            <div style="display: flex; gap: 8px;">
-                <button class="btn btn-secondary btn-sm" style="flex: 1; font-size: 11px;" onclick="fastForwardClockTo5Seconds()">
+            <span style="font-size: 12px; font-weight: 700; color: var(--accent);">🧪 ابزار آزمایش و دمو ویژگی‌های پرونده:</span>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <button class="btn btn-secondary btn-sm" style="font-size: 11px;" onclick="fastForwardClockTo5Seconds()">
                     ⚡ تست انقضای زمان (تنظیم تایمر به ۵ ثانیه)
                 </button>
+                <div style="display: flex; gap: 6px;">
+                    <button class="btn btn-secondary btn-sm" style="flex: 1; font-size: 10.5px;" onclick="testAssignMeAsJoker()">
+                        🃏 انتساب نقش جوکر
+                    </button>
+                    <button class="btn btn-secondary btn-sm" style="flex: 1; font-size: 10.5px;" onclick="testTriggerWillModal()">
+                        📜 تست وصیت‌نامه
+                    </button>
+                    <button class="btn btn-secondary btn-sm" style="flex: 1; font-size: 10.5px;" onclick="testTriggerJokerWin()">
+                        🏆 تست برد جوکر
+                    </button>
+                </div>
             </div>
             <p style="font-size: 10px; color: var(--text-muted); margin: 0;">
-                جهت آزمایش آسان قوانین ۸ ساعت، اولویت ۱ و ۲، و اعلام وقت اضافه.
+                جهت آزمایش آسان قوانین ۸ ساعت، نقش محرمانه جوکر و سیستم وصیت‌نامه ۳ گزینه‌ای.
             </p>
         </div>
         <span style="font-size: 11px; color: var(--text-muted); text-align: center;">Detective Genius v1.0.1 — موتور آفلاین اندروید</span>
     </div>
 
 </div>
+
+
+
+<!-- Confidential Joker Role Modal (Exclusively shown to the assigned Joker) -->
+<div class="modal-overlay" id="jokerRoleModal">
+    <div class="modal-sheet" style="text-align: center; border: 2px solid #A855F7;">
+        <div style="font-size: 56px; margin-bottom: 2px;">🃏</div>
+        <h3 style="font-size: 20px; font-weight: 800; color: #C084FC;" data-i18n="joker_modal_title">شما جوکر این پرونده هستید!</h3>
+        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-top: 6px;" id="jokerModalDesc">
+            هدف اختصاصی و محرمانه شما: باید حداقل <b id="jokerTargetSpan" style="color: #F43F5E;">X</b> نفر از مجموع کارآگاهان حذف شوند پیش از آنکه کارآگاهی هر ۴ معما را حل کند.
+        </p>
+        <div class="card card-elevated" style="border-color: #A855F7; padding: 12px; margin-top: 8px; text-align: right; font-size: 11.5px; line-height: 1.6;">
+            • <b>نیازی به حل معماهای ۴گانه ندارید.</b><br>
+            • <b>اشتراک اطلاعات و پاسخ‌ها کاملاً داوطلبانه است.</b><br>
+            • <b>هیچ کارآگاهی از هویت جوکر باخبر نیست.</b><br>
+            • اگر خودتان ۳ اشتباه کنید حذف می‌شوید و پیروزی جوکر از دست می‌رود.
+        </div>
+        <button class="btn" style="margin-top: 12px; width: 100%; background: #9333EA; font-weight: 800;" onclick="closeJokerRoleModal()" data-i18n="btn_accept_joker_mission">
+            🃏 پذیرش ماموریت مخفی جوکر
+        </button>
+    </div>
 </div>
 
+<!-- Final Will Creation Modal (Shown immediately upon elimination) -->
+<div class="modal-overlay" id="willCreationModal">
+    <div class="modal-sheet" style="max-height: 90vh;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 22px;">📜</span>
+                <h3 style="font-size: 16px; font-weight: 800; color: var(--gold);" data-i18n="will_modal_title">وصیت‌نامه نهایی کارآگاه</h3>
+            </div>
+            <span class="tag-pill" id="willTimerBadge" style="background: rgba(239, 68, 68, 0.2); color: var(--error); font-family: monospace;">⏱️ 45s</span>
+        </div>
+
+        <p style="font-size: 12px; color: var(--text-secondary); margin: 0; line-height: 1.4;" data-i18n="will_modal_intro">
+            شما حذف شدید، اما یک فرصت نهایی برای تأثیرگذاری بر روند پرونده در اختیار دارید. دقیقاً یکی از ۳ اقدام زیر را انتخاب و ثبت کنید (غیرقابل ویرایش):
+        </p>
+
+        <!-- 3 Tabs: Accusation, Revelation, Question -->
+        <div class="will-tab-bar">
+            <button class="will-tab-btn active" id="willTabBtnAccusation" onclick="switchWillTab('ACCUSATION')" data-i18n="will_tab_accusation">🎯 اتهام نهایی</button>
+            <button class="will-tab-btn" id="willTabBtnRevelation" onclick="switchWillTab('REVELATION')" data-i18n="will_tab_revelation">💡 افشای نهایی</button>
+            <button class="will-tab-btn" id="willTabBtnQuestion" onclick="switchWillTab('QUESTION')" data-i18n="will_tab_question">❓ یک سوال آخر</button>
+        </div>
+
+        <!-- Target Active Detective Picker (For Accusation & Question) -->
+        <div id="willTargetContainer" style="display: flex; flex-direction: column; gap: 6px;">
+            <label class="input-label" data-i18n="will_target_suspect_label">انتخاب کارآگاه فعال مورد نظر:</label>
+            <select class="input-field" id="willTargetSelect" style="direction: rtl;">
+                <!-- Populated dynamically with active players -->
+            </select>
+        </div>
+
+        <!-- Payload Textarea -->
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+            <label class="input-label" id="willPayloadLabel">متن اتهام نهایی:</label>
+            <textarea class="textarea-field" id="willPayloadInput" rows="3" placeholder="متن وصیت‌نامه خود را بنویسید..."></textarea>
+        </div>
+
+        <!-- Optional Inference toggle (For Revelation) -->
+        <div id="willInferenceRow" style="display: none; align-items: center; gap: 8px;">
+            <input type="checkbox" id="willIsInferenceCheck" />
+            <label for="willIsInferenceCheck" style="font-size: 11.5px; color: var(--text-secondary);" data-i18n="will_is_inference_label">این یک استنتاج شخصی است (نه مدرک اثبات‌شده)</label>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 4px;">
+            <button class="btn" style="flex: 2; background: var(--gold); color: #000; font-weight: 800;" onclick="submitPlayerWill()" data-i18n="btn_submit_will">
+                📜 ثبت و انتشار وصیت‌نامه
+            </button>
+            <button class="btn btn-secondary" style="flex: 1;" onclick="skipPlayerWill()" data-i18n="btn_skip_will">
+                صرف‌نظر
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Published Wills Dossier Modal (Viewable by all players) -->
+<div class="modal-overlay" id="publishedWillsModal">
+    <div class="modal-sheet" style="max-height: 85vh;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 22px;">📜</span>
+                <h3 style="font-size: 16px; font-weight: 800; color: var(--gold);">آرشیو وصیت‌نامه‌های منتشرشده</h3>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="closePublishedWillsModal()" style="padding: 2px 8px;">✕</button>
+        </div>
+
+        <div id="publishedWillsContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 60vh; overflow-y: auto; margin-top: 8px;">
+            <!-- Populated dynamically -->
+        </div>
+
+        <button class="btn btn-secondary" style="width: 100%; margin-top: 8px;" onclick="closePublishedWillsModal()" data-i18n="btn_close">
+            بستن
+        </button>
+    </div>
+</div>
 
 <!-- Network & Hotspot FAQ Modal (Comprehensive Guide!) -->
 <div class="modal-overlay" id="networkFaqModal">
@@ -1493,6 +1654,22 @@
             faq_modal_title: "راهنمای اتصال چندنفره و هات‌اسپات",
             overtime_modal_title: "تساوی کارآگاهی و اعلام وقت اضافه!",
             btn_continue_investigation: "ادامه عملیات در وقت اضافه",
+            joker_modal_title: "شما جوکر این پرونده هستید!",
+            btn_accept_joker_mission: "🃏 پذیرش ماموریت مخفی جوکر",
+            joker_tracker_title: "ماموریت محرمانه: جوکر پرونده",
+            joker_progress_label: "حذف‌های واجد شرایط:",
+            joker_reveal_label: "افشای هویت جوکر این پرونده:",
+            joker_won_title: "🃏 پرونده به دست جوکر فتح شد!",
+            will_modal_title: "وصیت‌نامه نهایی کارآگاه",
+            will_modal_intro: "شما حذف شدید، اما یک فرصت نهایی برای تأثیرگذاری بر روند پرونده در اختیار دارید. دقیقاً یکی از ۳ اقدام زیر را انتخاب و ثبت کنید (غیرقابل ویرایش):",
+            will_tab_accusation: "🎯 اتهام نهایی",
+            will_tab_revelation: "💡 افشای نهایی",
+            will_tab_question: "❓ یک سوال آخر",
+            will_target_suspect_label: "انتخاب کارآگاه فعال مورد نظر:",
+            will_is_inference_label: "این یک استنتاج شخصی است (نه مدرک اثبات‌شده)",
+            btn_submit_will: "📜 ثبت و انتشار وصیت‌نامه",
+            btn_skip_will: "صرف‌نظر و ورود به تماشاگر",
+            will_feed_btn: "وصیت‌ها",
         },
         en: {
             app_brand: "Detective Genius",
@@ -1620,7 +1797,23 @@
             rule_timeout_note: "8-Hour Rule: If time expires with no winner, Priority 1 is most right guesses, Priority 2 is fewest mistakes. If still tied, 1 hour overtime and 3 guesses are awarded.",
             faq_modal_title: "Multiplayer Network & Hotspot Guide",
             overtime_modal_title: "Detective Tie & Overtime Awarded!",
-            btn_continue_investigation: "Continue in Overtime"
+            btn_continue_investigation: "Continue in Overtime",
+            joker_modal_title: "YOU ARE THE JOKER!",
+            btn_accept_joker_mission: "🃏 Accept Secret Joker Mission",
+            joker_tracker_title: "Secret Role: Case Joker",
+            joker_progress_label: "Eligible Eliminations:",
+            joker_reveal_label: "Case Joker Identity Reveal:",
+            joker_won_title: "🃏 The Joker Wins the Case!",
+            will_modal_title: "Detective's Final Will",
+            will_modal_intro: "You have been eliminated, but you have one final opportunity to influence the investigation. Choose exactly one action (immutable):",
+            will_tab_accusation: "🎯 Final Accusation",
+            will_tab_revelation: "💡 Final Revelation",
+            will_tab_question: "❓ One Last Question",
+            will_target_suspect_label: "Select Target Active Detective:",
+            will_is_inference_label: "This is a personal inference (not verified fact)",
+            btn_submit_will: "📜 Seal & Publish Will",
+            btn_skip_will: "Skip & Become Spectator",
+            will_feed_btn: "Wills",
         }
     };
 
@@ -1716,6 +1909,20 @@
     let roomTimerInterval = null;
     let overtimeCount = 0;
     let currentMaxMistakes = 3; // +3 awarded per overtime period to tied players
+
+    // Joker Role & Asymmetric Objective
+    let jokerPlayerId = null;
+    let jokerTarget = 0; // ceil(2 * originalPlayerCount / 3)
+    let eligibleEliminationCount = 0;
+    let jokerStatus = 'ACTIVE'; // 'ACTIVE', 'WON', 'LOST'
+    let countedEliminations = new Set(); // strictly counts unique regular eliminations
+
+    // The Will System (Eliminated player's final public action)
+    let publishedWills = [];
+    let playerWillSubmitted = false;
+    let activeWillTab = 'ACCUSATION';
+    let willTimerInterval = null;
+    let willTimeRemaining = 45;
 
     // REAL PLAYERS IN THE ROOM (Starts with only ME/HOST!)
     let realPlayers = [
@@ -1975,6 +2182,8 @@
             `;
         }
 
+        jokerStatus = 'LOST';
+        renderJokerRevealCard(false);
         clearActiveCaseState();
         goToScreen('victory');
     }
@@ -2024,6 +2233,32 @@
         goToScreen('mystery-board');
     }
 
+    function testAssignMeAsJoker() {
+        playSfx('click');
+        jokerPlayerId = realPlayers[0].id;
+        jokerTarget = Math.ceil((2 * realPlayers.length) / 3);
+        eligibleEliminationCount = 1;
+        jokerStatus = 'ACTIVE';
+        initJokerRole();
+        updateJokerTrackerDisplay();
+        alert(currentLang === 'fa' ? `🃏 شما به عنوان جوکر پرونده منصوب شدید (هدف: ${jokerTarget} حذف). کارت پیگیری در تخته معما فعال شد.` : `Assigned as Joker! Target: ${jokerTarget}`);
+        goToScreen('mystery-board');
+    }
+
+    function testTriggerWillModal() {
+        playSfx('click');
+        playerWillSubmitted = false;
+        openWillCreationModal();
+    }
+
+    function testTriggerJokerWin() {
+        playSfx('click');
+        jokerPlayerId = realPlayers[0].id;
+        jokerTarget = Math.ceil((2 * realPlayers.length) / 3);
+        eligibleEliminationCount = jokerTarget;
+        triggerJokerVictory(jokerPlayerId, eligibleEliminationCount, jokerTarget);
+    }
+
     function updateScoreboardDisplay() {
         const scoreVal = document.getElementById('mbScoreValue');
         const mistakeVal = document.getElementById('mbMistakeStatValue');
@@ -2053,6 +2288,13 @@
                 roomDurationSec: roomDurationSec,
                 overtimeCount: overtimeCount,
                 groupChatMessages: groupChatMessages,
+                jokerPlayerId: jokerPlayerId,
+                jokerTarget: jokerTarget,
+                eligibleEliminationCount: eligibleEliminationCount,
+                jokerStatus: jokerStatus,
+                countedEliminations: Array.from(countedEliminations),
+                publishedWills: publishedWills,
+                playerWillSubmitted: playerWillSubmitted,
                 savedAt: Date.now()
             };
             localStorage.setItem('dg_active_case', JSON.stringify(state));
@@ -2098,6 +2340,19 @@
             roomDurationSec = state.roomDurationSec || 28800;
             overtimeCount = state.overtimeCount || 0;
             groupChatMessages = state.groupChatMessages || [];
+            jokerPlayerId = state.jokerPlayerId || null;
+            jokerTarget = state.jokerTarget || 0;
+            eligibleEliminationCount = state.eligibleEliminationCount || 0;
+            jokerStatus = state.jokerStatus || 'ACTIVE';
+            countedEliminations = new Set(state.countedEliminations || []);
+            publishedWills = state.publishedWills || [];
+            playerWillSubmitted = state.playerWillSubmitted || false;
+            updateWillBadgeCount();
+            if (realPlayers[0]?.id === jokerPlayerId) {
+                const trackerCard = document.getElementById('jokerTrackerCard');
+                if (trackerCard) trackerCard.style.display = 'flex';
+                updateJokerTrackerDisplay();
+            }
 
             // Update UI elements
             updateMistakesDisplay();
@@ -2172,7 +2427,361 @@
         }
     }
 
-// --- 6. NAVIGATION ---
+
+    // --- JOKER ENGINE & ASYMMETRIC VICTORY ---
+    function initJokerRole() {
+        if (!jokerPlayerId && realPlayers.length > 0) {
+            // Randomly select exactly one Joker from original players
+            const randomIdx = Math.floor(Math.random() * realPlayers.length);
+            jokerPlayerId = realPlayers[randomIdx].id;
+            // Fixed target: ceil(2 * originalPlayerCount / 3)
+            jokerTarget = Math.ceil((2 * realPlayers.length) / 3);
+            eligibleEliminationCount = 0;
+            jokerStatus = 'ACTIVE';
+            countedEliminations = new Set();
+        }
+
+        const isMeJoker = (realPlayers[0].id === jokerPlayerId);
+        const trackerCard = document.getElementById('jokerTrackerCard');
+
+        if (isMeJoker) {
+            // Confidential Role Reveal Modal for the Joker
+            const modal = document.getElementById('jokerRoleModal');
+            const targetSpan = document.getElementById('jokerTargetSpan');
+            if (targetSpan) targetSpan.textContent = jokerTarget;
+            if (modal) modal.classList.add('active');
+
+            // Show private tracker on Mystery Board
+            if (trackerCard) {
+                trackerCard.style.display = 'flex';
+                updateJokerTrackerDisplay();
+            }
+        } else {
+            // STRICT PRIVACY: Non-jokers NEVER see tracker or hint!
+            if (trackerCard) trackerCard.style.display = 'none';
+        }
+    }
+
+    function updateJokerTrackerDisplay() {
+        const isMeJoker = (realPlayers[0].id === jokerPlayerId);
+        const trackerCard = document.getElementById('jokerTrackerCard');
+        if (!isMeJoker || !trackerCard) return;
+
+        const progText = document.getElementById('jokerProgressText');
+        const badge = document.getElementById('jokerTargetBadge');
+        if (progText) {
+            progText.textContent = currentLang === 'fa'
+                ? `حذف‌های واجد شرایط: ${eligibleEliminationCount} / ${jokerTarget}`
+                : `Eligible Eliminations: ${eligibleEliminationCount} / ${jokerTarget}`;
+        }
+        if (badge) {
+            badge.textContent = currentLang === 'fa'
+                ? `هدف: ${jokerTarget} حذف`
+                : `Target: ${jokerTarget} Eliminations`;
+        }
+    }
+
+    function closeJokerRoleModal() {
+        playSfx('click');
+        document.getElementById('jokerRoleModal')?.classList.remove('active');
+    }
+
+    function triggerJokerVictory(jId, elimCount, target) {
+        playSfx('victory_fanfare');
+        stopRoomClock();
+        const jokerPlayer = realPlayers.find(p => p.id === jId) || realPlayers[0];
+        const av = AVATARS.find(a => a.id === jokerPlayer.avatar) || AVATARS[0];
+        document.getElementById('victoryAvatarEmoji').textContent = "🃏";
+
+        const titleEl = document.getElementById('victoryTitleHeading');
+        const annEl = document.getElementById('victoryAnnouncement');
+        const subEl = document.getElementById('victorySubheading');
+        const sumEl = document.getElementById('victorySummaryDesc');
+
+        if (currentLang === 'fa') {
+            titleEl.textContent = "🃏 پرونده به دست جوکر فتح شد!";
+            subEl.textContent = `پیروزی نامتقارن جوکر: حذف ${elimCount} کارآگاه (هدف: ${target})`;
+            annEl.textContent = `جوکر این پرونده کارآگاه «${jokerPlayer.nickname}» بود و موفق شد با فریب سایرین به هدف خود برسد!`;
+            sumEl.innerHTML = `
+                <b>نتیجه بررسی نهایی پرونده:</b><br>
+                ✓ جوکر پرونده: <b>«${jokerPlayer.nickname}»</b><br>
+                ✓ حذف‌های واجد شرایط: <b>${elimCount} از ${target}</b><br>
+                • هیچ کارآگاهی موفق به حل پیش‌دستانه تمام ۴ معما پیش از تکمیل سقف جوکر نشد.
+            `;
+        } else {
+            titleEl.textContent = "🃏 The Joker Wins the Case!";
+            subEl.textContent = `Asymmetric Joker Victory: ${elimCount} eliminations (Target: ${target})`;
+            annEl.textContent = `Detective "${jokerPlayer.nickname}" was the Joker and achieved their secret objective!`;
+            sumEl.innerHTML = `
+                <b>Final Investigation Result:</b><br>
+                ✓ Case Joker: <b>"${jokerPlayer.nickname}"</b><br>
+                ✓ Eligible Eliminations: <b>${elimCount} / ${target}</b><br>
+                • Detectives failed to solve all 4 mysteries before Joker reached the threshold.
+            `;
+        }
+
+        renderJokerRevealCard(true);
+        clearActiveCaseState();
+        goToScreen('victory');
+    }
+
+    function renderJokerRevealCard(jokerWon) {
+        const card = document.getElementById('jokerRevealCard');
+        if (!card) return;
+        const jokerPlayer = realPlayers.find(p => p.id === jokerPlayerId) || realPlayers[0];
+        const nameEl = document.getElementById('jokerRevealName');
+        const badgeEl = document.getElementById('jokerOutcomeBadge');
+        const statsEl = document.getElementById('jokerRevealStats');
+
+        card.style.display = 'block';
+        if (nameEl) nameEl.textContent = `کارآگاه «${jokerPlayer.nickname}»`;
+        if (badgeEl) {
+            badgeEl.textContent = jokerWon
+                ? (currentLang === 'fa' ? "پیروز ✓" : "WON ✓")
+                : (currentLang === 'fa' ? "ناکام ✕" : "DEFEATED ✕");
+            badgeEl.style.background = jokerWon ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)";
+            badgeEl.style.color = jokerWon ? "var(--success)" : "var(--error)";
+        }
+        if (statsEl) {
+            statsEl.textContent = currentLang === 'fa'
+                ? `هدف جوکر: ${jokerTarget} حذف | حذف‌های واجد شرایط ثبت‌شده: ${eligibleEliminationCount}`
+                : `Joker Target: ${jokerTarget} eliminations | Eligible eliminations recorded: ${eligibleEliminationCount}`;
+        }
+    }
+
+    // --- THE WILL ENGINE (FINAL ACTION OF ELIMINATED DETECTIVE) ---
+    function openWillCreationModal() {
+        playSfx('mistake_buzz');
+        const modal = document.getElementById('willCreationModal');
+        if (!modal) return;
+
+        // Populate active players into target select (exclude self and eliminated players)
+        const targetSelect = document.getElementById('willTargetSelect');
+        if (targetSelect) {
+            targetSelect.innerHTML = '';
+            const activeTargets = realPlayers.filter(p => p.id !== realPlayers[0].id && !p.isEliminated);
+            if (activeTargets.length === 0) {
+                targetSelect.innerHTML = `<option value="">${currentLang === 'fa' ? 'هیچ کارآگاه فعالی باقی نمانده' : 'No active detectives'}</option>`;
+            } else {
+                activeTargets.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = `${p.nickname} (${p.id})`;
+                    targetSelect.appendChild(opt);
+                });
+            }
+        }
+
+        switchWillTab('ACCUSATION');
+
+        // Start 45-second timeout countdown
+        willTimeRemaining = 45;
+        const timerBadge = document.getElementById('willTimerBadge');
+        if (timerBadge) timerBadge.textContent = `⏱️ ${willTimeRemaining}s`;
+
+        if (willTimerInterval) clearInterval(willTimerInterval);
+        willTimerInterval = setInterval(() => {
+            willTimeRemaining--;
+            if (timerBadge) timerBadge.textContent = `⏱️ ${willTimeRemaining}s`;
+            if (willTimeRemaining <= 0) {
+                clearInterval(willTimerInterval);
+                skipPlayerWill(); // auto-skip on timeout without stalling the game!
+            }
+        }, 1000);
+
+        modal.classList.add('active');
+    }
+
+    function switchWillTab(tab) {
+        playSfx('click');
+        activeWillTab = tab;
+        ['Accusation', 'Revelation', 'Question'].forEach(t => {
+            const btn = document.getElementById(`willTabBtn${t}`);
+            if (btn) btn.classList.toggle('active', t.toUpperCase() === tab);
+        });
+
+        const targetContainer = document.getElementById('willTargetContainer');
+        const payloadLabel = document.getElementById('willPayloadLabel');
+        const payloadInput = document.getElementById('willPayloadInput');
+        const inferenceRow = document.getElementById('willInferenceRow');
+
+        if (tab === 'ACCUSATION') {
+            if (targetContainer) targetContainer.style.display = 'flex';
+            if (inferenceRow) inferenceRow.style.display = 'none';
+            if (payloadLabel) payloadLabel.textContent = currentLang === 'fa' ? "شرح اتهام و دلایل سوءظن:" : "Suspicion reasoning:";
+            if (payloadInput) payloadInput.placeholder = currentLang === 'fa' ? "دلایل شک خود را به این کارآگاه بنویسید..." : "Write your suspicion and reasoning...";
+        } else if (tab === 'REVELATION') {
+            if (targetContainer) targetContainer.style.display = 'none';
+            if (inferenceRow) inferenceRow.style.display = 'flex';
+            if (payloadLabel) payloadLabel.textContent = currentLang === 'fa' ? "شرح مدرک یا اطلاعات افشاشده:" : "Information to reveal:";
+            if (payloadInput) payloadInput.placeholder = currentLang === 'fa' ? "یک سرنخ یا حقیقت مهم را برای عموم بنویسید..." : "Reveal a clue or deduction to all detectives...";
+        } else if (tab === 'QUESTION') {
+            if (targetContainer) targetContainer.style.display = 'flex';
+            if (inferenceRow) inferenceRow.style.display = 'none';
+            if (payloadLabel) payloadLabel.textContent = currentLang === 'fa' ? "متن سوال از کارآگاه مورد نظر:" : "Your question to the detective:";
+            if (payloadInput) payloadInput.placeholder = currentLang === 'fa' ? "سوال خود را با دقت مطرح کنید..." : "Ask your constrained question...";
+        }
+    }
+
+    function submitPlayerWill() {
+        const payloadInput = document.getElementById('willPayloadInput');
+        const text = payloadInput?.value?.trim();
+        if (!text) {
+            alert(currentLang === 'fa' ? "لطفاً متن وصیت‌نامه خود را بنویسید." : "Please write your will text.");
+            return;
+        }
+
+        const targetSelect = document.getElementById('willTargetSelect');
+        const targetId = (activeWillTab !== 'REVELATION') ? targetSelect?.value : null;
+        const targetPlayer = realPlayers.find(p => p.id === targetId);
+        const isInference = document.getElementById('willIsInferenceCheck')?.checked || false;
+
+        if (willTimerInterval) clearInterval(willTimerInterval);
+        playerWillSubmitted = true;
+        document.getElementById('willCreationModal')?.classList.remove('active');
+
+        const newWill = {
+            id: 'will_' + Date.now(),
+            playerId: realPlayers[0].id,
+            playerNickname: myNickname,
+            playerAvatar: myAvatar,
+            willType: activeWillTab,
+            targetPlayerId: targetId,
+            targetPlayerNickname: targetPlayer ? targetPlayer.nickname : null,
+            payloadText: text,
+            answerText: null,
+            isSelfInference: isInference,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+
+        publishedWills.push(newWill);
+        updateWillBadgeCount();
+
+        // Broadcast will as ornate message in Comms Wire
+        let broadcastText = "";
+        if (activeWillTab === 'ACCUSATION') {
+            broadcastText = `📜 [وصیت‌نامه - اتهام نهایی] خطاب به «${targetPlayer?.nickname}»: "${text}"`;
+        } else if (activeWillTab === 'REVELATION') {
+            broadcastText = `📜 [وصیت‌نامه - افشای مدرک] ${isInference ? '(استنتاج شخصی)' : ''}: "${text}"`;
+        } else {
+            broadcastText = `📜 [وصیت‌نامه - سوال آخر] از «${targetPlayer?.nickname}»: "${text}"`;
+        }
+        groupChatMessages.push({
+            sender: `وصیت‌نامه ${myNickname}`,
+            text: broadcastText,
+            isMe: false,
+            time: newWill.timestamp
+        });
+        renderChatMessages();
+
+        playSfx('envelope_rip');
+        alert(currentLang === 'fa' ? "وصیت‌نامه شما مهروموم شد و برای تمام کارآگاهان منتشر گردید!" : "Your Final Will has been sealed and published!");
+        saveActiveCaseState('elimination');
+        goToScreen('elimination');
+    }
+
+    function skipPlayerWill() {
+        if (willTimerInterval) clearInterval(willTimerInterval);
+        playerWillSubmitted = true;
+        document.getElementById('willCreationModal')?.classList.remove('active');
+        playSfx('click');
+        saveActiveCaseState('elimination');
+        goToScreen('elimination');
+    }
+
+    function updateWillBadgeCount() {
+        const countSpan = document.getElementById('mbWillCount');
+        if (countSpan) countSpan.textContent = publishedWills.length;
+    }
+
+    function openPublishedWillsModal() {
+        playSfx('click');
+        const modal = document.getElementById('publishedWillsModal');
+        const container = document.getElementById('publishedWillsContainer');
+        if (!modal || !container) return;
+
+        container.innerHTML = '';
+        if (publishedWills.length === 0) {
+            container.innerHTML = `<span style="font-size: 12px; color: var(--text-muted); text-align: center; margin: 20px 0;">${currentLang === 'fa' ? 'هنوز وصیت‌نامه‌ای ثبت نشده است.' : 'No wills published yet.'}</span>`;
+        } else {
+            publishedWills.forEach(w => {
+                const item = document.createElement('div');
+                item.className = 'will-card';
+                const av = AVATARS.find(a => a.id === w.playerAvatar) || AVATARS[0];
+                const typeName = w.willType === 'ACCUSATION' ? '🎯 اتهام نهایی' : (w.willType === 'REVELATION' ? '💡 افشای مدرک' : '❓ سوال آخر');
+
+                item.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 20px;">${av.emoji}</span>
+                            <div>
+                                <span style="font-size: 12px; font-weight: 800; color: var(--gold);">وصیت‌نامه کارآگاه «${escapeHtml(w.playerNickname)}»</span>
+                                <span style="font-size: 10px; color: var(--text-muted); display: block;">${w.timestamp}</span>
+                            </div>
+                        </div>
+                        <span class="tag-pill" style="font-size: 10px;">${typeName}</span>
+                    </div>
+
+                    <p style="font-size: 12.5px; color: var(--text-primary); margin: 4px 0; line-height: 1.5; font-weight: 600;">
+                        ${escapeHtml(w.payloadText)}
+                    </p>
+
+                    ${w.targetPlayerNickname ? `
+                        <div style="font-size: 11px; color: var(--accent);">
+                            🎯 مخاطب: کارآگاه «${escapeHtml(w.targetPlayerNickname)}»
+                        </div>
+                    ` : ''}
+
+                    ${w.isSelfInference ? `
+                        <span style="font-size: 10px; color: var(--warning);">⚠️ این مطلب استنتاج شخصی کارآگاه است (مدرک قطعی نیست).</span>
+                    ` : ''}
+
+                    ${w.answerText ? `
+                        <div style="background: var(--surface); padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); font-size: 11.5px; margin-top: 4px;">
+                            💬 <b>پاسخ عمومی کارآگاه:</b> ${escapeHtml(w.answerText)}
+                        </div>
+                    ` : ''}
+
+                    ${(w.willType === 'QUESTION' && w.targetPlayerId === realPlayers[0].id && !w.answerText) ? `
+                        <div style="display: flex; gap: 6px; margin-top: 6px;">
+                            <input class="input-field" id="willAnsInput_${w.id}" placeholder="پاسخ عمومی خود به این سوال را بنویسید..." style="font-size: 11px; padding: 6px 8px; flex: 1;" />
+                            <button class="btn btn-sm" onclick="answerWillQuestionPrompt('${w.id}')" style="font-size: 11px; padding: 6px 10px;">ارسال پاسخ</button>
+                        </div>
+                    ` : ''}
+                `;
+                container.appendChild(item);
+            });
+        }
+        modal.classList.add('active');
+    }
+
+    function closePublishedWillsModal() {
+        playSfx('click');
+        document.getElementById('publishedWillsModal')?.classList.remove('active');
+    }
+
+    function answerWillQuestionPrompt(willId) {
+        const input = document.getElementById(`willAnsInput_${willId}`);
+        const text = input?.value?.trim();
+        if (!text) return;
+
+        const will = publishedWills.find(w => w.id === willId);
+        if (will) {
+            will.answerText = text;
+            playSfx('click');
+            groupChatMessages.push({
+                sender: `پاسخ وصیت‌نامه ${myNickname}`,
+                text: `💬 پاسخ به سوال وصیت‌نامه «${will.playerNickname}»: "${text}"`,
+                isMe: true,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+            renderChatMessages();
+            openPublishedWillsModal(); // re-render modal
+            saveActiveCaseState();
+        }
+    }
+
+    // --- 6. NAVIGATION ---
     function goToScreen(screenName) {
         playSfx('click');
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -2485,6 +3094,8 @@
     // --- 10. QUESTION CREATION (MANUAL ONLY + SUGGESTIONS + SAVED QUESTIONS) ---
     function beginQuestionPhase() {
         playSfx('card_deal');
+        // Initialize Joker Role & Asymmetric Objective!
+        initJokerRole();
         // Start 8-hour running clock!
         if (!roomStartTime) {
             startRoomClock();
@@ -2793,6 +3404,38 @@
         `;
     }
 
+    
+    function handlePlayerElimination(playerId) {
+        realPlayers.forEach(p => {
+            if (p.id === playerId) p.isEliminated = true;
+        });
+
+        // 1. Eligible elimination accounting for Joker:
+        const isJoker = (playerId === jokerPlayerId);
+        if (isJoker) {
+            jokerStatus = 'LOST';
+        } else if (!countedEliminations.has(playerId)) {
+            countedEliminations.add(playerId);
+            eligibleEliminationCount++;
+            updateJokerTrackerDisplay();
+        }
+
+        // 2. Check Joker Victory Threshold:
+        if (eligibleEliminationCount >= jokerTarget && jokerStatus === 'ACTIVE') {
+            triggerJokerVictory(jokerPlayerId, eligibleEliminationCount, jokerTarget);
+            return;
+        }
+
+        // 3. Offer Will to the eliminated player:
+        if (playerId === realPlayers[0].id) {
+            if (!playerWillSubmitted) {
+                openWillCreationModal();
+            } else {
+                goToScreen('elimination');
+            }
+        }
+    }
+
     // --- 13. DEDUCTION & MYSTERY BOARD (SINGLE SUSPECT ONLY) ---
     function openDeductionModal(challengeNum) {
         playSfx('click');
@@ -2888,7 +3531,7 @@
             saveActiveCaseState('mystery-board');
 
             if (mistakes >= currentMaxMistakes) {
-                goToScreen('elimination');
+                handlePlayerElimination(realPlayers[0].id);
             }
         }
     }
@@ -3037,6 +3680,14 @@
         currentMaxMistakes = 3;
         overtimeCount = 0;
         solvedMysteries.clear();
+        jokerPlayerId = null;
+        jokerTarget = 0;
+        eligibleEliminationCount = 0;
+        jokerStatus = 'ACTIVE';
+        countedEliminations = new Set();
+        publishedWills = [];
+        playerWillSubmitted = false;
+        updateWillBadgeCount();
         realPlayers[0].rightGuesses = 0;
         realPlayers[0].wrongGuesses = 0;
         clearActiveCaseState();

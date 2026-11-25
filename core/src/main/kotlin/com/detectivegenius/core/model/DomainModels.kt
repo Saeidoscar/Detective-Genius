@@ -24,6 +24,51 @@ enum class ChallengeType {
 }
 
 @Serializable
+enum class JokerStatus {
+    ACTIVE,
+    WON,
+    LOST
+}
+
+@Serializable
+enum class GameWinnerType {
+    NONE,
+    REGULAR,
+    JOKER
+}
+
+@Serializable
+enum class WillStatus {
+    UNAVAILABLE,
+    PENDING,
+    SUBMITTED,
+    SKIPPED,
+    EXPIRED
+}
+
+@Serializable
+enum class WillType {
+    ACCUSATION,
+    REVELATION,
+    QUESTION
+}
+
+@Serializable
+data class WillRecord(
+    val id: String,
+    val playerId: String,
+    val playerNickname: String,
+    val playerAvatarId: String,
+    val willType: WillType,
+    val targetPlayerId: String? = null,
+    val targetPlayerNickname: String? = null,
+    val payloadText: String,
+    val answerText: String? = null,
+    val isSelfInference: Boolean = false,
+    val submittedAt: Long = System.currentTimeMillis()
+)
+
+@Serializable
 data class Player(
     val id: String,
     val nickname: String,
