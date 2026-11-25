@@ -499,6 +499,92 @@
         }
 
         
+        
+        /* Animated Notification Toasts & Badges */
+        #gameNotificationCenter {
+            position: fixed;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            width: 92%;
+            max-width: 440px;
+            pointer-events: none;
+        }
+        .game-toast {
+            pointer-events: auto;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.96);
+            backdrop-filter: blur(12px);
+            border: 1.5px solid var(--accent);
+            border-radius: 16px;
+            padding: 12px 14px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 16px rgba(6, 182, 212, 0.25);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: toastEnter 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            transition: all 0.25s ease;
+        }
+        .game-toast.toast-exit {
+            animation: toastExit 0.3s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
+        }
+        .game-toast.toast-error {
+            border-color: var(--error);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(239, 68, 68, 0.35);
+            animation: toastEnter 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, toastShake 0.4s ease 0.35s;
+        }
+        .game-toast.toast-success {
+            border-color: var(--success);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(16, 185, 129, 0.35);
+        }
+        .game-toast.toast-warning {
+            border-color: var(--warning);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(245, 158, 11, 0.35);
+        }
+        .game-toast.toast-joker {
+            border-color: #C084FC;
+            background: linear-gradient(135deg, rgba(88, 28, 135, 0.95), rgba(15, 23, 42, 0.98));
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 25px rgba(168, 85, 247, 0.45);
+        }
+        .game-toast.toast-will {
+            border-color: var(--gold);
+            background: linear-gradient(135deg, rgba(161, 98, 7, 0.9), rgba(15, 23, 42, 0.98));
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 25px rgba(234, 179, 8, 0.45);
+        }
+
+        @keyframes toastEnter {
+            from {
+                opacity: 0;
+                transform: translateY(-40px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        @keyframes toastExit {
+            from {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.9);
+            }
+        }
+        @keyframes toastShake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px) rotate(-1deg); }
+            40% { transform: translateX(6px) rotate(1deg); }
+            60% { transform: translateX(-4px) rotate(-0.5deg); }
+            80% { transform: translateX(4px) rotate(0.5deg); }
+        }
+
         /* Joker & Will System Styles */
         .joker-gradient-card {
             background: linear-gradient(135deg, rgba(88, 28, 135, 0.45), rgba(15, 23, 42, 0.85));
@@ -576,6 +662,8 @@
     </style>
 </head>
 <body class="rtl-mode">
+    <!-- Animated Notification Center for all in-game messages -->
+    <div id="gameNotificationCenter"></div>
 <div class="screen-viewport">
 
     <!-- Top App Header -->
@@ -602,6 +690,12 @@
             <img src="images/logo.png" alt="Detective Genius Official Logo" style="width: 145px; height: 145px; object-fit: contain; filter: drop-shadow(0 6px 20px rgba(6, 182, 212, 0.45)); border-radius: 20px;">
             <h1 style="font-size: 24px; font-weight: 800;" data-i18n="home_title">کارآگاه نابغه</h1>
             <p style="color: var(--accent); font-size: 13px; font-weight: 600;" data-i18n="home_subtitle">بازی معمایی و استنتاج اجتماعی آفلاین</p>
+            <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(6, 182, 212, 0.12); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 20px; padding: 4px 12px; cursor: pointer; margin-top: 2px;" onclick="copyBadgeIdToClipboard()">
+                <span style="font-size: 14px;">🪪</span>
+                <span style="font-size: 11.5px; color: var(--text-secondary);" data-i18n="profile_badge_label">نشان کارآگاهی تو:</span>
+                <b style="font-family: monospace; color: var(--accent); font-size: 12px; letter-spacing: 0.5px;" id="homeBadgeIdDisplay">DET-8492</b>
+                <span style="font-size: 10px; color: var(--text-muted);">(کپی)</span>
+            </div>
         </div>
 
         <!-- Active Case Card (If player disconnected Wi-Fi / left app) -->
@@ -692,6 +786,25 @@
             </div>
         </div>
 
+        <!-- Unique Detective Badge Card for Zero-Loss Reconnection -->
+        <div class="card card-elevated" style="border: 1.5px solid var(--accent); background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(15, 23, 42, 0.85));">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 28px;">🪪</span>
+                    <div>
+                        <span style="font-size: 11px; color: var(--accent); font-weight: 800;" data-i18n="profile_badge_label">نشان کارآگاهی انحصاری شما:</span>
+                        <h3 style="font-size: 18px; font-weight: 900; font-family: monospace; color: #FFF; letter-spacing: 1px;" id="profileBadgeIdDisplay">DET-8492</h3>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="copyBadgeIdToClipboard()" style="font-size: 11px; padding: 6px 12px;" data-i18n="btn_copy_badge">
+                    📋 کپی نشان
+                </button>
+            </div>
+            <p style="font-size: 11px; color: var(--text-secondary); margin: 6px 0 0; line-height: 1.5;" data-i18n="profile_badge_desc">
+                این نشان مثل اثر انگشت کارآگاهی توئه! اگه وسط بازی برق رفت، گوشیت خاموش شد یا به هر دلیلی از بازی دراومدی، کافیه با همین نشان برگردی تا ۱۰۰٪ سوالات، جواب‌ها، پاکت مدارک و حدس‌هات بدون اینکه یه سرنخ بپره لود بشن!
+            </p>
+        </div>
+
         <div class="card card-elevated">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
@@ -743,8 +856,20 @@
             <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;" data-i18n="onboarding_rule_4_desc">هر بازیکن دقیقاً ۱ پاکت مدارک دریافت می‌کند شامل یک مجموعه از ۳ سوال و پاسخ‌های متناظر آنها که خطاب به یکدیگر نوشته شده‌اند.</p>
         </div>
         <div class="card">
-            <h3 style="color: var(--accent); font-size: 15px;" data-i18n="onboarding_rule_5_title">۵. کشف ۴ راز پرونده</h3>
-            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;" data-i18n="onboarding_rule_5_desc">با بررسی پاسخ‌ها و گفتگو، ۴ معمای انفرادی را حل کنید: چه کسی به سوالات من پاسخ داد؟ من به سوالات چه کسی پاسخ دادم؟ نویسنده پاکت من کیست؟ و پاسخ‌دهنده پاکت من کیست؟ با ۳ اشتباه پرونده را می‌بازید!</p>
+            <h3 style="color: var(--accent); font-size: 15px;" data-i18n="onboarding_rule_5_title">۵. کشف ۴ راز پرونده با گفتگو و بی‌سیم</h3>
+            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;" data-i18n="onboarding_rule_5_desc">توی بی‌سیم یا دورهمی با بچه‌ها کل‌کل کن و این ۴ معما رو کشف کن: کی به سوالاتم جواب داد؟ من به سوالات کی جواب دادم؟ سوالات پاکتم مال کیه؟ و کی جوابشون رو داده؟ فقط حواست باشه، ۳ بار اشتباه حدس بزنی می‌سوزی!</p>
+        </div>
+        <div class="card" style="border-color: #A855F7;">
+            <h3 style="color: #C084FC; font-size: 15px;" data-i18n="onboarding_rule_6_title">۶. نقش مخفی و مرموز جوکر 🃏</h3>
+            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;" data-i18n="onboarding_rule_6_desc">تو هر دست، یه نفر مخفیانه جوکر میشه! جوکر نیازی به حل معماها نداره؛ ماموریتش اینه که بقیه رو گمراه کنه تا به تعداد هدف تعیین‌شده حذف بشن و جوکر تنهایی برنده شه!</p>
+        </div>
+        <div class="card" style="border-color: var(--gold);">
+            <h3 style="color: var(--gold); font-size: 15px;" data-i18n="onboarding_rule_7_title">۷. وصیت‌نامه کارآگاه حذف‌شده 📜</h3>
+            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;" data-i18n="onboarding_rule_7_desc">اگه ۳ تا اشتباه کردی و حذف شدی، نگران نباش! ۴۵ ثانیه وقت داری یه وصیت‌نامه باحال (اتهام زدن، افشای سرنخ، یا سوال‌پیچ کردن یکی از رفقا) بنویسی تا تو بی‌سیم پخش بشه!</p>
+        </div>
+        <div class="card" style="border-color: var(--accent);">
+            <h3 style="color: var(--accent); font-size: 15px;" data-i18n="onboarding_rule_8_title">۸. نشان کارآگاهی و برگشت بدون سوختن مدارک 🪪</h3>
+            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;" data-i18n="onboarding_rule_8_desc">هر کارآگاه یه کد نشان اختصاصی داره (مثل DET-8492). حتی اگه گوشیت خاموش بشه یا کلاً از بازی دربیای، کافیه این کد رو بزنی تا تمام مدارک، پاکت و پیشرفتت دقیقاً مثل روز اول برگرده!</p>
         </div>
         <button class="btn" onclick="goToScreen('home')" data-i18n="btn_enter_bureau">ورود به اداره کارآگاهی</button>
     </div>
@@ -782,6 +907,18 @@
                 <label class="input-label" data-i18n="join_room_pin">شناسه پرونده / پین اتاق (Room ID)</label>
                 <input class="input-field" id="joinPinInput" value="DG-4829" dir="ltr" style="font-family: monospace; font-weight: 700;" />
             </div>
+
+            <!-- Optional Detective Badge ID for Zero-loss Reconnection -->
+            <div class="input-group" style="margin-top: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label class="input-label" data-i18n="join_room_badge_id">نشان کارآگاهی شما (جهت بازگشت و بازیابی مدارک)</label>
+                    <span style="font-size: 10px; color: var(--accent); cursor: pointer;" onclick="pasteBadgeIdFromStorage()" data-i18n="btn_use_my_badge">نشان من 🪪</span>
+                </div>
+                <input class="input-field" id="joinPlayerBadgeInput" dir="ltr" style="font-family: monospace; font-weight: 700;" placeholder="مثال: DET-8492" />
+                <p style="font-size: 10.5px; color: var(--text-muted); margin: 3px 0 0; line-height: 1.4;" data-i18n="join_room_badge_hint">
+                    اگه قبلاً تو این اتاق بودی، این نشان رو وارد کن تا دقیقاً همون پاکت مدارک، جواب‌ها و وضعیتت بدون هیچ نقصی بازیابی بشه.
+                </p>
+            </div>
         </div>
 
         <button class="btn" onclick="startLobby(false)" data-i18n="join_room_connect_btn">
@@ -797,8 +934,13 @@
     <div id="screen-lobby" class="screen">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-                <h2 data-i18n="lobby_title" style="font-size: 18px;">اداره تحقیقات پرونده</h2>
-                <span style="font-size: 12px; color: var(--accent); font-weight: 700;" id="lobbyPinDisplay">شناسه اتاق: DG-4829</span>
+                <h2 data-i18n="lobby_title" style="font-size: 18px;">اتاق انتظار کارآگاهان</h2>
+                <div style="display: flex; gap: 8px; align-items: center; margin-top: 2px;">
+                    <span style="font-size: 12px; color: var(--accent); font-weight: 700;" id="lobbyPinDisplay">شناسه اتاق: DG-4829</span>
+                    <span class="tag-pill" style="cursor: pointer; font-family: monospace; font-size: 10.5px; background: rgba(6, 182, 212, 0.15); color: var(--accent); border: 1px solid rgba(6, 182, 212, 0.35);" onclick="copyBadgeIdToClipboard()" title="کپی نشان">
+                        🪪 <span id="lobbyBadgeDisplay">DET-8492</span>
+                    </span>
+                </div>
             </div>
             <span style="font-size: 13px; color: var(--text-secondary); font-weight: 700;" id="lobbyPlayerCount">کارآگاهان: ۱ / ۲۰</span>
         </div>
@@ -1013,8 +1155,13 @@
     <div id="screen-mystery-board" class="screen">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-                <h2 data-i18n="mb_title" style="font-size: 18px;">تخته اسرار و معماها</h2>
-                <span style="font-size: 12px; color: var(--text-secondary);" id="mbMistakeText">اشتباهات: ۰ / ۳</span>
+                <h2 data-i18n="mb_title" style="font-size: 18px;">تخته کارآگاهی و معماها</h2>
+                <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px;">
+                    <span style="font-size: 11px; color: var(--text-secondary);" id="mbMistakeText">اشتباهات: ۰ / ۳</span>
+                    <span class="tag-pill" style="cursor: pointer; font-family: monospace; font-size: 10px; background: rgba(6, 182, 212, 0.15); color: var(--accent); border: 1px solid rgba(6, 182, 212, 0.35);" onclick="copyBadgeIdToClipboard()" title="کپی نشان">
+                        🪪 <span id="mbBadgeDisplay">DET-8492</span>
+                    </span>
+                </div>
             </div>
             <div class="mistake-dots" id="mbMistakeDots">
                 <!-- Dynamically populated based on maxMistakes -->
@@ -1530,146 +1677,142 @@
         fa: {
             app_brand: "کارآگاه نابغه",
             nav_profile: "پروفایل",
-            home_title: "کارآگاه نابغه",
-            home_subtitle: "بازی معمایی و استنتاج اجتماعی آفلاین",
-            home_create_room: "ایجاد اتاق پرونده (میزبانی)",
-            home_join_room: "ورود به اتاق دوستان",
-            home_profile: "پروفایل و سوالات",
-            home_how_to_play: "راهنمای بازی",
-            home_settings: "تنظیمات",
-            home_edit_profile_hint: "لمس برای ویرایش پرونده و سوالات ذخیره‌شده ✏️",
-            profile_title: "پرونده و پروفایل کارآگاه",
-            profile_nickname: "نام کارآگاهی شما",
+            home_title: "کارآگاه نابغه 🕵️",
+            home_subtitle: "بازی دورهمی، حدس و استنتاج فوق‌العاده مهیج (کاملاً آفلاین!)",
+            home_create_room: "🎮 ساخت اتاق پرونده (میزبانی)",
+            home_join_room: "🚪 ورود به بازی رفقا",
+            home_profile: "🪪 پرونده، نشان و سوالات",
+            home_how_to_play: "📖 راهنمای دورهمی بازی",
+            home_settings: "⚙️ تنظیمات و صداها",
+            home_edit_profile_hint: "لمس کن تا اسمت، عکست و سوالات ذخیره‌شده‌ت رو تغییر بدی ✏️",
+            profile_title: "پرونده و هویت کارآگاه",
+            profile_nickname: "اسمت تو بازی چی باشه؟",
             profile_avatar_label: "تصویر نمایه کارآگاه:",
-            profile_saved_q_title: "بانک سوالات ذخیره‌شده من",
-            profile_saved_q_subtitle: "این سوالات در حافظه دستگاه ذخیره شده و در بازی قابل بارگذاری هستند",
-            profile_reset_q_btn: "🔄 بازنشانی به سوالات پیشنهادی پیش‌فرض",
-            profile_save_btn: "ذخیره پرونده و بازگشت",
-            onboarding_main_title: "راهنمای قوانین کارآگاه نابغه",
-            onboarding_rule_1_title: "۱. ایجاد یا ورود به اتاق",
-            onboarding_rule_1_desc: "حداقل ۴ کارآگاه با تعداد زوج (۴، ۶، ۸، ...) وارد اتاق می‌شوند. یک نفر میزبان پرونده است و همگی بر بستر وای‌فای محلی یا هات‌اسپورت بدون نیاز به اینترنت بازی می‌کنند.",
-            onboarding_rule_2_title: "۲. طرح دستی ۳ سوال",
-            onboarding_rule_2_desc: "هر کارآگاه ۳ سوال زیرکانه به صورت دستی می‌نویسد (یا از بانک سوالات ذخیره‌شده بارگذاری می‌کند). سوالات شما به صورت کاملاً محرمانه به کارآگاه دیگری تحویل داده می‌شود.",
-            onboarding_rule_3_title: "۳. پاسخ کاملاً دستی به بازجویی",
-            onboarding_rule_3_desc: "شما ۳ سوال ناشناس دریافت می‌کنید و به هرکدام پاسخی کاملاً دستی، منحصر‌به‌فرد و با دقت می‌دهید.",
-            onboarding_rule_4_title: "۴. دریافت ۱ پاکت مهروموم‌شده مدارک",
-            onboarding_rule_4_desc: "هر بازیکن دقیقاً ۱ پاکت مدارک دریافت می‌کند شامل یک مجموعه از ۳ سوال و پاسخ‌های متناظر آنها که خطاب به یکدیگر نوشته شده‌اند.",
-            onboarding_rule_5_title: "۵. کشف ۴ راز پرونده",
-            onboarding_rule_5_desc: "با بررسی پاسخ‌ها و گفتگو، ۴ معمای انفرادی را حل کنید: چه کسی به سوالات من پاسخ داد؟ من به سوالات چه کسی پاسخ دادم؟ نویسنده پاکت من کیست؟ و پاسخ‌دهنده پاکت من کیست؟ با ۳ اشتباه پرونده را می‌بازید!",
-            btn_enter_bureau: "ورود به اداره کارآگاهی",
-            join_room_title: "پیوستن به پرونده",
-            join_room_nickname: "نام کارآگاهی شما",
-            join_room_host_ip: "آدرس IP میزبان (در وای‌فای محلی)",
-            join_room_pin: "کد پین ۴ رقمی اتاق",
-            join_room_connect_btn: "اتصال به اتاق پرونده",
-            lobby_title: "اداره تحقیقات پرونده",
+            profile_badge_label: "نشان کارآگاهی انحصاری تو:",
+            btn_copy_badge: "📋 کپی نشان",
+            profile_badge_desc: "این کد مثل اثر انگشت کارآگاهی توئه! اگه گوشیت خاموش شد یا به هر دلیلی از بازی دراومدی، کافیه با همین نشان برگردی تا ۱۰۰٪ سوالات، جواب‌ها، پاکت مدارک و حدس‌هات بدون اینکه یه سرنخ بپره لود بشن!",
+            profile_saved_q_title: "بانک سوالات باحال من",
+            profile_saved_q_subtitle: "اینجا سوالات زیرکانه‌ت رو ذخیره کن تا وسط بازی راحت لودشون کنی!",
+            profile_reset_q_btn: "🔄 بازنشانی به سوالات پیشنهادی باحال",
+            profile_save_btn: "ذخیره و بازگشت به خانه",
+            onboarding_main_title: "راهنمای ساده و دورهمی کارآگاه نابغه 🕵️✨",
+            onboarding_rule_1_title: "۱. جمع شدن رفقا دور هم (۴ تا ۲۰ نفر)",
+            onboarding_rule_1_desc: "تعداد بازیکنان باید زوج باشه (۴، ۶، ۸، ...). یه نفر میزبان میشه و بقیه با هات‌اسپات یا مودم وصل میشن؛ کاملاً رایگان و بدون مصرف حتی یک کیلوبایت اینترنت!",
+            onboarding_rule_2_title: "۲. طرح ۳ تا سوال هوشمندانه و شخصی",
+            onboarding_rule_2_desc: "هر بازیکن ۳ تا سوال زیرکانه دستی می‌نویسه (یا از ذخیره‌شده‌هاش میاره). خیالت راحت، هیچ‌کس نمی‌فهمه این سوال‌ها مال توئه!",
+            onboarding_rule_3_title: "۳. جواب دادن کاملاً دستی و زیرکانه",
+            onboarding_rule_3_desc: "۳ تا سوال ناشناس از یه کارآگاه دیگه دستت می‌رسه و باید به همه‌شون جواب بدی. پاسخی بده که بعداً بتونی با حرف کشیدن از رفقا هویت‌ها رو حدس بزنی!",
+            onboarding_rule_4_title: "۴. رسیدن تنها ۱ پاکت مهروموم مدارک",
+            onboarding_rule_4_desc: "به هر کارآگاه دقیقاً ۱ پاکت مدارک می‌رسه که توش ۳ تا سوال و جواب‌های متناظرشونه که دو نفر دیگه برای هم نوشتن!",
+            onboarding_rule_5_title: "۵. کشف ۴ راز پرونده با گفتگو و بی‌سیم",
+            onboarding_rule_5_desc: "توی بی‌سیم یا دورهمی با بچه‌ها کل‌کل کن و این ۴ معما رو کشف کن: کی به سوالاتم جواب داد؟ من به سوالات کی جواب دادم؟ سوالات پاکتم مال کیه؟ و کی جوابشون رو داده؟ فقط حواست باشه، ۳ بار اشتباه حدس بزنی می‌سوزی!",
+            onboarding_rule_6_title: "۶. نقش مخفی و مرموز جوکر 🃏",
+            onboarding_rule_6_desc: "تو هر دست، یه نفر مخفیانه جوکر میشه! جوکر نیازی به حل معماها نداره؛ ماموریتش اینه که بقیه رو گمراه کنه تا به تعداد هدف تعیین‌شده حذف بشن و جوکر تنهایی برنده شه!",
+            onboarding_rule_7_title: "۷. وصیت‌نامه کارآگاه حذف‌شده 📜",
+            onboarding_rule_7_desc: "اگه ۳ تا اشتباه کردی و حذف شدی، نگران نباش! ۴۵ ثانیه وقت داری یه وصیت‌نامه باحال (اتهام زدن، افشای سرنخ، یا سوال‌پیچ کردن یکی از رفقا) بنویسی تا تو بی‌سیم پخش بشه!",
+            onboarding_rule_8_title: "۸. نشان کارآگاهی و برگشت بدون سوختن مدارک 🪪",
+            onboarding_rule_8_desc: "هر کارآگاه یه کد نشان اختصاصی داره (مثل DET-8492). حتی اگه گوشیت خاموش بشه یا کلاً از بازی دربیای، کافیه این کد رو بزنی تا تمام مدارک، پاکت و پیشرفتت دقیقاً مثل روز اول برگرده!",
+            btn_enter_bureau: "بزن بریم تو دل پرونده! 🚀",
+            join_room_title: "ورود به بازی رفقا 🚪",
+            join_room_nickname: "اسمت تو بازی",
+            join_room_host_ip: "آدرس IP گوشی میزبان",
+            join_room_pin: "کد ۴ رقمی اتاق",
+            join_room_badge_id: "نشان کارآگاهی شما (جهت بازگشت و بازیابی مدارک)",
+            btn_use_my_badge: "نشان من 🪪",
+            join_room_badge_hint: "اگه قبلاً تو این اتاق بودی، این نشان رو وارد کن تا دقیقاً همون پاکت مدارک، جواب‌ها و وضعیتت بدون هیچ نقصی بازیابی بشه.",
+            join_room_connect_btn: "🔗 ورود به جمع کارآگاهان",
+            lobby_title: "اتاق انتظار کارآگاهان",
             lobby_players_heading: "کارآگاهان حاضر در این پرونده:",
-            lobby_real_players_note: "بدون ربات فرضی",
-            lobby_add_friend_title: "➕ افزودن کارآگاه جدید (دوستان شما)",
-            btn_add_player: "افزودن",
-            lobby_share_btn: "📢 اشتراک کد اتاق",
-            btn_exit_lobby: "خروج",
-            lobby_start_game_btn: "شروع عملیات کارآگاهی",
-            qc_title: "طرح دستی ۳ سوال پرونده",
-            qc_instruction_banner: "✍️ توجه: سوالات باید کاملاً دستی نوشته شوند. می‌توانید از پیشنهادات ایده بگیرید یا سوالات ذخیره‌شده در پروفایل را بارگذاری کنید.",
+            lobby_real_players_note: "همه دوستان واقعی‌اند (بدون ربات)",
+            lobby_add_friend_title: "➕ افزودن کارآگاه جدید (دوستان دورهمی)",
+            btn_add_player: "افزودن رفیق",
+            lobby_share_btn: "📢 اشتراک کد اتاق با رفقا",
+            btn_exit_lobby: "خروج از اتاق",
+            lobby_start_game_btn: "🚀 شروع رسمی پرونده!",
+            qc_title: "طرح ۳ سوال زیرکانه ✍️",
+            qc_instruction_banner: "رفیق، سوالاتت رو دستی بنویس یا از بانک پروفایلت لود کن. سوالاتی بنویس که طرف مجبور شه یه ردپایی از خودش به جا بذاره!",
             qc_btn_load_saved: "📥 بارگذاری از پروفایل",
-            qc_btn_suggestions: "💡 مشاهده پیشنهادات",
-            qc_btn_save_to_profile: "ذخیره در پروفایل",
-            qc_suggestions_heading: "💡 سوالات پیشنهادی (لمس کنید تا کپی شود):",
-            qc_q1_label: "سوال اول (دستی بنویسید)",
-            qc_q2_label: "سوال دوم (دستی بنویسید)",
-            qc_q3_label: "سوال سوم (دستی بنویسید)",
-            qc_submit_btn: "مهروموم و ثبت ۳ سوال",
-            ans_title: "پاسخ به سوالات بازجویی",
-            ans_anonymous_tag: "سوالات ناشناس",
-            ans_instruction_banner: "✍️ توجه: شما ۳ سوال ناشناس دریافت کرده‌اید. پاسخ‌ها باید کاملاً دستی و توسط خودتان تایپ شوند.",
+            qc_btn_suggestions: "💡 ایده‌های پیشنهادی",
+            qc_btn_save_to_profile: "ذخیره در پروفایل من",
+            qc_suggestions_heading: "💡 سوالات پیشنهادی باحال (لمس کن تا کپی بشه):",
+            qc_q1_label: "سوال اول (دستی بنویس)",
+            qc_q2_label: "سوال دوم (دستی بنویس)",
+            qc_q3_label: "سوال سوم (دستی بنویس)",
+            qc_submit_btn: "✉️ مهروموم و ارسال سوالات",
+            ans_title: "بازجویی و پاسخ به سوالات 📝",
+            ans_anonymous_tag: "سوالات ناشناس کارآگاهی",
+            ans_instruction_banner: "این ۳ سوال ناشناس به دستت رسیده. با دقت و دستی جواب بده تا بعداً بتونی از جوابات برای پیدا کردن رفقا استفاده کنی!",
             ans_q1_header: "سوال اول (ناشناس):",
             ans_q2_header: "سوال دوم (ناشناس):",
             ans_q3_header: "سوال سوم (ناشناس):",
-            ans_submit_btn: "ارسال پاسخ‌های مهروموم‌شده",
-            dist_title: "تحویل بسته مدارک محرمانه",
-            dist_subtitle: "مدارک بررسی شده و پاکت مهروموم به کیف پرونده شما منتقل شد...",
-            dist_received_notice: "شما دقیقاً ۱ پاکت مهروموم‌شده مدارک دریافت کردید!",
-            dist_package_desc: "این پاکت شامل یک مجموعه از ۳ سوال و پاسخ‌های متناظر است که دو کارآگاه دیگر خطاب به یکدیگر نوشته‌اند.",
-            dist_open_packages: "گشودن پاکت مدارک و شروع استنتاج",
-            mb_title: "تخته اسرار و معماها",
+            ans_submit_btn: "✉️ ارسال پاسخ‌های محرمانه",
+            dist_title: "تحویل مدارک محرمانه پرونده 📂",
+            dist_subtitle: "پاکت مهروموم به دستت رسید... آماده استنتاج باش!",
+            dist_received_notice: "شما دقیقاً ۱ پاکت مهروموم مدارک دریافت کردید!",
+            dist_package_desc: "توی این پاکت ۳ تا سوال و جواب‌های متناظرشونه که دو نفر دیگه از رفقا برای هم نوشتن.",
+            dist_open_packages: "گشودن پاکت مدارک و ورود به تخته معما 🔍",
+            mb_title: "تخته کارآگاهی و معماها 🔍",
             mb_inspect_packages: "بررسی پاکت مدارک (۱)",
-            chat_title: "بی‌سیم ارتباطات",
-            mb_q1_title: "معمای ۱: چه کسی به سوالات من پاسخ داده؟",
-            mb_q1_desc: "کارآگاهی که به ۳ سوال طرح‌شده توسط شما پاسخ داده است را شناسایی کنید.",
-            mb_q2_title: "معمای ۲: من به سوالات چه کسی پاسخ دادم؟",
-            mb_q2_desc: "کارآگاهی که شما به ۳ سوال او پاسخ داده‌اید را شناسایی کنید.",
-            mb_q3_title: "معمای ۳: نویسنده سوالات پاکت مدارک من کیست؟",
-            mb_q3_desc: "کارآگاهی که ۳ سوال موجود در پاکت مدارک شما را نوشته است شناسایی کنید.",
-            mb_q4_title: "معمای ۴: پاسخ‌دهنده سوالات پاکت مدارک من کیست؟",
-            mb_q4_desc: "کارآگاهی که به ۳ سوال موجود در پاکت مدارک شما پاسخ داده است شناسایی کنید.",
-            mb_solve_action: "ثبت حدس کارآگاهی",
-            badge_unsolved: "حل نشده",
-            pv_title: "پاکت مدارک محرمانه",
-            pv_single_notice: "تنها پاکت تحویل‌شده به شما",
-            chat_public_tab: "اتاق عمومی",
-            chat_private_tab: "بی‌سیم محرمانه",
-            chat_partner_label: "مکالمه مستقیم با:",
-            victory_title: "پرونده مختومه شد!",
-            victory_all_solved: "تمام ۴ راز بزرگ کشف شدند!",
-            elim_title: "۳ اشتباه فاحش کارآگاهی!",
-            elim_subtitle: "شما از حل پرونده حذف شدید اما می‌توانید به عنوان تماشاگر گفتگو را دنبال کنید.",
-            elim_note: "در پرونده‌های واقعی، شواهد نادرست باعث دستگیری بی‌گناهان می‌شود.",
-            settings_title: "تنظیمات اداره پرونده",
-            settings_language: "زبان اصلی برنامه (Language)",
-            settings_theme: "پوسته ظاهری",
-            settings_sound_fx: "جلوه‌های صوتی",
+            chat_title: "بی‌سیم دورهمی",
+            mb_q1_title: "معمای ۱: کی به سوالات من جواب داد؟",
+            mb_q1_desc: "حدس بزن کدوم کارآگاه به ۳ تا سوال دست‌نویس خودت جواب داده.",
+            mb_q2_title: "معمای ۲: من به سوالات کی جواب دادم؟",
+            mb_q2_desc: "حدس بزن سوالاتی که اول بازی جواب دادی کار دست کی بوده.",
+            mb_q3_title: "معمای ۳: سوالات پاکت دستم مال کیه؟",
+            mb_q3_desc: "نویسنده اصلی ۳ تا سوال موجود در پاکت مدارکت رو پیدا کن.",
+            mb_q4_title: "معمای ۴: کی به سوالات پاکت دستم جواب داده؟",
+            mb_q4_desc: "پاسخ‌دهنده ۳ تا سوال موجود در پاکت مدارکت رو لو بده.",
+            mb_solve_action: "🎯 ثبت حدس قطعی",
+            badge_unsolved: "هنوز حل نشده",
+            pv_title: "پاکت محرمانه مدارک",
+            pv_single_notice: "تنها پاکت تحویل‌شده به شما در این پرونده",
+            chat_public_tab: "بی‌سیم عمومی",
+            chat_private_tab: "پچ‌پچ محرمانه",
+            chat_partner_label: "صحبت درگوشی با:",
+            victory_title: "دمت گرم کارآگاه نابغه! 🏆",
+            victory_all_solved: "پرونده رو مثل آب خوردن بستی! 🥳",
+            victory_summary: "✓ کارآگاهی که به سوالاتت جواب داد کشف شد<br>✓ کارآگاهی که به سوالاتش جواب دادی لو رفت<br>✓ نویسنده سوالات پاکتت پیدا شد<br>✓ پاسخ‌دهنده سوالات پاکتت هم دستگیر شد!",
+            btn_play_again: "شروع یه پرونده جدید و جذاب 🔄",
+            elim_title: "ای داد بیداد! ۳ تا سوتی دادی! 💥",
+            elim_subtitle: "متاسفانه از حل مستقیم پرونده کنار رفتی، ولی وقتشه وصیت‌نامه‌ت رو بذاری و تو بی‌سیم بازی رو تماشا کنی!",
+            elim_note: "تو پرونده‌های جنایی واقعی هم ۳ تا حدس الکی متهم اصلی رو فراری میده!",
+            btn_spectator_chat: "ورود به بی‌سیم تماشاگر 📡",
+            btn_try_again: "تلاش دوباره 🔄",
+            settings_title: "تنظیمات بازی",
+            settings_language: "زبان بازی (Language)",
+            settings_sound_fx: "افکت‌های صوتی و هیجان بازی",
             settings_haptics: "لرزش و بازخورد لمسی (Haptic)",
-            btn_back: "بازگشت →",
-            btn_cancel: "انصراف",
+            btn_back: "بازگشت",
+            btn_cancel: "بی‌خیال",
             btn_close: "بستن",
             btn_add: "افزودن",
-            btn_clear: "پاک کردن",
-            btn_send: "ارسال",
-            btn_play_again: "شروع پرونده جدید",
-            btn_try_again: "تلاش مجدد",
-            btn_spectator_chat: "ادامه تماشا در بی‌سیم",
-            modal_confirm_btn: "تأیید استنتاج",
+            modal_confirm_btn: "ثبت قطعی حدس",
             modal_load_q_title: "بارگذاری از سوالات ذخیره‌شده",
-            modal_load_q_hint: "روی هر سوال ضربه بزنید تا در یکی از جایگاه‌های خالی قرار گیرد:",
-            avatar_tray_label: "انتخاب نشان کارآگاهی:",
-            resume_case_title: "پرونده فعال در جریان",
-            btn_resume_case: "ادامه پرونده فعال",
-            btn_abandon_case: "انصراف",
+            modal_load_q_hint: "روی هر سوال ضربه بزن تا بره تو کادر خالی:",
+            faq_modal_title: "راهنمای اتصال دورهمی (وای‌فای و هات‌اسپات)",
             btn_network_faq: "راهنمای هات‌اسپات و شبکه",
-            btn_network_faq_short: "راهنما",
             faq_join_btn: "راهنمای اتصال و رفع خطای هات‌اسپات",
-            host_conn_type: "شبکه محلی آفلاین / هات‌اسپات",
-            host_conn_title: "اطلاعات اتصال میزبان",
-            host_ip_label: "آدرس آی‌پی شما (Host IP):",
-            host_room_id_label: "شناسه اختصاصی اتاق (Room ID):",
-            btn_copy_ip: "کپی IP",
-            btn_copy_room_id: "کپی شناسه",
-            host_conn_hint: "به دوستان بگویید به همین وای‌فای یا هات‌اسپات وصل شوند و این IP و شناسه اتاق را در «ورود به اتاق» وارد کنند.",
+            resume_case_title: "پرونده نیمه‌کاره داری رفیق! 🕵️",
+            home_resume_case_btn: "🚀 بازگشت به پرونده (حفظ مدارک)",
+            home_abandon_case_btn: "انصراف و پاک کردن",
             timer_running_label: "زمان باقی‌مانده پرونده (حداکثر ۸ ساعت):",
-            timer_overtime_badge: "⚡ وقت اضافه",
-            stat_right_guesses: "حدس‌های صحیح (اولویت ۱):",
-            stat_wrong_guesses: "خطاها (اولویت ۲):",
-            rule_timeout_note: "قانون ۸ ساعت: در صورت پایان زمان بدون برنده قطعی، اولویت ۱ با بیشترین حدس صحیح و اولویت ۲ با کمترین خطا برنده را تعیین می‌کند. در تساوی مجدد، ۱ ساعت وقت اضافه و ۳ حدس اعطا می‌شود.",
-            faq_modal_title: "راهنمای اتصال چندنفره و هات‌اسپات",
-            overtime_modal_title: "تساوی کارآگاهی و اعلام وقت اضافه!",
-            btn_continue_investigation: "ادامه عملیات در وقت اضافه",
-            joker_modal_title: "شما جوکر این پرونده هستید!",
-            btn_accept_joker_mission: "🃏 پذیرش ماموریت مخفی جوکر",
+            joker_modal_title: "ای شیطون! تو جوکر مخفی این دستی! 🃏",
+            btn_accept_joker_mission: "حله، من آماده‌م رفقا رو بپیچونم! 😎",
             joker_tracker_title: "ماموریت محرمانه: جوکر پرونده",
             joker_progress_label: "حذف‌های واجد شرایط:",
             joker_reveal_label: "افشای هویت جوکر این پرونده:",
-            joker_won_title: "🃏 پرونده به دست جوکر فتح شد!",
-            will_modal_title: "وصیت‌نامه نهایی کارآگاه",
-            will_modal_intro: "شما حذف شدید، اما یک فرصت نهایی برای تأثیرگذاری بر روند پرونده در اختیار دارید. دقیقاً یکی از ۳ اقدام زیر را انتخاب و ثبت کنید (غیرقابل ویرایش):",
-            will_tab_accusation: "🎯 اتهام نهایی",
-            will_tab_revelation: "💡 افشای نهایی",
-            will_tab_question: "❓ یک سوال آخر",
-            will_target_suspect_label: "انتخاب کارآگاه فعال مورد نظر:",
-            will_is_inference_label: "این یک استنتاج شخصی است (نه مدرک اثبات‌شده)",
-            btn_submit_will: "📜 ثبت و انتشار وصیت‌نامه",
-            btn_skip_will: "صرف‌نظر و ورود به تماشاگر",
+            joker_won_title: "🃏 جوکر همه‌تون رو دور زد و برد!",
+            will_modal_title: "آخرین حرف‌های کارآگاه (وصیت‌نامه) 📜",
+            will_modal_intro: "درسته حذف شدی رفیق، ولی هنوز می‌تونی سرنوشت پرونده رو عوض کنی! یکی از این ۳ تا حرکت رو انتخاب کن (غیرقابل ویرایش):",
+            will_tab_accusation: "🎯 اتهام به یکی از رفقا",
+            will_tab_revelation: "💡 افشای یه سرنخ طلایی",
+            will_tab_question: "❓ سوال‌پیچ کردن یکی از بچه‌ها",
+            will_target_suspect_label: "کارآگاه مورد نظرت رو انتخاب کن:",
+            will_is_inference_label: "این فقط استنتاج شخصیه (مدرک قطعی نیست)",
+            btn_submit_will: "📜 شلیک و انتشار وصیت‌نامه!",
+            btn_skip_will: "بی‌خیال، می‌خوام فقط تماشا کنم 🍿",
             will_feed_btn: "وصیت‌ها",
+            btn_continue_investigation: "ادامه عملیات در وقت اضافه"
         },
         en: {
             app_brand: "Detective Genius",
@@ -1891,6 +2034,78 @@
         ]
     };
 
+    
+    // --- NOTIFICATION CENTER & BADGE RECONNECTION SYSTEM ---
+    function showGameNotification(options) {
+        let msg = typeof options === 'string' ? options : options.message;
+        let title = options.title || null;
+        let type = options.type || 'info'; // 'info', 'success', 'warning', 'error', 'joker', 'will'
+        let icon = options.icon || (type === 'success' ? '🎉' : (type === 'error' ? '🚫' : (type === 'warning' ? '⚠️' : (type === 'joker' ? '🃏' : (type === 'will' ? '📜' : '💡')))));
+        let duration = options.duration || 3600;
+
+        const container = document.getElementById('gameNotificationCenter');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `game-toast toast-${type}`;
+        toast.innerHTML = `
+            <div style="font-size: 26px; flex-shrink: 0;">${icon}</div>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                ${title ? `<div style="font-size: 13px; font-weight: 800; color: #FFF;">${escapeHtml(title)}</div>` : ''}
+                <div style="font-size: 12px; color: #E2E8F0; line-height: 1.4; font-weight: 600;">${escapeHtml(msg)}</div>
+            </div>
+            <button style="background: none; border: none; color: var(--text-muted); font-size: 14px; cursor: pointer; padding: 4px;" onclick="this.parentElement.remove()">✕</button>
+        `;
+
+        container.appendChild(toast);
+        if (type === 'error') playSfx('mistake_buzz');
+        else if (type === 'success') playSfx('clue_found');
+        else playSfx('click');
+
+        setTimeout(() => {
+            toast.classList.add('toast-exit');
+            setTimeout(() => toast.remove(), 320);
+        }, duration);
+    }
+
+    // Override default browser alert with smooth animated toast!
+    window.alert = function(msg) {
+        showGameNotification({ message: String(msg), type: 'info' });
+    };
+
+    function updateBadgeDisplays() {
+        ['profileBadgeIdDisplay', 'lobbyBadgeDisplay', 'mbBadgeDisplay', 'homeBadgeIdDisplay'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = myPlayerBadgeId;
+        });
+        const joinBadgeInput = document.getElementById('joinPlayerBadgeInput');
+        if (joinBadgeInput && !joinBadgeInput.value) {
+            joinBadgeInput.value = myPlayerBadgeId;
+        }
+    }
+
+    function copyBadgeIdToClipboard() {
+        playSfx('click');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(myPlayerBadgeId);
+        }
+        showGameNotification({
+            title: currentLang === 'fa' ? "کپی شد! 🪪" : "Copied! 🪪",
+            message: currentLang === 'fa' ? `نشان کارآگاهی تو (${myPlayerBadgeId}) کپی شد. با این نشان همیشه می‌تونی بدون سوختن مدارکت برگردی!` : `Badge ID (${myPlayerBadgeId}) copied to clipboard!`,
+            type: 'success'
+        });
+    }
+
+    function pasteBadgeIdFromStorage() {
+        playSfx('click');
+        const input = document.getElementById('joinPlayerBadgeInput');
+        if (input) input.value = myPlayerBadgeId;
+        showGameNotification({
+            message: currentLang === 'fa' ? `نشان کارآگاهی تو درج شد: ${myPlayerBadgeId}` : `Inserted your badge ID: ${myPlayerBadgeId}`,
+            type: 'info'
+        });
+    }
+
     // --- 4. APP STATE (NO MOCK PLAYERS!) ---
     let currentLang = 'fa'; // FARSI IS DEFAULT!
     let isDarkMode = true;
@@ -1898,9 +2113,14 @@
     let myAvatar = "detective";
     let storedQuestions = [];
 
-    // Unique Room ID & Player Persistence
+    // Unique Room ID & Persistent Detective Badge ID
     let currentRoomId = "DG-" + Math.floor(1000 + Math.random() * 9000);
-    let playerSessionToken = "TOK-" + Math.random().toString(36).substring(2, 9).toUpperCase();
+    let myPlayerBadgeId = localStorage.getItem('dg_player_badge_id');
+    if (!myPlayerBadgeId) {
+        myPlayerBadgeId = "DET-" + Math.floor(1000 + Math.random() * 9000);
+        localStorage.setItem('dg_player_badge_id', myPlayerBadgeId);
+    }
+    let playerSessionToken = "TOK-" + myPlayerBadgeId + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
     let currentHostIp = "192.168.43.1";
 
     // 8-Hour Running Clock & Overtime
@@ -2271,6 +2491,7 @@
         try {
             const state = {
                 roomId: currentRoomId,
+                playerBadgeId: myPlayerBadgeId,
                 playerToken: playerSessionToken,
                 myNickname: myNickname,
                 myAvatar: myAvatar,
@@ -2324,8 +2545,11 @@
         try {
             const state = JSON.parse(raw);
             currentRoomId = state.roomId || currentRoomId;
+            myPlayerBadgeId = state.playerBadgeId || myPlayerBadgeId;
+            localStorage.setItem('dg_player_badge_id', myPlayerBadgeId);
             playerSessionToken = state.playerToken || playerSessionToken;
             myNickname = state.myNickname || myNickname;
+            updateBadgeDisplays();
             myAvatar = state.myAvatar || myAvatar;
             realPlayers = state.realPlayers || realPlayers;
             myQuestions = state.myQuestions || myQuestions;
@@ -2406,9 +2630,10 @@
             const timerEl = document.getElementById('homeResumeCaseTimer');
             if (infoEl) {
                 const solvedCount = state.solvedMysteries ? state.solvedMysteries.length : 0;
+                const bId = state.playerBadgeId || myPlayerBadgeId;
                 infoEl.textContent = currentLang === 'fa'
-                    ? `اتاق: ${state.roomId || currentRoomId} | حل‌شده: ${solvedCount} از ۴`
-                    : `Room: ${state.roomId || currentRoomId} | Solved: ${solvedCount}/4`;
+                    ? `اتاق: ${state.roomId || currentRoomId} | نشان: ${bId} | حل‌شده: ${solvedCount} از ۴`
+                    : `Room: ${state.roomId || currentRoomId} | Badge: ${bId} | Solved: ${solvedCount}/4`;
             }
             if (timerEl && state.roomStartTime) {
                 const elapsed = Math.floor((Date.now() - state.roomStartTime) / 1000);
@@ -2790,6 +3015,10 @@
             target.classList.add('active');
             target.scrollTop = 0;
         }
+        updateBadgeDisplays();
+        if (screenName === 'home') {
+            updateHomeActiveCaseCard();
+        }
     }
 
     // --- 7. LANGUAGE & LOCALIZATION ---
@@ -2912,6 +3141,7 @@
                 container.appendChild(el);
             });
         });
+        updateBadgeDisplays();
     }
 
     function renderProfileSavedQuestions() {
@@ -2972,10 +3202,42 @@
     // --- 9. LOBBY (NO FAKE / MOCK PLAYERS!) ---
     function startLobby(isHost) {
         goToScreen('lobby');
-        // Ensure host is player 1 with current profile
+        if (!isHost) {
+            const joinNick = document.getElementById('joinNicknameInput')?.value?.trim();
+            const joinPin = document.getElementById('joinPinInput')?.value?.trim();
+            const joinBadge = document.getElementById('joinPlayerBadgeInput')?.value?.trim();
+
+            if (joinNick) myNickname = joinNick;
+            if (joinPin) currentRoomId = joinPin;
+            if (joinBadge) {
+                myPlayerBadgeId = joinBadge;
+                localStorage.setItem('dg_player_badge_id', myPlayerBadgeId);
+            }
+
+            // Check if this badge has an existing saved case for this room:
+            const raw = localStorage.getItem('dg_active_case');
+            if (raw) {
+                try {
+                    const saved = JSON.parse(raw);
+                    if (saved.roomId === currentRoomId || saved.playerBadgeId === myPlayerBadgeId || saved.playerToken?.includes(myPlayerBadgeId)) {
+                        resumeActiveCase();
+                        showGameNotification({
+                            title: currentLang === 'fa' ? "مدارک با موفقیت بازیابی شد! 🎉" : "Evidence Restored! 🎉",
+                            message: currentLang === 'fa' ? "با نشان اختصاصی‌ت برگشتی و ۱۰۰٪ سوالات، جواب‌ها و پاکت مدارکت لود شد!" : "Restored your case progress and evidence package with your Badge ID!",
+                            type: 'success'
+                        });
+                        return;
+                    }
+                } catch (_) {}
+            }
+        }
+
+        // Ensure current player profile and badge are assigned
         realPlayers[0].nickname = myNickname;
         realPlayers[0].avatar = myAvatar;
         realPlayers[0].isHost = isHost;
+        realPlayers[0].badgeId = myPlayerBadgeId;
+        updateBadgeDisplays();
 
         // Detect and display Host IP and Room ID
         const hostIp = detectHostIp();
