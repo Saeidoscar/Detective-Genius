@@ -35,6 +35,9 @@ fun main() {
     testDuplicateMessageProtection()
     println("✓ testDuplicateMessageProtection passed")
 
+    testJokerPrivacyAndWillBroadcastingOnWire()
+    println("✓ testJokerPrivacyAndWillBroadcastingOnWire passed")
+
     println("=== ALL NETWORKING TESTS PASSED SUCCESSFULLY! ===")
 }
 
@@ -184,3 +187,73 @@ fun testDuplicateMessageProtection() {
     assert(duplicateResult == null, "Duplicate messageId should be ignored and dropped")
     assertEquals(1, server.chatHistory.size, "Chat history must not contain duplicate messages")
 }
+
+fun testJokerPrivacyAndWillBroadcastingOnWire() {
+    val pin = "8888"
+    val server = DetectiveHostServer(roomPin = pin, hostPlayerId = "p1")
+    val c1 = DetectiveClient(playerId = "p1", nickname = "HostP1", avatarId = "detective")
+    val c2 = DetectiveClient(playerId = "p2", nickname = "ClientP2", avatarId = "robot")
+    val c3 = DetectiveClient(playerId = "p3", nickname = "ClientP3", avatarId = "wizard")
+    val c4 = DetectiveClient(playerId = "p4", nickname = "ClientP4", avatarId = "ninja")
+
+    c1.connectDirectToHost(server, pin)
+    c2.connectDirectToHost(server, pin)
+    c3.connectDirectToHost(server, pin)
+    c4.connectDirectToHost(server, pin)
+
+    c1.setReady(true)
+    c2.setReady(true)
+    c3.setReady(true)
+    c4.setReady(true)
+
+    // Assign p1 as Joker with target 3
+    server.engine.assignJoker("p1", target = 3)
+    c1.startGame()
+
+    // Non-joker clients (c2, c3, c4) must NOT receive joker identity or target
+    val c2View = c2.currentView.value!!
+    assert(!c2View.isJoker, "c2 must NOT be marked as Joker")
+    assertEquals(0, c2View.jokerTarget, "Non-joker c2 must receive 0 for jokerTarget")
+    assertEquals(0, c2View.eligibleEliminationCount, "Non-joker c2 must receive 0 for eligibleCount")
+    assert(c2View.jokerReveal == null, "c2 must NOT have jokerReveal before match end")
+
+    // Joker client (c1) receives role
+    val c1View = c1.currentView.value!!
+    assert(c1View.isJoker, "c1 must be marked as Joker")
+    assertEquals(3, c1View.jokerTarget, "c1 receives target 3")
+
+    // Submit Q&A to reach investigation
+    listOf("p1", "p2", "p3", "p4").forEach {
+        server.engine.submitQuestions(it, listOf("Q1 $it?", "Q2 $it?", "Q3 $it?"))
+    }
+    listOf("p1", "p2", "p3", "p4").forEach {
+        val view = server.engine.createClientView(it)
+        server.engine.submitAnswers(it, view.assignedQuestionsToAnswer.associate { q -> q.id to "Ans" })
+    }
+    server.broadcastStateUpdate()
+
+    // Eliminate c2
+    repeat(3) {
+        c2.submitGuess(ChallengeType.Q1_WHO_ANSWERED_MY_QUESTIONS, "WRONG")
+    }
+
+    // Verify c2 has pending will
+    val c2ElimView = c2.currentView.value!!
+    assert(c2ElimView.isEliminated, "c2 must be eliminated")
+    assert(c2ElimView.pendingWill != null, "c2 must receive pendingWill")
+    assertEquals("p2", c2ElimView.pendingWill!!.playerId)
+
+    // c2 submits a Will Accusation targeting p3
+    c2.submitWill(
+        willType = "ACCUSATION",
+        targetPlayerId = "p3",
+        payloadText = "I accuse player 3 of deception"
+    )
+
+    // Verify all players receive the published will in public view
+    val p4View = c4.currentView.value!!
+    assertEquals(1, p4View.publishedWills.size, "p4 must see published will")
+    assertEquals("ACCUSATION", p4View.publishedWills[0].willType)
+    assertEquals("p3", p4View.publishedWills[0].targetPlayerId)
+}
+

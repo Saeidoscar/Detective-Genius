@@ -37,6 +37,35 @@ data class PlayerSummaryDto(
     val mistakes: Int
 )
 
+@Serializable
+data class JokerRevealDto(
+    val jokerPlayerId: String,
+    val jokerTarget: Int,
+    val eligibleEliminationCount: Int,
+    val jokerWon: Boolean
+)
+
+@Serializable
+data class PendingWillDto(
+    val playerId: String,
+    val deadlineSeconds: Int = 45
+)
+
+@Serializable
+data class WillRecordDto(
+    val id: String,
+    val playerId: String,
+    val playerNickname: String,
+    val playerAvatarId: String,
+    val willType: String, // ACCUSATION, REVELATION, QUESTION
+    val targetPlayerId: String? = null,
+    val targetPlayerNickname: String? = null,
+    val payloadText: String,
+    val answerText: String? = null,
+    val isSelfInference: Boolean = false,
+    val timestamp: Long = 0L
+)
+
 /**
  * Complete personalized view sent to an individual player.
  */
@@ -52,7 +81,17 @@ data class ClientPlayerViewDto(
     val isEliminated: Boolean = false,
     val winnerPlayerId: String? = null,
     val roomPin: String = "",
-    val hostPlayerId: String = ""
+    val hostPlayerId: String = "",
+    // Joker & Will properties
+    val isJoker: Boolean = false,
+    val jokerTarget: Int = 0,
+    val eligibleEliminationCount: Int = 0,
+    val jokerStatus: String = "ACTIVE",
+    val gameWinnerType: String = "NONE",
+    val gameEndReason: String? = null,
+    val jokerReveal: JokerRevealDto? = null,
+    val pendingWill: PendingWillDto? = null,
+    val publishedWills: List<WillRecordDto> = emptyList()
 )
 
 @Serializable

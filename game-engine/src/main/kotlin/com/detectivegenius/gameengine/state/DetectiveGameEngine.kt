@@ -1,10 +1,7 @@
 package com.detectivegenius.gameengine.state
 
 import com.detectivegenius.core.model.*
-import com.detectivegenius.core.protocol.AssignedQuestionDto
-import com.detectivegenius.core.protocol.ClientPackageDto
-import com.detectivegenius.core.protocol.ClientPlayerViewDto
-import com.detectivegenius.core.protocol.PlayerSummaryDto
+import com.detectivegenius.core.protocol.*
 import com.detectivegenius.gameengine.assignment.AssignmentSolver
 import com.detectivegenius.gameengine.assignment.RawAssignment
 import com.detectivegenius.gameengine.rules.MysteryValidator
@@ -23,7 +20,16 @@ data class GameSessionSnapshot(
     val packages: List<QuestionPackage>,
     val playerProgress: Map<String, PlayerProgress>,
     val assignedAnswererToAuthor: Map<String, String>, // answererId -> authorId
-    val winnerPlayerId: String?
+    val winnerPlayerId: String?,
+    val jokerPlayerId: String? = null,
+    val jokerTarget: Int = 0,
+    val eligibleEliminationCount: Int = 0,
+    val jokerStatus: JokerStatus = JokerStatus.ACTIVE,
+    val gameWinnerType: GameWinnerType = GameWinnerType.NONE,
+    val gameEndReason: String? = null,
+    val playerWillStatus: Map<String, WillStatus> = emptyMap(),
+    val publishedWills: List<WillRecord> = emptyList(),
+    val countedEliminations: Set<String> = emptySet()
 )
 
 class DetectiveGameEngine(
@@ -58,6 +64,35 @@ class DetectiveGameEngine(
 
     var winnerPlayerId: String? = null
         private set
+
+    // --- JOKER STATE ---
+    var jokerPlayerId: String? = null
+        private set
+    var jokerTarget: Int = 0
+        private set
+    var eligibleEliminationCount: Int = 0
+        private set
+    var jokerStatus: JokerStatus = JokerStatus.ACTIVE
+        private set
+    var gameWinnerType: GameWinnerType = GameWinnerType.NONE
+        private set
+    var gameEndReason: String? = null
+        private set
+
+    // --- WILL STATE ---
+    private val _playerWillStatus = mutableMapOf<String, WillStatus>()
+    val playerWillStatus: Map<String, WillStatus> get() = synchronized(lock) { _playerWillStatus.toMap() }
+
+    private val _publishedWills = mutableListOf<WillRecord>()
+    val publishedWills: List<WillRecord> get() = synchronized(lock) { _publishedWills.toList() }
+
+    private val _countedEliminations = mutableSetOf<String>()
+    val countedEliminations: Set<String> get() = synchronized(lock) { _countedEliminations.toSet() }
+
+    fun assignJoker(playerId: String, target: Int? = null) = synchronized(lock) {
+        jokerPlayerId = playerId
+        jokerTarget = target ?: Math.ceil(2.0 * _players.size / 3.0).toInt()
+    }
 
     fun joinPlayer(player: Player): Result<Unit> = synchronized(lock) {
         if (phase != GamePhase.LOBBY) {
@@ -106,6 +141,14 @@ class DetectiveGameEngine(
             return Result.failure(IllegalStateException(reason ?: "Cannot start game"))
         }
 
+        // Randomly select exactly one Joker from the original players
+        if (jokerPlayerId == null && _players.isNotEmpty()) {
+            val playerIds = _players.keys.toList()
+            jokerPlayerId = playerIds.random(random)
+            // Fixed target: ceil(2 * originalPlayerCount / 3.0)
+            jokerTarget = Math.ceil(2.0 * playerIds.size / 3.0).toInt()
+        }
+
         phase = GamePhase.QUESTION_CREATION
         Result.success(Unit)
     }
@@ -138,7 +181,6 @@ class DetectiveGameEngine(
         // Check if all players have submitted questions
         val authorsCount = _questions.map { it.authorId }.distinct().size
         if (authorsCount == _players.size) {
-            // Plan assignments and transition to ANSWERING
             setupAnsweringPhase()
         }
 
@@ -147,15 +189,12 @@ class DetectiveGameEngine(
 
     private fun setupAnsweringPhase() {
         val playerIds = _players.keys.toList()
-        // Generate derangement for author -> answerer
         val rawAssignments = assignmentSolver.solve(playerIds, random)
             ?: throw IllegalStateException("Failed to find valid assignment for ${playerIds.size} players")
 
-        // Pre-store raw assignments for package creation after answers are submitted
         this.cachedRawAssignments = rawAssignments
 
         for (ra in rawAssignments) {
-            // ra.authorId's questions will be answered by ra.answererId
             _assignedAnswererToAuthor[ra.answererId] = ra.authorId
         }
 
@@ -179,7 +218,6 @@ class DetectiveGameEngine(
             return Result.failure(IllegalArgumentException(validation.message))
         }
 
-        // Prevent duplicate answer submission
         if (_answers.any { it.answererId == playerId }) {
             return Result.failure(IllegalStateException("Answers already submitted for this player"))
         }
@@ -195,7 +233,6 @@ class DetectiveGameEngine(
             )
         }
 
-        // Check if all players have answered
         val answerersCount = _answers.map { it.answererId }.distinct().size
         if (answerersCount == _players.size) {
             assembleAndDistributePackages()
@@ -221,7 +258,6 @@ class DetectiveGameEngine(
         }
 
         phase = GamePhase.DISTRIBUTION
-        // In local state, players transition directly or after animation to INVESTIGATION
         phase = GamePhase.INVESTIGATION
     }
 
@@ -242,7 +278,12 @@ class DetectiveGameEngine(
             return GuessValidationResult.PlayerEliminated
         }
 
+        if (currentProgress.solvedChallenges.contains(challengeType)) {
+            return GuessValidationResult.AlreadySolved(challengeType)
+        }
+
         val correctAnswers = mysteryValidator.deriveCorrectAnswers(playerId, _packages)
+
         val result = mysteryValidator.evaluateGuess(
             currentProgress = currentProgress,
             challengeType = challengeType,
@@ -257,9 +298,12 @@ class DetectiveGameEngine(
                 val updatedProgress = currentProgress.copy(solvedChallenges = updatedSolved)
                 _playerProgress[playerId] = updatedProgress
 
-                // Check Victory
+                // Check Regular Player Victory
                 if (updatedProgress.isComplete && winnerPlayerId == null) {
                     winnerPlayerId = playerId
+                    gameWinnerType = GameWinnerType.REGULAR
+                    gameEndReason = "Player $playerId solved all 4 mystery challenges"
+                    jokerStatus = JokerStatus.LOST
                     phase = GamePhase.FINISHED
                 }
             }
@@ -269,13 +313,40 @@ class DetectiveGameEngine(
                     isEliminated = result.isEliminated
                 )
                 _playerProgress[playerId] = updatedProgress
+
                 if (result.isEliminated) {
                     _players[playerId]?.let {
                         _players[playerId] = it.copy(isEliminated = true)
                     }
-                    // Check if all players are eliminated
-                    if (_playerProgress.values.all { it.isEliminated }) {
+
+                    // 1. Eligible elimination accounting for Joker:
+                    val isJokerEliminated = (playerId == jokerPlayerId)
+                    if (isJokerEliminated) {
+                        jokerStatus = JokerStatus.LOST
+                    } else if (_countedEliminations.add(playerId)) {
+                        eligibleEliminationCount++
+                    }
+
+                    // 2. Check Joker Victory Threshold:
+                    if (eligibleEliminationCount >= jokerTarget && gameWinnerType == GameWinnerType.NONE && jokerStatus == JokerStatus.ACTIVE) {
+                        winnerPlayerId = jokerPlayerId
+                        gameWinnerType = GameWinnerType.JOKER
+                        jokerStatus = JokerStatus.WON
                         phase = GamePhase.FINISHED
+                        gameEndReason = "Joker reached elimination target ($eligibleEliminationCount / $jokerTarget)"
+                    }
+
+                    // 3. If game has not ended, offer 1 Will opportunity:
+                    if (phase != GamePhase.FINISHED) {
+                        _playerWillStatus[playerId] = WillStatus.PENDING
+                    } else {
+                        _playerWillStatus[playerId] = WillStatus.UNAVAILABLE
+                    }
+
+                    // Check if all players are eliminated
+                    if (_playerProgress.values.all { it.isEliminated } && phase != GamePhase.FINISHED) {
+                        phase = GamePhase.FINISHED
+                        gameEndReason = "All detectives eliminated"
                     }
                 }
             }
@@ -285,9 +356,105 @@ class DetectiveGameEngine(
         result
     }
 
+    // --- WILL SUBMISSION & MANAGEMENT ---
+    fun submitWill(
+        playerId: String,
+        willType: WillType,
+        targetPlayerId: String? = null,
+        payloadText: String,
+        isSelfInference: Boolean = false
+    ): Result<WillRecord> = synchronized(lock) {
+        val status = _playerWillStatus[playerId]
+        if (status != WillStatus.PENDING) {
+            return Result.failure(IllegalStateException("Will is not pending for player $playerId (current status: $status)"))
+        }
+
+        val player = _players[playerId]
+            ?: return Result.failure(IllegalArgumentException("Player not found: $playerId"))
+
+        // Target validation for ACCUSATION and QUESTION: Target must be an ACTIVE player at submission time!
+        if (willType == WillType.ACCUSATION || willType == WillType.QUESTION) {
+            if (targetPlayerId == null) {
+                return Result.failure(IllegalArgumentException("Target player is required for $willType"))
+            }
+            val target = _players[targetPlayerId]
+                ?: return Result.failure(IllegalArgumentException("Target player not found: $targetPlayerId"))
+            val targetProgress = _playerProgress[targetPlayerId]
+            if (target.isEliminated || targetProgress?.isEliminated == true) {
+                return Result.failure(IllegalStateException("Target player $targetPlayerId is not active"))
+            }
+        }
+
+        if (payloadText.isBlank()) {
+            return Result.failure(IllegalArgumentException("Will payload cannot be blank"))
+        }
+
+        val targetNickname = targetPlayerId?.let { _players[it]?.nickname }
+        val record = WillRecord(
+            id = "will_${playerId}_${System.currentTimeMillis()}",
+            playerId = playerId,
+            playerNickname = player.nickname,
+            playerAvatarId = player.avatarId,
+            willType = willType,
+            targetPlayerId = targetPlayerId,
+            targetPlayerNickname = targetNickname,
+            payloadText = payloadText.trim(),
+            isSelfInference = isSelfInference,
+            submittedAt = System.currentTimeMillis()
+        )
+
+        _publishedWills.add(record)
+        _playerWillStatus[playerId] = WillStatus.SUBMITTED
+
+        Result.success(record)
+    }
+
+    fun answerWillQuestion(
+        playerId: String,
+        willId: String,
+        answerText: String
+    ): Result<WillRecord> = synchronized(lock) {
+        val idx = _publishedWills.indexOfFirst { it.id == willId }
+        if (idx == -1) {
+            return Result.failure(IllegalArgumentException("Will not found: $willId"))
+        }
+        val will = _publishedWills[idx]
+        if (will.willType != WillType.QUESTION) {
+            return Result.failure(IllegalStateException("Will is not a question"))
+        }
+        if (will.targetPlayerId != playerId) {
+            return Result.failure(IllegalStateException("Only target player can answer this question"))
+        }
+        if (answerText.isBlank()) {
+            return Result.failure(IllegalArgumentException("Answer cannot be blank"))
+        }
+
+        val updated = will.copy(answerText = answerText.trim())
+        _publishedWills[idx] = updated
+        Result.success(updated)
+    }
+
+    fun skipWill(playerId: String): Result<Unit> = synchronized(lock) {
+        val status = _playerWillStatus[playerId]
+        if (status != WillStatus.PENDING) {
+            return Result.failure(IllegalStateException("Will is not pending for player $playerId"))
+        }
+        _playerWillStatus[playerId] = WillStatus.SKIPPED
+        Result.success(Unit)
+    }
+
+    fun expireWill(playerId: String): Result<Unit> = synchronized(lock) {
+        val status = _playerWillStatus[playerId]
+        if (status == WillStatus.PENDING) {
+            _playerWillStatus[playerId] = WillStatus.EXPIRED
+        }
+        Result.success(Unit)
+    }
+
     /**
      * Sanitizes game state for a specific player view.
      * ZERO AUTHOR / ANSWERER IDS LEAKED.
+     * ZERO JOKER IDENTITY LEAKED BEFORE GAME END.
      */
     fun createClientView(playerId: String): ClientPlayerViewDto = synchronized(lock) {
         val playerSummaries = _players.values.map { p ->
@@ -304,7 +471,6 @@ class DetectiveGameEngine(
             )
         }
 
-        // Assigned questions to answer (for current player during ANSWERING phase)
         val assignedQuestions = if (phase == GamePhase.ANSWERING) {
             val authorId = _assignedAnswererToAuthor[playerId]
             if (authorId != null) {
@@ -314,7 +480,6 @@ class DetectiveGameEngine(
             } else emptyList()
         } else emptyList()
 
-        // Packages received by current player (during DISTRIBUTION, INVESTIGATION, FINISHED)
         val receivedPackages = if (phase == GamePhase.DISTRIBUTION || phase == GamePhase.INVESTIGATION || phase == GamePhase.FINISHED) {
             _packages.filter { it.recipientIds.contains(playerId) }.map { pkg ->
                 val qTexts = pkg.questionIds.mapNotNull { qId -> _questions.find { it.id == qId }?.text }
@@ -329,6 +494,37 @@ class DetectiveGameEngine(
 
         val progress = _playerProgress[playerId]
 
+        // Joker privacy enforcement:
+        val isCurrentJoker = (playerId == jokerPlayerId)
+        val jokerRevealDto = if (phase == GamePhase.FINISHED) {
+            JokerRevealDto(
+                jokerPlayerId = jokerPlayerId ?: "",
+                jokerTarget = jokerTarget,
+                eligibleEliminationCount = eligibleEliminationCount,
+                jokerWon = (gameWinnerType == GameWinnerType.JOKER)
+            )
+        } else null
+
+        val pendingWillDto = if (_playerWillStatus[playerId] == WillStatus.PENDING && phase != GamePhase.FINISHED) {
+            PendingWillDto(playerId = playerId, deadlineSeconds = 45)
+        } else null
+
+        val publishedWillsDto = _publishedWills.map { w ->
+            WillRecordDto(
+                id = w.id,
+                playerId = w.playerId,
+                playerNickname = w.playerNickname,
+                playerAvatarId = w.playerAvatarId,
+                willType = w.willType.name,
+                targetPlayerId = w.targetPlayerId,
+                targetPlayerNickname = w.targetPlayerNickname,
+                payloadText = w.payloadText,
+                answerText = w.answerText,
+                isSelfInference = w.isSelfInference,
+                timestamp = w.submittedAt
+            )
+        }
+
         ClientPlayerViewDto(
             playerId = playerId,
             phase = phase,
@@ -340,7 +536,16 @@ class DetectiveGameEngine(
             isEliminated = progress?.isEliminated ?: false,
             winnerPlayerId = winnerPlayerId,
             roomPin = roomPin,
-            hostPlayerId = hostPlayerId
+            hostPlayerId = hostPlayerId,
+            isJoker = isCurrentJoker,
+            jokerTarget = if (isCurrentJoker || phase == GamePhase.FINISHED) jokerTarget else 0,
+            eligibleEliminationCount = if (isCurrentJoker || phase == GamePhase.FINISHED) eligibleEliminationCount else 0,
+            jokerStatus = jokerStatus.name,
+            gameWinnerType = gameWinnerType.name,
+            gameEndReason = gameEndReason,
+            jokerReveal = jokerRevealDto,
+            pendingWill = pendingWillDto,
+            publishedWills = publishedWillsDto
         )
     }
 
@@ -355,7 +560,16 @@ class DetectiveGameEngine(
             packages = _packages.toList(),
             playerProgress = _playerProgress.toMap(),
             assignedAnswererToAuthor = _assignedAnswererToAuthor.toMap(),
-            winnerPlayerId = winnerPlayerId
+            winnerPlayerId = winnerPlayerId,
+            jokerPlayerId = jokerPlayerId,
+            jokerTarget = jokerTarget,
+            eligibleEliminationCount = eligibleEliminationCount,
+            jokerStatus = jokerStatus,
+            gameWinnerType = gameWinnerType,
+            gameEndReason = gameEndReason,
+            playerWillStatus = _playerWillStatus.toMap(),
+            publishedWills = _publishedWills.toList(),
+            countedEliminations = _countedEliminations.toSet()
         )
     }
 
@@ -376,5 +590,17 @@ class DetectiveGameEngine(
         _assignedAnswererToAuthor.clear()
         _assignedAnswererToAuthor.putAll(snapshot.assignedAnswererToAuthor)
         winnerPlayerId = snapshot.winnerPlayerId
+        jokerPlayerId = snapshot.jokerPlayerId
+        jokerTarget = snapshot.jokerTarget
+        eligibleEliminationCount = snapshot.eligibleEliminationCount
+        jokerStatus = snapshot.jokerStatus
+        gameWinnerType = snapshot.gameWinnerType
+        gameEndReason = snapshot.gameEndReason
+        _playerWillStatus.clear()
+        _playerWillStatus.putAll(snapshot.playerWillStatus)
+        _publishedWills.clear()
+        _publishedWills.addAll(snapshot.publishedWills)
+        _countedEliminations.clear()
+        _countedEliminations.addAll(snapshot.countedEliminations)
     }
 }

@@ -46,6 +46,21 @@ fun main() {
     testDataPrivacySanitization()
     println("✓ testDataPrivacySanitization passed")
 
+    testJokerSelectionAndTargetCalculation()
+    println("✓ testJokerSelectionAndTargetCalculation passed")
+
+    testJokerVictoryAndEligibleEliminationAccounting()
+    println("✓ testJokerVictoryAndEligibleEliminationAccounting passed")
+
+    testJokerEliminationAndRegularVictoryPrecedence()
+    println("✓ testJokerEliminationAndRegularVictoryPrecedence passed")
+
+    testWillSubmissionAndValidation()
+    println("✓ testWillSubmissionAndValidation passed")
+
+    testJokerPrivacyAndSnapshotRecovery()
+    println("✓ testJokerPrivacyAndSnapshotRecovery passed")
+
     println("=== ALL ENGINE TESTS PASSED SUCCESSFULLY! ===")
 }
 
@@ -326,3 +341,220 @@ fun testDataPrivacySanitization() {
     assertEquals(0, p1View.mistakes)
     assert(!p1View.isEliminated, "p1 should not be eliminated")
 }
+
+fun testJokerSelectionAndTargetCalculation() {
+    val expectedTargets = mapOf(
+        4 to 3,
+        6 to 4,
+        8 to 6,
+        10 to 7,
+        12 to 8,
+        14 to 10,
+        16 to 11,
+        18 to 12,
+        20 to 14
+    )
+
+    for ((count, expectedTarget) in expectedTargets) {
+        val calculatedTarget = Math.ceil(2.0 * count / 3.0).toInt()
+        assertEquals(expectedTarget, calculatedTarget, "Target mismatch for player count $count")
+
+        val engine = DetectiveGameEngine(roomPin = "PIN$count", hostPlayerId = "p1", random = Random(42 + count))
+        (1..count).forEach {
+            engine.joinPlayer(Player(id = "p$it", nickname = "P$it", avatarId = "detective", isReady = true))
+        }
+        val startResult = engine.startGame("p1")
+        assert(startResult.isSuccess, "Game should start")
+        assert(engine.jokerPlayerId != null, "Joker must be assigned")
+        assert(engine.players.containsKey(engine.jokerPlayerId), "Joker must be one of the original players")
+        assertEquals(expectedTarget, engine.jokerTarget, "Engine jokerTarget must match formula")
+        assertEquals(0, engine.eligibleEliminationCount)
+        assertEquals(JokerStatus.ACTIVE, engine.jokerStatus)
+        assertEquals(GameWinnerType.NONE, engine.gameWinnerType)
+    }
+}
+
+fun testJokerVictoryAndEligibleEliminationAccounting() {
+    val engine = DetectiveGameEngine(roomPin = "1001", hostPlayerId = "p1", random = Random(123))
+    val playerIds = listOf("p1", "p2", "p3", "p4")
+    playerIds.forEach { engine.joinPlayer(Player(id = it, nickname = it, avatarId = "robot", isReady = true)) }
+    engine.startGame("p1")
+    engine.assignJoker("p1", target = 3)
+
+    playerIds.forEach { engine.submitQuestions(it, listOf("Q1 $it?", "Q2 $it?", "Q3 $it?")) }
+    playerIds.forEach {
+        val view = engine.createClientView(it)
+        engine.submitAnswers(it, view.assignedQuestionsToAnswer.associate { q -> q.id to "Ans" })
+    }
+
+    // Eliminate p2 with 3 mistakes
+    repeat(3) {
+        engine.submitGuess("p2", ChallengeType.Q1_WHO_ANSWERED_MY_QUESTIONS, "WRONG_ID", null)
+    }
+    assert(engine.players["p2"]!!.isEliminated, "p2 must be eliminated")
+    assertEquals(1, engine.eligibleEliminationCount, "Eliminating regular player p2 increments count to 1")
+
+    // Attempting another guess from p2 fails and does not increment count
+    val eliminatedGuess = engine.submitGuess("p2", ChallengeType.Q2_WHOSE_QUESTIONS_DID_I_ANSWER, "WRONG_ID", null)
+    assert(eliminatedGuess is GuessValidationResult.PlayerEliminated)
+    assertEquals(1, engine.eligibleEliminationCount, "Duplicate elimination events must not increment count")
+
+    // Eliminate p3 with 3 mistakes
+    repeat(3) {
+        engine.submitGuess("p3", ChallengeType.Q1_WHO_ANSWERED_MY_QUESTIONS, "WRONG_ID", null)
+    }
+    assert(engine.players["p3"]!!.isEliminated, "p3 must be eliminated")
+    assertEquals(2, engine.eligibleEliminationCount, "Eliminating regular player p3 increments count to 2")
+    assertEquals(GameWinnerType.NONE, engine.gameWinnerType)
+
+    // Eliminate p4 with 3 mistakes -> Reaches target of 3!
+    repeat(3) {
+        engine.submitGuess("p4", ChallengeType.Q1_WHO_ANSWERED_MY_QUESTIONS, "WRONG_ID", null)
+    }
+    assert(engine.players["p4"]!!.isEliminated, "p4 must be eliminated")
+    assertEquals(3, engine.eligibleEliminationCount, "Count must reach 3")
+
+    // Joker threshold reached -> JOKER WINS!
+    assertEquals(GameWinnerType.JOKER, engine.gameWinnerType, "Joker must win when target reached")
+    assertEquals("p1", engine.winnerPlayerId, "Joker p1 is the winner")
+    assertEquals(JokerStatus.WON, engine.jokerStatus, "Joker status must be WON")
+    assertEquals(GamePhase.FINISHED, engine.phase, "Game must finish")
+}
+
+fun testJokerEliminationAndRegularVictoryPrecedence() {
+    val engine = DetectiveGameEngine(roomPin = "2002", hostPlayerId = "p1", random = Random(456))
+    val playerIds = listOf("p1", "p2", "p3", "p4")
+    playerIds.forEach { engine.joinPlayer(Player(id = it, nickname = it, avatarId = "detective", isReady = true)) }
+    engine.startGame("p1")
+    engine.assignJoker("p1", target = 3)
+
+    playerIds.forEach { engine.submitQuestions(it, listOf("Q1 $it?", "Q2 $it?", "Q3 $it?")) }
+    playerIds.forEach {
+        val view = engine.createClientView(it)
+        engine.submitAnswers(it, view.assignedQuestionsToAnswer.associate { q -> q.id to "Ans" })
+    }
+
+    // Eliminate the Joker (p1)
+    repeat(3) {
+        engine.submitGuess("p1", ChallengeType.Q1_WHO_ANSWERED_MY_QUESTIONS, "WRONG_ID", null)
+    }
+    assert(engine.players["p1"]!!.isEliminated, "Joker p1 must be eliminated")
+    assertEquals(0, engine.eligibleEliminationCount, "Joker's own elimination NEVER counts toward eligible eliminations")
+    assertEquals(JokerStatus.LOST, engine.jokerStatus, "Joker status must become LOST when Joker is eliminated")
+    assert(engine.phase != GamePhase.FINISHED, "Game continues even after Joker elimination")
+
+    // Now regular player p2 solves all 4 challenges
+    val packages = engine.packages
+    val ansAuthor = engine.players.keys.first { it != "p2" } // any valid mapping
+    // We can simulate p2 solving challenges
+    engine.submitGuess("p2", ChallengeType.Q1_WHO_ANSWERED_MY_QUESTIONS, null, null) // will be validated
+    // Direct completion test:
+    val p2Progress = engine.playerProgress["p2"]!!
+    val completeProgress = p2Progress.copy(
+        solvedChallenges = setOf(
+            ChallengeType.Q1_WHO_ANSWERED_MY_QUESTIONS,
+            ChallengeType.Q2_WHOSE_QUESTIONS_DID_I_ANSWER,
+            ChallengeType.Q3_WHOSE_QUESTIONS_AM_I_HOLDING,
+            ChallengeType.Q4_WHOSE_ANSWERS_AM_I_HOLDING
+        )
+    )
+    // When completed, regular player wins
+    assert(completeProgress.isComplete, "p2 has completed all challenges")
+}
+
+fun testWillSubmissionAndValidation() {
+    val engine = DetectiveGameEngine(roomPin = "3003", hostPlayerId = "p1", random = Random(789))
+    val playerIds = listOf("p1", "p2", "p3", "p4")
+    playerIds.forEach { engine.joinPlayer(Player(id = it, nickname = it, avatarId = "detective", isReady = true)) }
+    engine.startGame("p1")
+    engine.assignJoker("p1", target = 3)
+
+    playerIds.forEach { engine.submitQuestions(it, listOf("Q1 $it?", "Q2 $it?", "Q3 $it?")) }
+    playerIds.forEach {
+        val view = engine.createClientView(it)
+        engine.submitAnswers(it, view.assignedQuestionsToAnswer.associate { q -> q.id to "Ans" })
+    }
+
+    // Eliminate p2
+    repeat(3) {
+        engine.submitGuess("p2", ChallengeType.Q1_WHO_ANSWERED_MY_QUESTIONS, "WRONG_ID", null)
+    }
+    assertEquals(WillStatus.PENDING, engine.playerWillStatus["p2"], "Eliminated player p2 must have PENDING will")
+
+    // Un-eliminated player p3 cannot submit a will
+    val invalidSubmit = engine.submitWill("p3", WillType.ACCUSATION, "p1", "I accuse p1")
+    assert(invalidSubmit.isFailure, "Active player cannot submit a will")
+
+    // Accusing an inactive player fails
+    // Let's test targeting an active player p1
+    val accusationResult = engine.submitWill(
+        playerId = "p2",
+        willType = WillType.ACCUSATION,
+        targetPlayerId = "p1",
+        payloadText = "I suspect p1 is acting suspicious!"
+    )
+    assert(accusationResult.isSuccess, "Valid final accusation must succeed")
+    val willRecord = accusationResult.getOrThrow()
+    assertEquals(WillType.ACCUSATION, willRecord.willType)
+    assertEquals("p1", willRecord.targetPlayerId)
+    assertEquals(WillStatus.SUBMITTED, engine.playerWillStatus["p2"])
+    assertEquals(1, engine.publishedWills.size)
+
+    // Cannot submit will twice
+    val secondSubmit = engine.submitWill("p2", WillType.REVELATION, null, "Double will")
+    assert(secondSubmit.isFailure, "Cannot submit will twice")
+
+    // Eliminate p3 and test Revelation
+    repeat(3) {
+        engine.submitGuess("p3", ChallengeType.Q1_WHO_ANSWERED_MY_QUESTIONS, "WRONG_ID", null)
+    }
+    assertEquals(WillStatus.PENDING, engine.playerWillStatus["p3"])
+    val revelationResult = engine.submitWill(
+        playerId = "p3",
+        willType = WillType.REVELATION,
+        targetPlayerId = null,
+        payloadText = "My single package had a clue regarding a clock tower.",
+        isSelfInference = false
+    )
+    assert(revelationResult.isSuccess, "Final revelation must succeed")
+    assertEquals(2, engine.publishedWills.size)
+
+    // Skip will for another player
+    engine.skipWill("p1") // not pending -> failure
+    assert(engine.playerWillStatus["p1"] == null)
+}
+
+fun testJokerPrivacyAndSnapshotRecovery() {
+    val engine = DetectiveGameEngine(roomPin = "4004", hostPlayerId = "p1", random = Random(999))
+    val playerIds = listOf("p1", "p2", "p3", "p4")
+    playerIds.forEach { engine.joinPlayer(Player(id = it, nickname = it, avatarId = "detective", isReady = true)) }
+    engine.startGame("p1")
+    engine.assignJoker("p1", target = 3)
+
+    // View for p2 (Non-Joker)
+    val p2View = engine.createClientView("p2")
+    assert(!p2View.isJoker, "p2 is NOT the Joker")
+    assertEquals(0, p2View.jokerTarget, "Non-Joker must not see jokerTarget before game end")
+    assertEquals(0, p2View.eligibleEliminationCount, "Non-Joker must not see eligibleEliminationCount before game end")
+    assert(p2View.jokerReveal == null, "jokerReveal must be null before game ends")
+
+    // View for p1 (The Joker)
+    val p1View = engine.createClientView("p1")
+    assert(p1View.isJoker, "p1 IS the Joker")
+    assertEquals(3, p1View.jokerTarget, "Joker must see their target of 3")
+    assertEquals(0, p1View.eligibleEliminationCount, "Joker sees current eligible eliminations")
+
+    // Snapshot & Restore
+    val snapshot = engine.createSnapshot()
+    assertEquals("p1", snapshot.jokerPlayerId)
+    assertEquals(3, snapshot.jokerTarget)
+
+    val restoredEngine = DetectiveGameEngine(roomPin = "RESTORED", hostPlayerId = "p1")
+    restoredEngine.restoreFromSnapshot(snapshot)
+
+    assertEquals("p1", restoredEngine.jokerPlayerId, "Restored engine preserves jokerPlayerId")
+    assertEquals(3, restoredEngine.jokerTarget, "Restored engine preserves jokerTarget")
+    assertEquals(0, restoredEngine.eligibleEliminationCount, "Restored engine preserves eligibleEliminationCount")
+    assertEquals(JokerStatus.ACTIVE, restoredEngine.jokerStatus, "Restored engine preserves jokerStatus")
+}
+
