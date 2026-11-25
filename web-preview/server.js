@@ -33,7 +33,10 @@ const mimeTypes = {
     '.png': 'image/png',
     '.svg': 'image/svg+xml',
     '.wav': 'audio/wav',
-    '.mp3': 'audio/mpeg'
+    '.mp3': 'audio/mpeg',
+    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    '.pdf': 'application/pdf',
+    '.zip': 'application/zip'
 };
 
 const server = http.createServer((req, res) => {
@@ -97,7 +100,15 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    let filePath = path.join(PUBLIC_DIR, pathname === '/' ? 'index.html' : pathname);
+    let decodedPath = pathname;
+    try {
+        decodedPath = decodeURIComponent(pathname);
+    } catch (e) {}
+
+    let filePath = path.join(PUBLIC_DIR, decodedPath === '/' ? 'index.html' : decodedPath);
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
+        filePath = path.join(filePath, 'index.html');
+    }
     if (!fs.existsSync(filePath)) {
         filePath = path.join(PUBLIC_DIR, 'index.html');
     }
@@ -111,7 +122,7 @@ const server = http.createServer((req, res) => {
             res.end(`Server Error: ${err.code}`);
         } else {
             res.writeHead(200, { 'Content-Type': contentType });
-            res.end(content, 'utf-8');
+            res.end(content);
         }
     });
 });

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مرکز دانلود اسناد رسمی ثبت اختراع - کارآگاه نابغه</title>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0B0F19;
+            --surface: #131B2E;
+            --surface-elevated: #1B2540;
+            --accent: #06B6D4;
+            --gold: #EAB308;
+            --success: #10B981;
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --border: #334155;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', sans-serif; }
+        body {
+            background-color: var(--bg);
+            color: var(--text-primary);
+            padding: 24px 16px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 680px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(234, 179, 8, 0.1));
+            border: 1px solid var(--accent);
+            border-radius: 18px;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 { font-size: 20px; font-weight: 900; color: #FFF; margin-bottom: 6px; }
+        .header p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+        .badge {
+            display: inline-block;
+            background: rgba(234, 179, 8, 0.2);
+            color: var(--gold);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 800;
+            margin-top: 10px;
+        }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+        .card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+        .file-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .file-icon {
+            font-size: 32px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+        }
+        .file-meta h3 { font-size: 14px; font-weight: 800; color: #FFF; }
+        .file-meta span { font-size: 11px; color: var(--text-secondary); }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--accent);
+            color: #000;
+            font-weight: 800;
+            font-size: 12px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+        .btn:hover { transform: scale(1.03); }
+        .btn-gold { background: var(--gold); }
+        .btn-zip {
+            background: linear-gradient(135deg, var(--gold), #CA8A04);
+            color: #000;
+            font-size: 14px;
+            font-weight: 900;
+            padding: 12px 20px;
+            border-radius: 12px;
+            text-align: center;
+            justify-content: center;
+            box-shadow: 0 4px 16px rgba(234, 179, 8, 0.3);
+        }
+        .copy-box {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .copy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .copy-header span { font-size: 12px; font-weight: 800; color: var(--accent); }
+        .copy-text {
+            font-size: 12px;
+            color: #E2E8F0;
+            line-height: 1.6;
+            user-select: all;
+            background: rgba(0,0,0,0.3);
+            padding: 8px;
+            border-radius: 8px;
+        }
+        .copy-btn {
+            background: rgba(255,255,255,0.1);
+            color: #FFF;
+            border: 1px solid var(--border);
+            padding: 4px 10px;
+            font-size: 11px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .copy-btn:hover { background: var(--accent); color: #000; }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 50%;
+            transform: translateX(50%);
+            background: var(--success);
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 13px;
+            display: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>مرکز دانلود اسناد رسمی ثبت اختراع</h1>
+            <p>مربوط به اظهارنامه ثبت اختراع سازمان ثبت اسناد و املاک کشور (قوه قضائیه)<br>متقاضی: <b>سعید رجب‌زاده</b> | شماره پیگیری: <b>۷۱۱۳۱۰۰۴۲۰۱۶۹۹</b></p>
+            <div class="badge">تایید شده منطبق با آخرین راهنماهای رسمی مرکز مالکیت معنوی</div>
+        </div>
+
+        <!-- Single Click All-in-One Download -->
+        <a href="/patent/اسناد_ثبت_اختراع_سعید_رجب_زاده_71131004201699.zip" class="btn btn-zip" download>
+            📦 دانلود یکجای تمامی اسناد در قالب یک فایل ZIP (حجم: ۴.۱ مگابایت)
+        </a>
+
+        <!-- Copyable Form Fields -->
+        <div class="card">
+            <h2 style="font-size: 15px; font-weight: 800; color: var(--gold);">📋 مقادیر مورد نیاز فرم اظهارنامه (کپی با یک کلیک)</h2>
+            
+            <div class="copy-box">
+                <div class="copy-header">
+                    <span>۱. عنوان اختراع (جهت درج در فیلد عنوان)</span>
+                    <button class="copy-btn" onclick="copyText('titleContent')">کپی عنوان</button>
+                </div>
+                <div id="titleContent" class="copy-text">سامانه و روش توزیع‌شده رایانه‌ای جهت مدیریت و ارزیابی استنتاج چندکاربره با مکانیزم افراز اطلاعات تک‌بسته‌ای و توازن نقش نامتقارن</div>
+            </div>
+
+            <div class="copy-box">
+                <div class="copy-header">
+                    <span>۲. خلاصه اختراع (متن ۱۷۰ کلمه‌ای بدون شعار تبلیغاتی)</span>
+                    <button class="copy-btn" onclick="copyText('abstractContent')">کپی خلاصه</button>
+                </div>
+                <div id="abstractContent" class="copy-text">این اختراع در زمینه سامانه‌ها و روش‌های رایانه‌ای پردازش توزیع‌شده داده‌ها، ارتباطات شبکه محلی و مدیریت وضعیت تعاملی در برنامه‌های کاربردی چندکاربره قرار دارد. در سیستم‌های موجود بازی‌های استنتاجی، وابستگی به سرورهای اینترنتی متمرکز، افشای اطلاعات هویتی و نقش‌ها از طریق شنود شبکه، انفعال بازیکنان پس از حذف، و فقدان فرمول‌بندی متوازن برای نقش‌های فریبنده نامتقارن از چالش‌های اساسی به شمار می‌روند. برای رفع این مشکلات، اختراع حاضر سامانه‌ای توزیع‌شده مبتنی بر پروتکل سوکت و کشف سرویس شبکه محلی (بدون نیاز به اینترنت) ارائه می‌دهد که در آن مدیریت محرمانگی اطلاعات بر پایه اصل افراز تک‌بسته‌ای مدارک با اعمال شروط سیزده‌گانه ریاضی انجام می‌پذیرد. همچنین، یک ماشین وضعیت نامتقارن برای نقش فریبنده (جوکر) تعبیه شده که سقف حذفیات هدف را به صورت پویا با تابع ریاضی جزء صحیح رو به بالا از دو برابر تعداد بازیکنان تقسیم بر سه تعیین می‌کند. بازیکنان حذف‌شده بر اثر ثبت سه فرضیه نادرست، از طریق یک پروتکل انتقال وضعیت اتمیک مجاز به ثبت یک وصیت‌نامه رمزگذاری‌شده همراه با پاسخ عمومی در کانال بی‌سیم می‌باشند.</div>
+            </div>
+        </div>
+
+        <!-- Individual Attachment Downloads -->
+        <div class="card">
+            <h2 style="font-size: 15px; font-weight: 800; color: #FFF;">📂 دانلود جداگانه هر یک از ضمایم سامانه</h2>
+
+            <!-- 1. Claims -->
+            <div class="file-row" style="border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+                <div class="file-info">
+                    <div class="file-icon">📄</div>
+                    <div class="file-meta">
+                        <h3>۱. ادعانامه (Claims)</h3>
+                        <span>فرمت: DOCX | حجم: ۳۹ کیلوبایت | ۱۴ ادعای مستقل و وابسته</span>
+                    </div>
+                </div>
+                <a href="/patent/ادعانامه.docx" class="btn" download="ادعانامه.docx">دانلود DOCX</a>
+            </div>
+
+            <!-- 2. Description -->
+            <div class="file-row" style="border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+                <div class="file-info">
+                    <div class="file-icon">📑</div>
+                    <div class="file-meta">
+                        <h3>۲. توصیف اختراع (Description)</h3>
+                        <span>فرمت: DOCX | حجم: ۴۲ کیلوبایت | دارای تمامی ۹ بخش الزامی</span>
+                    </div>
+                </div>
+                <a href="/patent/توصیف_اختراع.docx" class="btn" download="توصیف_اختراع.docx">دانلود DOCX</a>
+            </div>
+
+            <!-- 3. Abstract -->
+            <div class="file-row" style="border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+                <div class="file-info">
+                    <div class="file-icon">📝</div>
+                    <div class="file-meta">
+                        <h3>۳. خلاصه اختراع (Abstract)</h3>
+                        <span>فرمت: DOCX | حجم: ۳۷ کیلوبایت | ۱۷۰ کلمه دقیق</span>
+                    </div>
+                </div>
+                <a href="/patent/خلاصه_اختراع.docx" class="btn" download="خلاصه_اختراع.docx">دانلود DOCX</a>
+            </div>
+
+            <!-- 4. Technical Drawings PDF -->
+            <div class="file-row" style="border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+                <div class="file-info">
+                    <div class="file-icon">📐</div>
+                    <div class="file-meta">
+                        <h3>۴. نقشه فنی اختراع (PDF اصلی سامانه)</h3>
+                        <span>فرمت: PDF | حجم: ۱.۲ مگابایت | ۶ شکل سیاه و سفید و خطی</span>
+                    </div>
+                </div>
+                <a href="/patent/نقشه_فنی_اختراع.pdf" class="btn btn-gold" download="نقشه_فنی_اختراع.pdf">دانلود PDF</a>
+            </div>
+
+            <!-- 5. Technical Drawings DOCX -->
+            <div class="file-row">
+                <div class="file-info">
+                    <div class="file-icon">📊</div>
+                    <div class="file-meta">
+                        <h3>۵. نقشه فنی اختراع (نسخه Word)</h3>
+                        <span>فرمت: DOCX | حجم: ۱.۱ مگابایت | جهت آرشیو یا ویرایش</span>
+                    </div>
+                </div>
+                <a href="/patent/نقشه_فنی_اختراع.docx" class="btn" download="نقشه_فنی_اختراع.docx">دانلود DOCX</a>
+            </div>
+        </div>
+
+        <div style="text-align: center; font-size: 12px; color: var(--text-secondary); margin-top: 10px;">
+            این فایل‌ها به صورت مستقیم قابل بارگذاری در کارتابل «لیست ضمایم اظهارنامه» سامانه مالکیت معنوی هستند.
+        </div>
+    </div>
+
+    <div id="toast" class="toast">کپی شد!</div>
+
+    <script>
+        function copyText(elementId) {
+            const text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('toast');
+                toast.style.display = 'block';
+                setTimeout(() => { toast.style.display = 'none'; }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
