@@ -500,6 +500,112 @@
 
         
         
+        
+        /* --- CINEMATIC MOVIE PLAYER & MATCH GALLERY STYLES --- */
+        .scenario-card-interactive {
+            cursor: pointer;
+            transition: all 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-radius: 16px;
+            padding: 14px 16px;
+            position: relative;
+            user-select: none;
+        }
+        .scenario-card-interactive:hover {
+            transform: translateY(-4px) scale(1.015);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.7), 0 0 20px rgba(6, 182, 212, 0.45);
+        }
+        .scenario-play-banner {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.25), rgba(59, 130, 246, 0.25));
+            border: 1px dashed var(--accent);
+            border-radius: 10px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 12px;
+            font-weight: 800;
+            color: #FFF;
+        }
+        .scenario-play-banner:hover {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.45), rgba(59, 130, 246, 0.45));
+            border-color: #FFF;
+        }
+
+        /* Fullscreen Cinema Movie Overlay */
+        #cinematicMovieOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(8, 12, 22, 0.98);
+            backdrop-filter: blur(16px);
+            z-index: 100000;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 16px;
+            max-width: 520px;
+            margin: 0 auto;
+            animation: fadeInCinema 0.3s ease forwards;
+        }
+        #cinematicMovieOverlay.active {
+            display: flex;
+        }
+        @keyframes fadeInCinema {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .cinema-screen-box {
+            flex: 1;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+            border: 2px solid var(--accent);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.8), 0 0 30px rgba(6, 182, 212, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .cinema-timeline-bar {
+            height: 4px;
+            background: var(--surface-highlight);
+            width: 100%;
+            position: relative;
+        }
+        .cinema-timeline-progress {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--gold));
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .cinema-badge-glow {
+            animation: cinemaPulse 1.8s infinite alternate;
+        }
+        @keyframes cinemaPulse {
+            from { transform: scale(1); filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.4)); }
+            to { transform: scale(1.05); filter: drop-shadow(0 0 16px rgba(6, 182, 212, 0.8)); }
+        }
+
+        .cinema-wax-seal {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #EAB308 30%, #B45309 90%);
+            border: 2px solid #FDE047;
+            box-shadow: 0 0 20px rgba(234, 179, 8, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            animation: waxGlow 2s infinite alternate;
+        }
+        @keyframes waxGlow {
+            from { transform: scale(0.95) rotate(-3deg); }
+            to { transform: scale(1.05) rotate(3deg); }
+        }
+
         /* Animated Notification Toasts & Badges */
         #gameNotificationCenter {
             position: fixed;
@@ -830,6 +936,10 @@
             </button>
         </div>
 
+                <!-- Completed Matches Gallery Button -->
+        <button class="btn btn-secondary" style="width: 100%; margin-bottom: 6px; border-color: var(--gold); color: var(--gold); font-weight: 800;" onclick="openCompletedGalleryModal()">
+            📂 <span data-i18n="btn_open_completed_gallery">گالری پرونده‌های مختومه</span> (<span id="profileGalleryCountBadge">۰</span>)
+        </button>
         <button class="btn" onclick="saveAndReturnHome()" data-i18n="profile_save_btn">ذخیره پرونده و بازگشت</button>
     </div>
 
@@ -1453,6 +1563,95 @@
 
 
 
+
+<!-- CINEMATIC MATCH MOVIE THEATER (Watch matches like a movie with automatic animations) -->
+<div id="cinematicMovieOverlay">
+    <!-- Cinema Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 24px;">🎬</span>
+            <div>
+                <h3 style="font-size: 15px; font-weight: 900; color: #FFF; margin: 0;" id="cinemaMatchTitle">سینمای پرونده کارآگاه نابغه</h3>
+                <span style="font-size: 10.5px; color: var(--accent); font-weight: 700;" id="cinemaSceneLabel">صحنه ۱ از ۶: آغاز پرونده</span>
+            </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="exitCinematicMovie()" style="padding: 4px 10px; font-size: 12px;">✕</button>
+    </div>
+
+    <!-- Timeline Progress Bar -->
+    <div class="cinema-timeline-bar" style="margin: 8px 0;">
+        <div class="cinema-timeline-progress" id="cinemaProgressBar"></div>
+    </div>
+
+    <!-- Scene Chapter Chips -->
+    <div style="display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px;" id="cinemaChapterChips">
+        <!-- Rendered dynamically -->
+    </div>
+
+    <!-- Cinema Projection Box -->
+    <div class="cinema-screen-box" id="cinemaScreenArea">
+        <div id="cinemaContent" style="flex: 1; padding: 16px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; overflow-y: auto;">
+            <!-- Live animated scene frames rendered here -->
+        </div>
+    </div>
+
+    <!-- Cinema Controls Bar -->
+    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+        <div style="display: flex; gap: 8px; align-items: center; justify-content: center;">
+            <button class="btn btn-secondary btn-sm" onclick="cinemaPrevScene()" style="font-size: 12px; padding: 6px 12px;" data-i18n="cinema_btn_prev">
+                ⏮️ صحنه قبل
+            </button>
+            <button class="btn btn-sm" id="cinemaPlayPauseBtn" onclick="toggleCinemaPlayPause()" style="font-size: 13px; padding: 6px 18px; font-weight: 800; background: var(--accent); color: #000;" data-i18n="cinema_btn_pause">
+                توقف ⏸️
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="cinemaNextScene()" style="font-size: 12px; padding: 6px 12px;" data-i18n="cinema_btn_next">
+                صحنه بعد ⏭️
+            </button>
+            <button class="btn btn-secondary btn-sm" id="cinemaSpeedBtn" onclick="cycleCinemaSpeed()" style="font-size: 11px; padding: 6px 10px; font-family: monospace;">
+                1x
+            </button>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+            <button class="btn" style="flex: 2; font-size: 11.5px; padding: 8px; background: var(--gold); color: #000; font-weight: 800;" onclick="cinemaJumpToInteractiveGame()" data-i18n="cinema_btn_interactive">
+                🎮 ورود به تخته معما و بازی زنده
+            </button>
+            <button class="btn btn-secondary" style="flex: 1.2; font-size: 11px; padding: 8px;" onclick="cinemaCopyAiJson()">
+                📋 کپی JSON
+            </button>
+            <button class="btn btn-secondary btn-sm" style="flex: 0.8; font-size: 11px; padding: 8px;" onclick="exitCinematicMovie()" data-i18n="btn_close">
+                خروج
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- COMPLETED MATCHES GALLERY MODAL (Only contains fully completed games) -->
+<div class="modal-overlay" id="completedGalleryModal">
+    <div class="modal-sheet" style="max-height: 90vh;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 22px;">📂</span>
+                <div>
+                    <h3 style="font-size: 15px; font-weight: 800; color: var(--gold);" data-i18n="gallery_modal_title">گالری پرونده‌های مختومه‌شده</h3>
+                    <span style="font-size: 10px; color: var(--text-muted);" data-i18n="gallery_modal_subtitle">پرونده‌ها فقط در صورت اتمام کامل در این گالری ذخیره می‌شوند.</span>
+                </div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="closeCompletedGalleryModal()" style="padding: 2px 8px;">✕</button>
+        </div>
+
+        <div id="completedGalleryContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 65vh; overflow-y: auto; margin-top: 8px;">
+            <!-- Rendered dynamically -->
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 6px;">
+            <button class="btn btn-secondary" style="width: 100%;" onclick="closeCompletedGalleryModal()" data-i18n="btn_close">
+                بستن
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Interactive Match Scenarios & AI Processing Modal -->
 <div class="modal-overlay" id="scenarioPickerModal">
     <div class="modal-sheet" style="max-height: 90vh;">
@@ -1712,6 +1911,13 @@
         // --- 1. I18N DICTIONARY (FARSI & ENGLISH 100% UNIFIED & VERIFIED) ---
     const i18n = {
 fa: {
+            "btn_open_completed_gallery": "گالری پرونده‌های مختومه",
+            "cinema_btn_interactive": "🎮 ورود به تخته معما و بازی زنده",
+            "cinema_btn_next": "صحنه بعد ⏭️",
+            "cinema_btn_pause": "توقف ⏸️",
+            "cinema_btn_prev": "⏮️ صحنه قبل",
+            "gallery_modal_subtitle": "پرونده‌ها فقط در صورت اتمام کامل در این گالری ذخیره می‌شوند.",
+            "gallery_modal_title": "گالری پرونده‌های مختومه‌شده",
             "ans_anonymous_tag": "سوالات ناشناس کارآگاهی",
             "ans_instruction_banner": "این ۳ سوال ناشناس به دستت رسیده. با دقت و دستی جواب بده تا بعداً بتونی از جوابات برای پیدا کردن رفقا استفاده کنی!",
             "ans_q1_header": "سوال اول (ناشناس):",
@@ -1881,6 +2087,13 @@ fa: {
             "will_target_suspect_label": "کارآگاه مورد نظرت رو انتخاب کن:"
 },
 en: {
+            "btn_open_completed_gallery": "Completed Matches Gallery",
+            "cinema_btn_interactive": "🎮 Enter Mystery Board & Play Live",
+            "cinema_btn_next": "Next Scene ⏭️",
+            "cinema_btn_pause": "Pause ⏸️",
+            "cinema_btn_prev": "⏮️ Prev Scene",
+            "gallery_modal_subtitle": "Matches are archived here strictly upon full resolution.",
+            "gallery_modal_title": "Completed Matches Gallery",
             "ans_anonymous_tag": "Anonymous Inquiries",
             "ans_instruction_banner": "You received 3 anonymous questions. Answer by hand so you can leave subtle breadcrumbs!",
             "ans_q1_header": "Question 1 (Anonymous):",
@@ -2457,6 +2670,14 @@ en: {
     }
 
     function triggerTimeoutVictory(winner, priorityLevel, rightCount, wrongCount) {
+        recordCompletedMatchInGallery({
+            winnerType: "TIMEOUT_PRIORITY_VICTORY",
+            winnerPlayerId: winner.id,
+            winnerNickname: winner.nickname,
+            priorityLevel: priorityLevel,
+            rightGuesses: rightCount,
+            wrongGuesses: wrongCount
+        });
         playSfx('victory_fanfare');
         stopRoomClock();
         const av = AVATARS.find(a => a.id === winner.avatar) || AVATARS[0];
@@ -2634,6 +2855,7 @@ en: {
             };
             localStorage.setItem('dg_active_case', JSON.stringify(state));
             updateHomeActiveCaseCard();
+        updateCompletedGalleryBadgeCount();
         } catch (_) {}
     }
 
@@ -2826,6 +3048,14 @@ en: {
     }
 
     function triggerJokerVictory(jId, elimCount, target) {
+        const jokerPlayerP = realPlayers.find(p => p.id === jId) || realPlayers[0];
+        recordCompletedMatchInGallery({
+            winnerType: "JOKER_VICTORY",
+            winnerPlayerId: jId,
+            winnerNickname: jokerPlayerP.nickname,
+            eliminationsRecorded: elimCount,
+            targetRequired: target
+        });
         playSfx('victory_fanfare');
         stopRoomClock();
         const jokerPlayer = realPlayers.find(p => p.id === jId) || realPlayers[0];
@@ -3925,6 +4155,11 @@ en: {
     }
 
     function triggerNormalVictory(winner) {
+        recordCompletedMatchInGallery({
+            winnerType: "REGULAR_DETECTIVE_VICTORY",
+            winnerPlayerId: winner.id,
+            winnerNickname: winner.nickname
+        });
         playSfx('victory_fanfare');
         stopRoomClock();
         const av = AVATARS.find(a => a.id === winner.avatar) || AVATARS[0];
@@ -4404,7 +4639,7 @@ en: {
         document.getElementById('scenarioPickerModal')?.classList.remove('active');
     }
 
-    function renderScenarioCards() {
+        function renderScenarioCards() {
         const container = document.getElementById('scenarioCardsContainer');
         if (!container) return;
         container.innerHTML = '';
@@ -4412,12 +4647,12 @@ en: {
 
         MATCH_SCENARIOS.forEach((sc, idx) => {
             const card = document.createElement('div');
-            card.className = 'card card-elevated';
-            card.style.borderColor = sc.data.outcome.winnerType === 'JOKER_VICTORY' ? '#A855F7' : 'var(--accent)';
-            card.style.background = sc.data.outcome.winnerType === 'JOKER_VICTORY' 
-                ? 'linear-gradient(135deg, rgba(88, 28, 135, 0.25), rgba(15, 23, 42, 0.85))' 
-                : 'linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(15, 23, 42, 0.85))';
-            card.style.padding = '12px 14px';
+            card.className = 'card card-elevated scenario-card-interactive';
+            const isJoker = sc.data.outcome.winnerType === 'JOKER_VICTORY';
+            card.style.borderColor = isJoker ? '#A855F7' : 'var(--accent)';
+            card.style.background = isJoker 
+                ? 'linear-gradient(135deg, rgba(88, 28, 135, 0.28), rgba(15, 23, 42, 0.9))' 
+                : 'linear-gradient(135deg, rgba(6, 182, 212, 0.16), rgba(15, 23, 42, 0.9))';
 
             const title = isFa ? sc.titleFa : sc.titleEn;
             const desc = isFa ? sc.descFa : sc.descEn;
@@ -4426,31 +4661,39 @@ en: {
             card.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
                     <div>
-                        <h4 style="font-size: 13.5px; font-weight: 800; color: #FFF; margin: 0;">${title}</h4>
+                        <h4 style="font-size: 14px; font-weight: 900; color: #FFF; margin: 0;">${title}</h4>
                         <div style="display: flex; gap: 6px; margin-top: 4px;">
                             <span class="tag-pill" style="font-size: 9.5px; background: rgba(6, 182, 212, 0.25); color: var(--accent);">${sc.playerCount} ${isFa ? 'بازیکن' : 'Players'}</span>
                             <span class="tag-pill" style="font-size: 9.5px; background: rgba(234, 179, 8, 0.2); color: var(--gold);">${tag}</span>
                         </div>
                     </div>
-                    <span style="font-size: 24px;">${sc.data.outcome.winnerType === 'JOKER_VICTORY' ? '🃏' : '🕵️'}</span>
+                    <span style="font-size: 26px;">${isJoker ? '🃏' : '🕵️'}</span>
                 </div>
 
-                <p style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.5; margin: 8px 0 10px;">
+                <p style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.5; margin: 8px 0 6px;">
                     ${desc}
                 </p>
 
-                <div style="display: flex; gap: 6px;">
-                    <button class="btn btn-sm" style="flex: 1.2; font-size: 11px; padding: 6px 8px; font-weight: 800;" onclick="loadMatchScenario('${sc.id}')">
-                        ▶️ ${isFa ? 'اجرای سناریو در بازی' : 'Load Scenario Live'}
+                <!-- Clickable Movie Play Banner -->
+                <div class="scenario-play-banner" onclick="event.stopPropagation(); startCinematicMovieForScenario('${sc.id}')">
+                    <span>🎬 ${isFa ? 'تماشای فیلم کامل بازی (انیمیشن اتوماتیک)' : 'Watch Full Match Movie (Auto Animation)'}</span>
+                    <span style="font-size: 14px;">▶️</span>
+                </div>
+
+                <div style="display: flex; gap: 6px; margin-top: 8px;" onclick="event.stopPropagation()">
+                    <button class="btn btn-sm" style="flex: 1.2; font-size: 11px; padding: 6px 8px; font-weight: 800; background: var(--gold); color: #000;" onclick="loadMatchScenario('${sc.id}')">
+                        🎮 ${isFa ? 'اجرای زنده در بازی' : 'Load Interactive'}
                     </button>
                     <button class="btn btn-secondary btn-sm" style="flex: 1; font-size: 10.5px; padding: 6px 8px;" onclick="copyScenarioJson('${sc.id}')">
-                        📋 ${isFa ? 'کپی JSON هوش مصنوعی' : 'Copy AI JSON'}
+                        📋 ${isFa ? 'کپی JSON' : 'Copy JSON'}
                     </button>
                     <button class="btn btn-secondary btn-sm" style="padding: 6px 8px; font-size: 10.5px;" onclick="downloadScenarioJson('${sc.id}')" title="${isFa ? 'دانلود فایل JSON' : 'Download JSON'}">
                         💾
                     </button>
                 </div>
             `;
+            // Make the entire card clickable to launch the movie player!
+            card.onclick = () => startCinematicMovieForScenario(sc.id);
             container.appendChild(card);
         });
     }
@@ -4610,6 +4853,567 @@ en: {
                 : "Current live match data exported to JSON and copied to clipboard!",
             type: 'success'
         });
+    }
+
+    
+    // --- 17. CINEMATIC MOVIE PLAYER & COMPLETED MATCHES GALLERY ---
+    let cinemaMatchData = null;
+    let cinemaCurrentScene = 0;
+    let cinemaTimer = null;
+    let cinemaProgressInterval = null;
+    let cinemaIsPlaying = true;
+    let cinemaSpeed = 1; // 1x, 2x, 4x
+    let cinemaProgressMs = 0;
+    let cinemaSceneDurationMs = 7000; // 7 seconds per scene at 1x
+
+    const CINEMA_CHAPTERS = [
+        { id: 0, titleFa: "آغاز پرونده", titleEn: "Match Intro", icon: "🕵️" },
+        { id: 1, titleFa: "نقش مخفی جوکر", titleEn: "Secret Joker", icon: "🃏" },
+        { id: 2, titleFa: "طرح سوال و پاکت مدارک", titleEn: "Q&A & Package", icon: "✉️" },
+        { id: 3, titleFa: "مکالمات بی‌سیم", titleEn: "Comms Wire", icon: "📡" },
+        { id: 4, titleFa: "سوتی‌ها و حذف", titleEn: "Eliminations", icon: "💥" },
+        { id: 5, titleFa: "وصیت‌نامه نهایی", titleEn: "Final Will", icon: "📜" },
+        { id: 6, titleFa: "نتیجه و افشای نهایی", titleEn: "Grand Finale", icon: "🏆" }
+    ];
+
+    function startCinematicMovieForScenario(scenarioId) {
+        const sc = MATCH_SCENARIOS.find(s => s.id === scenarioId);
+        if (!sc) return;
+        closeScenarioPickerModal();
+        startCinematicMovie(sc.data);
+    }
+
+    function startCinematicMovie(data) {
+        cinemaMatchData = data;
+        cinemaCurrentScene = 0;
+        cinemaIsPlaying = true;
+        cinemaSpeed = 1;
+        playSfx('envelope_rip');
+
+        const overlay = document.getElementById('cinematicMovieOverlay');
+        if (!overlay) return;
+        overlay.classList.add('active');
+
+        const titleEl = document.getElementById('cinemaMatchTitle');
+        if (titleEl) {
+            titleEl.textContent = currentLang === 'fa' 
+                ? `فیلم سینمایی پرونده ${data.matchConfig.roomId} (${data.players.length} کارآگاه)`
+                : `Case Movie: ${data.matchConfig.roomId} (${data.players.length} Detectives)`;
+        }
+
+        renderCinemaChapterChips();
+        renderCinemaScene(0);
+        startCinemaPlayback();
+    }
+
+    function renderCinemaChapterChips() {
+        const container = document.getElementById('cinemaChapterChips');
+        if (!container) return;
+        container.innerHTML = '';
+        CINEMA_CHAPTERS.forEach((ch, idx) => {
+            const chip = document.createElement('div');
+            chip.className = `tag-pill ${idx === cinemaCurrentScene ? 'selected' : ''}`;
+            chip.style.cursor = 'pointer';
+            chip.style.fontSize = '10px';
+            chip.style.padding = '3px 8px';
+            chip.style.whiteSpace = 'nowrap';
+            chip.style.background = idx === cinemaCurrentScene ? 'var(--accent)' : 'var(--surface-highlight)';
+            chip.style.color = idx === cinemaCurrentScene ? '#000' : 'var(--text-secondary)';
+            chip.style.fontWeight = idx === cinemaCurrentScene ? '800' : '600';
+            chip.innerHTML = `${ch.icon} ${currentLang === 'fa' ? ch.titleFa : ch.titleEn}`;
+            chip.onclick = () => jumpToCinemaScene(idx);
+            container.appendChild(chip);
+        });
+    }
+
+    function jumpToCinemaScene(idx) {
+        playSfx('click');
+        cinemaCurrentScene = idx;
+        renderCinemaChapterChips();
+        renderCinemaScene(idx);
+        resetCinemaSceneTimer();
+    }
+
+    function cinemaNextScene() {
+        if (cinemaCurrentScene < CINEMA_CHAPTERS.length - 1) {
+            jumpToCinemaScene(cinemaCurrentScene + 1);
+        } else {
+            // End of movie
+            pauseCinemaPlayback();
+            showGameNotification({
+                title: currentLang === 'fa' ? "🎬 فیلم پرونده به پایان رسید!" : "🎬 Movie Complete!",
+                message: currentLang === 'fa' ? "می‌توانید به گالری مراجعه کرده، JSON را کپی کنید یا وارد تخته بازی شوید." : "You can copy the AI JSON or jump into the interactive board.",
+                type: 'success'
+            });
+        }
+    }
+
+    function cinemaPrevScene() {
+        if (cinemaCurrentScene > 0) {
+            jumpToCinemaScene(cinemaCurrentScene - 1);
+        }
+    }
+
+    function toggleCinemaPlayPause() {
+        playSfx('click');
+        if (cinemaIsPlaying) {
+            pauseCinemaPlayback();
+        } else {
+            resumeCinemaPlayback();
+        }
+    }
+
+    function pauseCinemaPlayback() {
+        cinemaIsPlaying = false;
+        clearInterval(cinemaProgressInterval);
+        clearTimeout(cinemaTimer);
+        const btn = document.getElementById('cinemaPlayPauseBtn');
+        if (btn) {
+            btn.innerHTML = currentLang === 'fa' ? "پخش ▶️" : "Play ▶️";
+            btn.style.background = "var(--success)";
+        }
+    }
+
+    function resumeCinemaPlayback() {
+        cinemaIsPlaying = true;
+        const btn = document.getElementById('cinemaPlayPauseBtn');
+        if (btn) {
+            btn.innerHTML = currentLang === 'fa' ? "توقف ⏸️" : "Pause ⏸️";
+            btn.style.background = "var(--accent)";
+        }
+        startCinemaPlayback();
+    }
+
+    function cycleCinemaSpeed() {
+        playSfx('click');
+        if (cinemaSpeed === 1) cinemaSpeed = 2;
+        else if (cinemaSpeed === 2) cinemaSpeed = 4;
+        else cinemaSpeed = 1;
+
+        const btn = document.getElementById('cinemaSpeedBtn');
+        if (btn) btn.textContent = `${cinemaSpeed}x`;
+        resetCinemaSceneTimer();
+    }
+
+    function startCinemaPlayback() {
+        clearInterval(cinemaProgressInterval);
+        clearTimeout(cinemaTimer);
+        if (!cinemaIsPlaying) return;
+
+        cinemaProgressMs = 0;
+        const effectiveDuration = cinemaSceneDurationMs / cinemaSpeed;
+        const progressBar = document.getElementById('cinemaProgressBar');
+
+        cinemaProgressInterval = setInterval(() => {
+            if (!cinemaIsPlaying) return;
+            cinemaProgressMs += 100;
+            const pct = Math.min(100, (cinemaProgressMs / effectiveDuration) * 100);
+            if (progressBar) progressBar.style.width = `${pct}%`;
+        }, 100);
+
+        cinemaTimer = setTimeout(() => {
+            if (cinemaIsPlaying) {
+                cinemaNextScene();
+            }
+        }, effectiveDuration);
+    }
+
+    function resetCinemaSceneTimer() {
+        const progressBar = document.getElementById('cinemaProgressBar');
+        if (progressBar) progressBar.style.width = '0%';
+        startCinemaPlayback();
+    }
+
+    function exitCinematicMovie() {
+        playSfx('click');
+        pauseCinemaPlayback();
+        document.getElementById('cinematicMovieOverlay')?.classList.remove('active');
+    }
+
+    function cinemaCopyAiJson() {
+        if (!cinemaMatchData) return;
+        playSfx('click');
+        const jsonStr = generateAiFriendlyGameJson(cinemaMatchData);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(jsonStr);
+        }
+        showGameNotification({
+            title: currentLang === 'fa' ? "📋 کپی شد!" : "📋 Copied!",
+            message: currentLang === 'fa' ? "کل سناریوی پرونده در قالب JSON هوش مصنوعی کپی گردید." : "Full match JSON copied for AI analysis!",
+            type: 'success'
+        });
+    }
+
+    function cinemaJumpToInteractiveGame() {
+        exitCinematicMovie();
+        if (!cinemaMatchData) return;
+        loadMatchScenario(cinemaMatchData.matchConfig.roomId);
+    }
+
+    function renderCinemaScene(sceneIndex) {
+        const content = document.getElementById('cinemaContent');
+        const labelEl = document.getElementById('cinemaSceneLabel');
+        if (!content || !cinemaMatchData) return;
+        const isFa = currentLang === 'fa';
+        const d = cinemaMatchData;
+
+        if (labelEl) {
+            labelEl.textContent = `${isFa ? 'صحنه' : 'Scene'} ${sceneIndex + 1} / 7: ${isFa ? CINEMA_CHAPTERS[sceneIndex].titleFa : CINEMA_CHAPTERS[sceneIndex].titleEn}`;
+        }
+
+        switch (sceneIndex) {
+            case 0: // Match Intro
+                content.innerHTML = `
+                    <div style="font-size: 54px; margin-bottom: 6px;" class="cinema-badge-glow">🕵️‍♂️</div>
+                    <span class="tag-pill" style="background: rgba(6, 182, 212, 0.2); color: var(--accent); margin-bottom: 6px;">
+                        ${isFa ? 'پرونده رسمی' : 'Official Case'} ${d.matchConfig.roomId}
+                    </span>
+                    <h2 style="font-size: 18px; font-weight: 900; color: #FFF; margin: 0 0 6px;">
+                        ${isFa ? 'گردهمایی کارآگاهان و شروع عملیات' : 'Detectives Assemble & Briefing Begins'}
+                    </h2>
+                    <p style="font-size: 12.5px; color: var(--text-secondary); max-width: 360px; line-height: 1.6; margin: 0 0 14px;">
+                        ${isFa 
+                            ? `${d.players.length} کارآگاه زبده دور یک میز جمع شده‌اند. هدف: کشف ۴ راز بزرگ بر اساس ۱ پاکت مدارک مهروموم‌شده!`
+                            : `${d.players.length} sharp detectives gathered. Objective: Deduce all 4 mysteries using exactly 1 sealed package!`}
+                    </p>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
+                        ${d.players.map(p => {
+                            const av = AVATARS.find(a => a.id === p.avatar) || AVATARS[0];
+                            return `
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 10px; padding: 6px 8px; min-width: 65px;">
+                                    <span style="font-size: 22px;">${av.emoji}</span>
+                                    <span style="font-size: 11px; font-weight: 700; color: #FFF;">${escapeHtml(isFa ? p.nickname : p.nicknameEn)}</span>
+                                    <span style="font-size: 9px; color: var(--accent); font-family: monospace;">${p.badgeId}</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+                break;
+
+            case 1: // Secret Joker Role
+                const joker = d.players.find(p => p.id === d.jokerDossier.jokerPlayerId) || d.players[0];
+                const jokerAv = AVATARS.find(a => a.id === joker.avatar) || AVATARS[0];
+                content.innerHTML = `
+                    <div style="font-size: 60px; margin-bottom: 6px;" class="cinema-badge-glow">🃏</div>
+                    <span class="tag-pill" style="background: rgba(168, 85, 247, 0.25); color: #D8B4FE; border: 1px solid #C084FC; margin-bottom: 6px;">
+                        ${isFa ? 'ماموریت محرمانه و نامتقارن' : 'Secret Asymmetric Objective'}
+                    </span>
+                    <h2 style="font-size: 18px; font-weight: 900; color: #C084FC; margin: 0 0 6px;">
+                        ${isFa ? `جوکر پرونده انتخاب شد: «${joker.nickname}»` : `Case Joker Selected: "${joker.nicknameEn}"`}
+                    </h2>
+                    <div class="joker-gradient-card" style="max-width: 380px; text-align: right; padding: 12px; margin-top: 6px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="font-size: 12px; font-weight: 800; color: #FFF;">
+                                ${isFa ? `هدف جوکر: حداقل ${d.jokerDossier.targetEliminations} حذف` : `Joker Target: At least ${d.jokerDossier.targetEliminations} Eliminations`}
+                            </span>
+                            <span style="font-size: 10px; color: #D8B4FE; font-family: monospace;">ceil(2*N/3)</span>
+                        </div>
+                        <p style="font-size: 11.5px; color: #E2E8F0; line-height: 1.5; margin: 0;">
+                            ${isFa 
+                                ? `جوکر نیازی به حل معماها ندارد. او باید با بلوف و هدایت غلط کارآگاهان، آنها را به ۳ اشتباه و حذف بکشاند!`
+                                : `The Joker does not need to solve the mysteries. Their goal is to mislead detectives into 3 strikes and elimination!`}
+                        </p>
+                    </div>
+                `;
+                break;
+
+            case 2: // Q&A & Package
+                content.innerHTML = `
+                    <div style="font-size: 54px; margin-bottom: 6px;">✉️</div>
+                    <span class="tag-pill" style="background: rgba(234, 179, 8, 0.2); color: var(--gold); margin-bottom: 6px;">
+                        ${isFa ? 'تنها ۱ پاکت مهروموم مدارک' : 'Single Sealed Evidence Package'}
+                    </span>
+                    <h2 style="font-size: 17px; font-weight: 900; color: #FFF; margin: 0 0 8px;">
+                        ${isFa ? 'طرح ۳ سوال دست‌نویس و توزیع پاکت مدارک' : '3 Manual Inquiries & Evidence Dispatch'}
+                    </h2>
+                    <div class="card card-elevated" style="max-width: 380px; border-color: var(--gold); text-align: right; padding: 12px;">
+                        <span style="font-size: 11px; color: var(--gold); font-weight: 800;">
+                            ${isFa ? `محتوای پاکت در دست کارآگاه (نویسنده: ${d.heldPackage.author})` : `Held Package (Author: ${d.heldPackage.author})`}
+                        </span>
+                        <div style="font-size: 11px; color: var(--text-primary); margin-top: 6px; line-height: 1.5;">
+                            ${d.heldPackage.questions.slice(0, 2).map((q, i) => `
+                                <div>• <b>${q}</b> <span style="color: var(--accent); font-weight: 700;">→ ${d.heldPackage.answers[i]}</span></div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                break;
+
+            case 3: // Comms Wire
+                content.innerHTML = `
+                    <div style="font-size: 50px; margin-bottom: 4px;">📡</div>
+                    <h2 style="font-size: 17px; font-weight: 900; color: var(--accent); margin: 0 0 8px;">
+                        ${isFa ? 'بی‌سیم دورهمی: بازجویی و تقاطع سرنخ‌ها' : 'Comms Wire: Interrogation & Cross-Examination'}
+                    </h2>
+                    <div style="display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 400px; max-height: 220px; overflow-y: auto; text-align: right;">
+                        ${d.commsWire.map(c => `
+                            <div class="chat-bubble ${c.isMe ? 'chat-bubble-me' : 'chat-bubble-them'}" style="margin: 2px 0; font-size: 12px; padding: 8px 10px;">
+                                <div style="font-size: 10px; font-weight: 800; color: var(--accent);">${escapeHtml(c.sender)} <span style="color: var(--text-muted); font-size: 9px;">${c.time}</span></div>
+                                <div style="margin-top: 2px;">${escapeHtml(c.text)}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                break;
+
+            case 4: // Mistakes & Eliminations
+                const elimPlayers = d.players.filter(p => p.isEliminated);
+                content.innerHTML = `
+                    <div style="font-size: 54px; margin-bottom: 6px; animation: toastShake 0.4s infinite alternate;">💥</div>
+                    <span class="tag-pill" style="background: rgba(239, 68, 68, 0.25); color: var(--error); margin-bottom: 6px;">
+                        ${isFa ? 'قانون فاحش ۳ اشتباه' : '3-Mistake Strikeout'}
+                    </span>
+                    <h2 style="font-size: 18px; font-weight: 900; color: var(--error); margin: 0 0 6px;">
+                        ${isFa ? 'سوتی‌های کارآگاهی و حذف از پرونده' : 'False Accusations & Eliminations'}
+                    </h2>
+                    <p style="font-size: 12px; color: var(--text-secondary); max-width: 360px; line-height: 1.5; margin: 0 0 10px;">
+                        ${isFa 
+                            ? `${elimPlayers.length} کارآگاه با ۳ اشتباه فاحش از حل پرونده کنار رفتند و به تماشاگر تبدیل شدند.`
+                            : `${elimPlayers.length} detective(s) made 3 mistakes and transitioned to spectator mode.`}
+                    </p>
+                    <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                        ${elimPlayers.map(p => `
+                            <div style="background: rgba(239, 68, 68, 0.15); border: 1.5px solid var(--error); border-radius: 12px; padding: 8px 12px; text-align: center;">
+                                <div style="font-size: 12px; font-weight: 800; color: #FFF;">⚠️ ${escapeHtml(isFa ? p.nickname : p.nicknameEn)}</div>
+                                <div style="font-size: 10px; color: var(--error);">${isFa ? '۳ خطا: حذف شد' : '3 Mistakes: Eliminated'}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                break;
+
+            case 5: // The Final Will
+                const will = d.wills[0] || { playerNickname: "کارآگاه", willType: "ACCUSATION", payloadText: "وصیت‌نامه ثبت نشد" };
+                content.innerHTML = `
+                    <div class="cinema-wax-seal" style="margin-bottom: 8px;">📜</div>
+                    <span class="tag-pill" style="background: rgba(234, 179, 8, 0.25); color: var(--gold); margin-bottom: 6px;">
+                        ${isFa ? 'وصیت‌نامه رسمی کارآگاه حذف‌شده' : "Eliminated Detective's Final Will"}
+                    </span>
+                    <h2 style="font-size: 17px; font-weight: 900; color: var(--gold); margin: 0 0 6px;">
+                        ${isFa ? `آخرین کلام کارآگاه «${will.playerNickname}»` : `Parting Move from "${will.playerNickname}"`}
+                    </h2>
+                    <div class="card card-elevated" style="max-width: 380px; border: 2px solid var(--gold); background: rgba(30, 41, 59, 0.9); padding: 12px; text-align: right;">
+                        <span class="tag-pill" style="font-size: 9.5px; margin-bottom: 4px;">${will.willType}</span>
+                        <p style="font-size: 12px; color: #FFF; font-weight: 700; line-height: 1.5; margin: 4px 0;">
+                            "${escapeHtml(will.payloadText)}"
+                        </p>
+                        ${will.answerText ? `
+                            <div style="background: var(--surface); padding: 6px 8px; border-radius: 6px; font-size: 11px; color: var(--accent); margin-top: 6px;">
+                                💬 <b>${isFa ? 'پاسخ مخاطب در بی‌سیم:' : 'Public Wire Response:'}</b> ${escapeHtml(will.answerText)}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                break;
+
+            case 6: // Grand Finale & Resolution
+                const isJokerWin = d.outcome.winnerType === 'JOKER_VICTORY';
+                content.innerHTML = `
+                    <div style="font-size: 64px; margin-bottom: 6px;">${isJokerWin ? '🃏' : '🏆'}</div>
+                    <span class="tag-pill" style="background: ${isJokerWin ? 'rgba(168, 85, 247, 0.3)' : 'rgba(16, 185, 129, 0.3)'}; color: ${isJokerWin ? '#D8B4FE' : 'var(--success)'}; font-size: 11px; margin-bottom: 6px;">
+                        ${isJokerWin ? (isFa ? 'پیروزی نامتقارن جوکر' : 'Asymmetric Joker Victory') : (isFa ? 'پیروزی درخشان کارآگاهان' : 'Detective Grand Victory')}
+                    </span>
+                    <h2 style="font-size: 20px; font-weight: 900; color: #FFF; margin: 0 0 6px;">
+                        ${isJokerWin ? (isFa ? 'پرونده به دست جوکر فتح شد!' : 'Joker Seized the Case!') : (isFa ? 'تمام ۴ معما با نبوغ کشف شدند!' : 'All 4 Mysteries Cracked!')}
+                    </h2>
+                    <div class="card card-elevated" style="max-width: 380px; border-color: ${isJokerWin ? '#A855F7' : 'var(--success)'}; padding: 12px; text-align: right;">
+                        <div style="font-size: 12.5px; font-weight: 800; color: #FFF; margin-bottom: 4px;">
+                            ${isFa ? `قهرمان پرونده: «${d.outcome.winnerNickname}»` : `Match Victor: "${d.outcome.winnerNickname}"`}
+                        </div>
+                        <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.5;">
+                            ${isFa ? (d.jokerDossier.notesFa || '') : (d.jokerDossier.notesEn || '')}
+                        </div>
+                    </div>
+                `;
+                break;
+        }
+    }
+
+    // --- COMPLETED MATCHES GALLERY PERSISTENCE ENGINE ---
+    function recordCompletedMatchInGallery(outcomeData) {
+        try {
+            const fullMatch = {
+                matchConfig: {
+                    roomId: currentRoomId,
+                    playerCount: realPlayers.length,
+                    durationHours: 8,
+                    elapsedSec: roomStartTime ? Math.floor((Date.now() - roomStartTime)/1000) : 3600,
+                    language: currentLang
+                },
+                players: realPlayers.map(p => ({
+                    id: p.id,
+                    nickname: p.nickname,
+                    nicknameEn: p.nickname,
+                    avatar: p.avatar,
+                    isHost: p.isHost,
+                    isEliminated: p.isEliminated || false,
+                    mistakes: p.wrongGuesses || 0,
+                    solvedCount: p.rightGuesses || 0,
+                    badgeId: p.badgeId || "DET-UNKNOWN",
+                    isJoker: (p.id === jokerPlayerId)
+                })),
+                jokerDossier: {
+                    jokerPlayerId: jokerPlayerId,
+                    jokerNickname: realPlayers.find(p => p.id === jokerPlayerId)?.nickname || "Joker",
+                    targetEliminations: jokerTarget,
+                    eligibleEliminationsCount: eligibleEliminationCount,
+                    status: jokerStatus,
+                    notesFa: jokerStatus === 'WON' ? `جوکر سقف ${jokerTarget} حذف را با موفقیت تکمیل کرد.` : `کارآگاه برنده شد و جوکر ناکام ماند.`
+                },
+                heldPackage: mySinglePackage || {
+                    packageId: "PKG-LIVE",
+                    author: "کارآگاه ۲",
+                    answerer: "کارآگاه ۳",
+                    questions: ["سوال ۱", "سوال ۲", "سوال ۳"],
+                    answers: ["پاسخ ۱", "پاسخ ۲", "پاسخ ۳"]
+                },
+                wills: publishedWills || [],
+                commsWire: groupChatMessages || [],
+                outcome: outcomeData,
+                completedAt: Date.now(),
+                dateFormatted: new Date().toLocaleDateString(currentLang === 'fa' ? 'fa-IR' : 'en-US'),
+                timeFormatted: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+
+            const raw = localStorage.getItem('dg_completed_matches_gallery');
+            let gallery = raw ? JSON.parse(raw) : [];
+
+            // Prevent duplicate entries within 5 seconds
+            if (!gallery.some(g => g.completedAt && Math.abs(g.completedAt - fullMatch.completedAt) < 5000)) {
+                gallery.unshift(fullMatch);
+                if (gallery.length > 50) gallery = gallery.slice(0, 50);
+                localStorage.setItem('dg_completed_matches_gallery', JSON.stringify(gallery));
+                updateCompletedGalleryBadgeCount();
+            }
+        } catch (e) {
+            console.error("Error archiving completed match to gallery:", e);
+        }
+    }
+
+    function updateCompletedGalleryBadgeCount() {
+        try {
+            const raw = localStorage.getItem('dg_completed_matches_gallery');
+            const gallery = raw ? JSON.parse(raw) : [];
+            const badge = document.getElementById('profileGalleryCountBadge');
+            if (badge) badge.textContent = gallery.length;
+        } catch (_) {}
+    }
+
+    function openCompletedGalleryModal() {
+        playSfx('click');
+        renderCompletedGallery();
+        document.getElementById('completedGalleryModal')?.classList.add('active');
+    }
+
+    function closeCompletedGalleryModal() {
+        playSfx('click');
+        document.getElementById('completedGalleryModal')?.classList.remove('active');
+    }
+
+    function renderCompletedGallery() {
+        const container = document.getElementById('completedGalleryContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        const isFa = currentLang === 'fa';
+
+        const raw = localStorage.getItem('dg_completed_matches_gallery');
+        const gallery = raw ? JSON.parse(raw) : [];
+
+        if (gallery.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 30px 16px; color: var(--text-muted);">
+                    <div style="font-size: 40px; margin-bottom: 8px;">📂</div>
+                    <p style="font-size: 12.5px; line-height: 1.6; margin: 0;">
+                        ${isFa 
+                            ? 'هنوز هیچ پرونده‌ای به اتمام کامل نرسیده است! پرونده‌ها تنها در صورت اتمام رسمی و قطعی (حل ۴ معما یا برد جوکر) در این گالری ذخیره می‌شوند.'
+                            : 'No completed matches archived yet! Matches are saved here strictly upon full resolution.'}
+                    </p>
+                </div>
+            `;
+            return;
+        }
+
+        gallery.forEach((match, idx) => {
+            const card = document.createElement('div');
+            card.className = 'card card-elevated scenario-card-interactive';
+            const isJoker = match.outcome.winnerType === 'JOKER_VICTORY';
+            card.style.borderColor = isJoker ? '#A855F7' : 'var(--gold)';
+            card.style.background = isJoker 
+                ? 'linear-gradient(135deg, rgba(88, 28, 135, 0.25), rgba(15, 23, 42, 0.85))'
+                : 'linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(15, 23, 42, 0.85))';
+
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 26px;">${isJoker ? '🃏' : '🏆'}</span>
+                        <div>
+                            <h4 style="font-size: 13.5px; font-weight: 800; color: #FFF; margin: 0;">
+                                ${isFa ? `پرونده مختومه ${match.matchConfig.roomId}` : `Resolved Case ${match.matchConfig.roomId}`}
+                            </h4>
+                            <span style="font-size: 10px; color: var(--text-muted);">${match.dateFormatted} | ${match.timeFormatted}</span>
+                        </div>
+                    </div>
+                    <span class="tag-pill" style="font-size: 9.5px; background: ${isJoker ? 'rgba(168, 85, 247, 0.3)' : 'rgba(16, 185, 129, 0.3)'}; color: ${isJoker ? '#D8B4FE' : 'var(--success)'};">
+                        ${isJoker ? (isFa ? 'برد جوکر' : 'Joker Won') : (isFa ? 'برد کارآگاه' : 'Detective Won')}
+                    </span>
+                </div>
+
+                <div style="font-size: 11.5px; color: var(--text-secondary); margin: 6px 0;">
+                    ${isFa ? `برنده پرونده: <b>«${match.outcome.winnerNickname}»</b> (${match.players.length} بازیکن)` : `Victor: <b>"${match.outcome.winnerNickname}"</b> (${match.players.length} Players)`}
+                </div>
+
+                <div style="display: flex; gap: 6px; margin-top: 8px;">
+                    <button class="btn btn-sm" style="flex: 1.5; font-size: 11px; padding: 6px 8px; font-weight: 800; background: var(--accent); color: #000;" onclick="startCinematicMovieFromGallery(${idx})">
+                        🎬 ${isFa ? 'پخش فیلم بازی' : 'Watch Movie'}
+                    </button>
+                    <button class="btn btn-secondary btn-sm" style="flex: 1; font-size: 10.5px; padding: 6px 8px;" onclick="copyGalleryMatchJson(${idx})">
+                        📋 ${isFa ? 'کپی JSON' : 'Copy JSON'}
+                    </button>
+                    <button class="btn btn-danger btn-sm" style="padding: 6px 10px; font-size: 11px;" onclick="deleteGalleryMatch(${idx})">
+                        🗑️
+                    </button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function startCinematicMovieFromGallery(idx) {
+        closeCompletedGalleryModal();
+        const raw = localStorage.getItem('dg_completed_matches_gallery');
+        const gallery = raw ? JSON.parse(raw) : [];
+        if (gallery[idx]) {
+            startCinematicMovie(gallery[idx]);
+        }
+    }
+
+    function copyGalleryMatchJson(idx) {
+        const raw = localStorage.getItem('dg_completed_matches_gallery');
+        const gallery = raw ? JSON.parse(raw) : [];
+        if (gallery[idx]) {
+            playSfx('click');
+            const jsonStr = generateAiFriendlyGameJson(gallery[idx]);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(jsonStr);
+            }
+            showGameNotification({
+                title: currentLang === 'fa' ? "📋 کپی شد!" : "📋 Copied!",
+                message: currentLang === 'fa' ? "JSON کامل پرونده مختومه کپی گردید." : "Completed match JSON copied!",
+                type: 'success'
+            });
+        }
+    }
+
+    function deleteGalleryMatch(idx) {
+        if (!confirm(currentLang === 'fa' ? "آیا این پرونده از آرشیو گالری حذف شود؟" : "Delete this match from archives?")) return;
+        playSfx('click');
+        const raw = localStorage.getItem('dg_completed_matches_gallery');
+        let gallery = raw ? JSON.parse(raw) : [];
+        gallery.splice(idx, 1);
+        localStorage.setItem('dg_completed_matches_gallery', JSON.stringify(gallery));
+        renderCompletedGallery();
+        updateCompletedGalleryBadgeCount();
     }
 
     // --- 15. INITIALIZATION ON LOAD ---
