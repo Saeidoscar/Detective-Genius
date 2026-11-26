@@ -2,6 +2,8 @@ package com.detectivegenius.networking.server
 
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.net.DatagramPacket
+import java.net.DatagramSocket
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
@@ -15,35 +17,48 @@ import java.util.concurrent.atomic.AtomicReference
 /**
  * Lightweight, robust, pure standard library embedded HTTP REST server for
  * offline Wi-Fi and Hotspot multiplayer networking in Detective Genius.
- * Binds strictly to 0.0.0.0 and handles client joins, heartbeat polling,
- * real-time action forwarding, and authoritative state synchronization.
+ * Binds strictly to 0.0.0.0 and handles room radar beaconing, client joins,
+ * heartbeat polling, password protection, and authoritative state synchronization.
  * Zero external dependencies: works on all Android versions and standard JVMs.
  */
 class EmbeddedHttpServer(
     private val preferredPort: Int = 8080
 ) {
     private var serverSocket: ServerSocket? = null
+    private var beaconSocket: DatagramSocket? = null
     private val isRunning = AtomicBoolean(false)
     private val threadPool = Executors.newCachedThreadPool()
 
     var activePort: Int = preferredPort
         private set
 
-    var currentRoomId: String = "DG-4829"
+    var currentRoomId: String = "DG-1842"
+    var roomName: String = "اتاق کارآگاهان"
+    var roomPassword: String = ""
+    var hostNickname: String = "کارآگاه (میزبان)"
+
     private val roomStateRef = AtomicReference<String>("{}")
     private val pendingJoins = ConcurrentLinkedQueue<String>() // Raw JSON strings
     private val pendingActions = ConcurrentLinkedQueue<String>() // Raw JSON strings
     private val connectedPlayers = ConcurrentHashMap<String, Long>() // playerId -> lastSeen
 
-    fun start(roomId: String, initialRoomStateJson: String): Int {
+    fun start(
+        roomId: String,
+        name: String = "اتاق کارآگاهان",
+        password: String = "",
+        hostNick: String = "کارآگاه (میزبان)",
+        initialRoomStateJson: String = "{}"
+    ): Int {
+        currentRoomId = roomId
+        roomName = if (name.isNotBlank()) name.trim() else "اتاق کارآگاهان"
+        roomPassword = password.trim()
+        hostNickname = if (hostNick.isNotBlank()) hostNick.trim() else "کارآگاه (میزبان)"
+        roomStateRef.set(initialRoomStateJson)
+
         if (isRunning.get()) {
-            currentRoomId = roomId
-            roomStateRef.set(initialRoomStateJson)
             return activePort
         }
 
-        currentRoomId = roomId
-        roomStateRef.set(initialRoomStateJson)
         pendingJoins.clear()
         pendingActions.clear()
         connectedPlayers.clear()
@@ -69,6 +84,7 @@ class EmbeddedHttpServer(
         serverSocket = boundSocket
         isRunning.set(true)
 
+        // 1. TCP Server Thread
         threadPool.execute {
             while (isRunning.get() && !boundSocket.isClosed) {
                 try {
@@ -82,6 +98,39 @@ class EmbeddedHttpServer(
             }
         }
 
+        // 2. UDP Radar Broadcast Beacon Thread (Every 1.2s to 255.255.255.255:8889)
+        threadPool.execute {
+            var bSocket: DatagramSocket? = null
+            try {
+                bSocket = DatagramSocket()
+                bSocket.broadcast = true
+                beaconSocket = bSocket
+
+                while (isRunning.get()) {
+                    try {
+                        val playerCount = getConnectedPlayerCount()
+                        val hasPw = roomPassword.isNotEmpty()
+                        val safeName = roomName.replace("\"", "\\\"")
+                        val safeNick = hostNickname.replace("\"", "\\\"")
+                        val payload = """{"type":"DG_ROOM_BEACON","roomId":"$currentRoomId","roomName":"$safeName","hostNickname":"$safeNick","port":$activePort,"hasPassword":$hasPw,"playerCount":$playerCount,"timestamp":${System.currentTimeMillis()}}"""
+                        val bytes = payload.toByteArray(Charsets.UTF_8)
+                        val packet = DatagramPacket(bytes, bytes.size, InetAddress.getByName("255.255.255.255"), 8889)
+                        bSocket.send(packet)
+                    } catch (_: Throwable) {}
+
+                    try {
+                        Thread.sleep(1200)
+                    } catch (_: InterruptedException) {
+                        break
+                    }
+                }
+            } catch (_: Throwable) {
+            } finally {
+                try { bSocket?.close() } catch (_: Throwable) {}
+                beaconSocket = null
+            }
+        }
+
         return activePort
     }
 
@@ -91,6 +140,11 @@ class EmbeddedHttpServer(
             serverSocket?.close()
         } catch (_: Throwable) {}
         serverSocket = null
+
+        try {
+            beaconSocket?.close()
+        } catch (_: Throwable) {}
+        beaconSocket = null
     }
 
     fun isServerRunning(): Boolean = isRunning.get() && serverSocket?.isClosed == false
@@ -119,6 +173,14 @@ class EmbeddedHttpServer(
             list.add(item)
         }
         return "[" + list.joinToString(",") + "]"
+    }
+
+    private fun getConnectedPlayerCount(): Int {
+        return try {
+            val state = roomStateRef.get()
+            val matches = Regex("\"nickname\"\\s*:").findAll(state).count()
+            if (matches > 0) matches else 1
+        } catch (_: Throwable) { 1 }
     }
 
     private fun normalizePin(pin: String): String {
@@ -235,14 +297,29 @@ class EmbeddedHttpServer(
 
     private fun handlePing(): HttpResponse {
         val now = System.currentTimeMillis()
-        val json = """{"status":"ok","roomId":"$currentRoomId","port":$activePort,"isRunning":true,"timestamp":$now}"""
+        val safeName = roomName.replace("\"", "\\\"")
+        val safeNick = hostNickname.replace("\"", "\\\"")
+        val hasPw = roomPassword.isNotEmpty()
+        val count = getConnectedPlayerCount()
+
+        val json = """{"status":"ok","roomId":"$currentRoomId","roomName":"$safeName","hostNickname":"$safeNick","port":$activePort,"hasPassword":$hasPw,"playerCount":$count,"isRunning":true,"timestamp":$now}"""
         return HttpResponse(200, "application/json", json)
     }
 
     private fun handleJoin(body: String): HttpResponse {
+        // 1. Password check if room is password protected
+        if (roomPassword.isNotEmpty()) {
+            val suppliedPw = extractJsonField(body, "password")
+            if (suppliedPw != roomPassword) {
+                val err = """{"status":"error","code":"WRONG_PASSWORD","message":"رمز عبور اتاق اشتباه است."}"""
+                return HttpResponse(401, "application/json", err)
+            }
+        }
+
+        // 2. Room ID check if provided
         val reqPin = extractJsonField(body, "roomId")
         if (reqPin.isNotEmpty() && normalizePin(reqPin) != normalizePin(currentRoomId)) {
-            val err = """{"status":"error","code":"INVALID_ROOM_ID","message":"Room ID mismatch"}"""
+            val err = """{"status":"error","code":"INVALID_ROOM_ID","message":"شناسه اتاق همخوانی ندارد."}"""
             return HttpResponse(400, "application/json", err)
         }
 
@@ -258,7 +335,8 @@ class EmbeddedHttpServer(
         pendingJoins.add(playerBlock)
 
         val state = roomStateRef.get()
-        val resp = """{"status":"ok","roomId":"$currentRoomId","playerId":"$playerId","gameState":$state}"""
+        val safeName = roomName.replace("\"", "\\\"")
+        val resp = """{"status":"ok","roomId":"$currentRoomId","roomName":"$safeName","playerId":"$playerId","gameState":$state}"""
         return HttpResponse(200, "application/json", resp)
     }
 
@@ -270,7 +348,8 @@ class EmbeddedHttpServer(
 
         val now = System.currentTimeMillis()
         val state = roomStateRef.get()
-        val resp = """{"status":"ok","roomId":"$currentRoomId","timestamp":$now,"gameState":$state}"""
+        val safeName = roomName.replace("\"", "\\\"")
+        val resp = """{"status":"ok","roomId":"$currentRoomId","roomName":"$safeName","timestamp":$now,"gameState":$state}"""
         return HttpResponse(200, "application/json", resp)
     }
 
