@@ -1125,7 +1125,7 @@
             <button class="btn btn-secondary" style="flex: 1;" onclick="shareLobbyRoom()" data-i18n="lobby_share_btn">
                 📢 اشتراک کد اتاق
             </button>
-            <button class="btn btn-secondary" style="flex: 1;" onclick="goToScreen('home')" data-i18n="btn_exit_lobby">
+            <button class="btn btn-secondary" style="flex: 1;" onclick="leaveLobby()" data-i18n="btn_exit_lobby">
                 خروج
             </button>
         </div>
@@ -2453,6 +2453,10 @@ en: {
         { id: "p1", nickname: "کارآگاه", avatar: "detective", isHost: true, isReady: true, rightGuesses: 0, wrongGuesses: 0, maxMistakes: 3 }
     ];
 
+    function getLocalPlayer() {
+        return realPlayers.find(p => p.id === myPlayerId) || realPlayers[0];
+    }
+
     let mistakes = 0;
     let solvedMysteries = new Set();
     let currentModalChallenge = null;
@@ -2506,7 +2510,19 @@ en: {
     }
 
     
-    // --- NETWORK DETECTION & COPY HELPERS ---
+    // =========================================================================
+    // MULTIPLAYER LAN & HOTSPOT NETWORKING ENGINE
+    // =========================================================================
+    let isHostMode = false;
+    let myPlayerId = "p1";
+    let currentHostPort = 8080;
+    let hostSyncInterval = null;
+    let clientPollInterval = null;
+    let lastKnownPhase = 'lobby';
+    let serverGameState = null;
+    let isConnectingToHost = false;
+
+    // Detect Host IP with priority for Android hotspot gateway (192.168.43.x)
     function detectHostIp() {
         if (window.DetectiveNative && window.DetectiveNative.getDeviceIp) {
             try {
@@ -2525,6 +2541,355 @@ en: {
             return currentHostIp;
         }
         return currentHostIp || '192.168.43.1';
+    }
+
+    // Unified network request helper: uses native HttpURLConnection bridge on Android, fetch() on web
+    async function dgNetworkRequest(method, endpoint, body = null) {
+        let url = endpoint;
+        if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
+            const host = isHostMode ? '127.0.0.1' : (currentHostIp || '192.168.43.1');
+            const port = currentHostPort || ((window.location && window.location.port === '3000') ? 3000 : 8080);
+            url = `http://${host}:${port}${endpoint}`;
+        }
+
+        // 1. Android Native Bridge (100% bypass of WebView CORS/Cleartext/Mixed Content)
+        if (window.DetectiveNative && window.DetectiveNative.httpRequest) {
+            try {
+                const bodyStr = body ? JSON.stringify(body) : null;
+                const respStr = window.DetectiveNative.httpRequest(method, url, bodyStr);
+                if (respStr && respStr.trim().length > 0) {
+                    const parsed = JSON.parse(respStr);
+                    if (parsed.status === 'error' && parsed.code === 'NETWORK_ERROR') {
+                        throw new Error(parsed.message || "Network error");
+                    }
+                    return parsed;
+                }
+            } catch (e) {
+                if (e.message && (e.message.includes('failed to connect') || e.message.includes('Network error') || e.message.includes('refused') || e.message.includes('timeout'))) {
+                    throw e;
+                }
+            }
+        }
+
+        // 2. Standard Fetch API (Web Preview fallback)
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 4000);
+        try {
+            const opts = {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                signal: timer.signal
+            };
+            if (body) {
+                opts.body = JSON.stringify(body);
+            }
+            const res = await fetch(url, opts);
+            clearTimeout(timer);
+            return await res.json();
+        } catch (err) {
+            clearTimeout(timer);
+            throw err;
+        }
+    }
+
+    // Broadcast room state from Host to network
+    function syncRoomStateToNetwork() {
+        if (!isHostMode) return;
+        if (!serverGameState) {
+            serverGameState = {
+                roomId: currentRoomId,
+                hostIp: currentHostIp,
+                hostPort: currentHostPort,
+                phase: 'lobby',
+                realPlayers: realPlayers,
+                submittedQuestions: {},
+                submittedAnswers: {},
+                assignedQuestions: {},
+                playerPackages: {},
+                playerSolutions: {},
+                chats: [],
+                publishedWills: [],
+                playerScores: {},
+                jokerPlayerId: jokerPlayerId || "",
+                jokerTarget: jokerTarget || 3,
+                updatedAt: Date.now()
+            };
+        }
+        serverGameState.realPlayers = realPlayers;
+        serverGameState.updatedAt = Date.now();
+
+        if (window.DetectiveNative && window.DetectiveNative.syncRoomState) {
+            try {
+                window.DetectiveNative.syncRoomState(JSON.stringify(serverGameState));
+            } catch (_) {}
+        }
+
+        dgNetworkRequest('POST', '/api/sync', { roomId: currentRoomId, gameState: serverGameState }).catch(() => {});
+    }
+
+    // Host background tick: checks for new player joins and incoming client actions
+    async function hostSyncTick() {
+        if (!isHostMode) return;
+
+        // 1. Drain pending joins from native server
+        if (window.DetectiveNative && window.DetectiveNative.drainPendingJoins) {
+            try {
+                const joinsRaw = window.DetectiveNative.drainPendingJoins();
+                if (joinsRaw && joinsRaw !== '[]') {
+                    const joins = JSON.parse(joinsRaw);
+                    let addedAny = false;
+                    for (const p of joins) {
+                        if (!realPlayers.some(existing => existing.id === p.id || (p.badgeId && existing.badgeId === p.badgeId))) {
+                            realPlayers.push({
+                                id: p.id || `p${realPlayers.length + 1}`,
+                                nickname: p.nickname || "کارآگاه مهمان",
+                                avatar: p.avatar || "detective",
+                                badgeId: p.badgeId || "",
+                                isHost: false,
+                                isReady: true,
+                                rightGuesses: 0,
+                                wrongGuesses: 0,
+                                mistakes: 0,
+                                maxMistakes: 3
+                            });
+                            addedAny = true;
+                            showGameNotification({
+                                title: currentLang === 'fa' ? "کارآگاه جدید ملحق شد! 🕵️" : "Detective Joined! 🕵️",
+                                message: currentLang === 'fa' ? `«${p.nickname}» وارد اتاق شد.` : `"${p.nickname}" joined the room.`,
+                                type: 'success'
+                            });
+                            playSfx('clue_solve');
+                        }
+                    }
+                    if (addedAny) {
+                        renderLobbyPlayers();
+                        syncRoomStateToNetwork();
+                    }
+                }
+            } catch (_) {}
+        }
+
+        // 2. Drain pending actions (questions, answers, chat, guesses)
+        if (window.DetectiveNative && window.DetectiveNative.drainPendingActions) {
+            try {
+                const actionsRaw = window.DetectiveNative.drainPendingActions();
+                if (actionsRaw && actionsRaw !== '[]') {
+                    const actions = JSON.parse(actionsRaw);
+                    for (const act of actions) {
+                        handleIncomingActionOnHost(act);
+                    }
+                }
+            } catch (_) {}
+        }
+
+        // 3. Fallback poll via network (for web preview or hybrid)
+        try {
+            const pollRes = await dgNetworkRequest('GET', `/api/poll?roomId=${currentRoomId}&playerId=p1`);
+            if (pollRes && pollRes.status === 'ok' && pollRes.gameState) {
+                const s = pollRes.gameState;
+                if (Array.isArray(s.realPlayers) && s.realPlayers.length > realPlayers.length) {
+                    let hasNew = false;
+                    for (const p of s.realPlayers) {
+                        if (!realPlayers.some(existing => existing.id === p.id || (p.badgeId && existing.badgeId === p.badgeId))) {
+                            realPlayers.push(p);
+                            hasNew = true;
+                            showGameNotification({
+                                title: currentLang === 'fa' ? "کارآگاه جدید ملحق شد! 🕵️" : "Detective Joined! 🕵️",
+                                message: currentLang === 'fa' ? `«${p.nickname}» وارد اتاق شد.` : `"${p.nickname}" joined the room.`,
+                                type: 'success'
+                            });
+                            playSfx('clue_solve');
+                        }
+                    }
+                    if (hasNew) {
+                        renderLobbyPlayers();
+                        syncRoomStateToNetwork();
+                    }
+                }
+            }
+        } catch (_) {}
+    }
+
+    // Host processes client actions
+    function handleIncomingActionOnHost(act) {
+        if (!act) return;
+        const type = act.type;
+        const pId = act.playerId;
+
+        if (type === 'SUBMIT_QUESTIONS') {
+            if (!serverGameState.submittedQuestions) serverGameState.submittedQuestions = {};
+            serverGameState.submittedQuestions[pId] = act.questions;
+            checkAndProceedToAnsweringPhase();
+        } else if (type === 'SUBMIT_ANSWERS') {
+            if (!serverGameState.submittedAnswers) serverGameState.submittedAnswers = {};
+            serverGameState.submittedAnswers[pId] = act.answers;
+            checkAndProceedToMysteryBoard();
+        } else if (type === 'CHAT') {
+            if (!serverGameState.chats) serverGameState.chats = [];
+            const msg = act.message || {
+                id: `msg_${Date.now()}`,
+                senderId: pId,
+                sender: act.sender || "کارآگاه",
+                text: act.text,
+                recipientId: act.recipientId || null,
+                time: act.time || "12:00"
+            };
+            if (!serverGameState.chats.some(m => m.id === msg.id)) {
+                serverGameState.chats.push(msg);
+                syncChatMessages(serverGameState.chats);
+                syncRoomStateToNetwork();
+            }
+        } else if (type === 'DEDUCTION_UPDATE') {
+            const targetP = realPlayers.find(p => p.id === pId);
+            if (targetP) {
+                targetP.rightGuesses = act.solvedCount || targetP.rightGuesses;
+                targetP.wrongGuesses = act.mistakes || targetP.wrongGuesses;
+                if (act.isEliminated) {
+                    targetP.isEliminated = true;
+                }
+                updateScoreboardDisplay();
+                syncRoomStateToNetwork();
+            }
+        } else if (type === 'SUBMIT_WILL') {
+            if (act.will) {
+                if (!serverGameState.publishedWills) serverGameState.publishedWills = [];
+                serverGameState.publishedWills.push(act.will);
+                publishedWills = serverGameState.publishedWills;
+                renderPublishedWills();
+                syncRoomStateToNetwork();
+            }
+        }
+    }
+
+    // Joiner background polling loop
+    function startClientPolling() {
+        if (clientPollInterval) clearInterval(clientPollInterval);
+        clientPollInterval = setInterval(clientPollTick, 800);
+    }
+
+    async function clientPollTick() {
+        if (isHostMode) return;
+        try {
+            const res = await dgNetworkRequest('GET', `/api/poll?roomId=${currentRoomId}&playerId=${myPlayerId}`);
+            if (res && res.status === 'ok' && res.gameState) {
+                applyServerGameState(res.gameState);
+            }
+        } catch (_) {}
+    }
+
+    // Apply state received from Host
+    function applyServerGameState(state) {
+        if (!state) return;
+        serverGameState = state;
+
+        // 1. Sync realPlayers
+        if (Array.isArray(state.realPlayers) && state.realPlayers.length > 0) {
+            const prevCount = realPlayers.length;
+            realPlayers = state.realPlayers;
+
+            const currentScreen = document.querySelector('.screen.active')?.id?.replace('screen-', '');
+            if (currentScreen === 'lobby') {
+                renderLobbyPlayers();
+            }
+            if (state.realPlayers.length > prevCount && currentScreen === 'lobby') {
+                playSfx('clue_solve');
+            }
+        }
+
+        // 2. Sync Joker info
+        if (state.jokerPlayerId) {
+            jokerPlayerId = state.jokerPlayerId;
+            jokerTarget = state.jokerTarget || Math.ceil((2 * realPlayers.length) / 3);
+        }
+
+        // 3. Sync Game Phase
+        const newPhase = state.phase;
+        if (newPhase && newPhase !== lastKnownPhase) {
+            lastKnownPhase = newPhase;
+            handlePhaseTransition(newPhase, state);
+        }
+
+        // 4. Sync Chats
+        if (Array.isArray(state.chats)) {
+            syncChatMessages(state.chats);
+        }
+
+        // 5. Sync Published Wills
+        if (Array.isArray(state.publishedWills)) {
+            publishedWills = state.publishedWills;
+            renderPublishedWills();
+        }
+    }
+
+    // Handle phase transitions triggered by Host
+    function handlePhaseTransition(newPhase, state) {
+        if (newPhase === 'question-creation') {
+            initLocalQuestionCreation();
+        } else if (newPhase === 'answering') {
+            setupLocalAnsweringPhase();
+        } else if (newPhase === 'distribution' || newPhase === 'mystery-board') {
+            setupLocalMysteryBoard();
+        } else if (newPhase === 'victory') {
+            const winner = state.winner || realPlayers[0];
+            triggerNormalVictory(winner);
+        }
+    }
+
+    // Chat synchronizer
+    function syncChatMessages(chatList) {
+        if (!Array.isArray(chatList)) return;
+        let hasNew = false;
+        chatList.forEach(m => {
+            const isMine = m.senderId === myPlayerId;
+            const newObj = {
+                id: m.id,
+                senderId: m.senderId,
+                sender: m.sender,
+                text: m.text,
+                time: m.time || "12:00",
+                isMe: isMine
+            };
+
+            if (!m.recipientId) {
+                // Group chat
+                if (!groupChatMessages.some(existing => existing.id === m.id || (existing.isMe && existing.text === m.text))) {
+                    groupChatMessages.push(newObj);
+                    if (!isMine) hasNew = true;
+                }
+            } else {
+                // Private chat
+                const partner = isMine ? m.recipientId : m.senderId;
+                if (!privateChatMessages[partner]) privateChatMessages[partner] = [];
+                if (!privateChatMessages[partner].some(existing => existing.id === m.id || (existing.isMe && existing.text === m.text))) {
+                    privateChatMessages[partner].push(newObj);
+                    if (!isMine) hasNew = true;
+                }
+            }
+        });
+
+        if (hasNew) {
+            playSfx('clue_solve');
+            const currentScreen = document.querySelector('.screen.active')?.id?.replace('screen-', '');
+            if (currentScreen === 'chat') {
+                renderChatMessages();
+            } else {
+                showGameNotification({
+                    title: "📻 پیام جدید در بی‌سیم",
+                    message: "یک پیام جدید در بی‌سیم کارآگاهی دریافت شد.",
+                    type: 'info'
+                });
+            }
+        }
+    }
+
+    function leaveLobby() {
+        if (hostSyncInterval) { clearInterval(hostSyncInterval); hostSyncInterval = null; }
+        if (clientPollInterval) { clearInterval(clientPollInterval); clientPollInterval = null; }
+        if (isHostMode && window.DetectiveNative && window.DetectiveNative.stopHostServer) {
+            window.DetectiveNative.stopHostServer();
+        }
+        isHostMode = false;
+        goToScreen('home');
     }
 
     function copyHostIp() {
@@ -3226,6 +3591,14 @@ en: {
         publishedWills.push(newWill);
         updateWillBadgeCount();
 
+        // Broadcast will to room
+        dgNetworkRequest('POST', '/api/action', {
+            roomId: currentRoomId,
+            playerId: myPlayerId,
+            type: 'SUBMIT_WILL',
+            will: newWill
+        }).catch(() => {});
+
         // Broadcast will as ornate message in Comms Wire
         let broadcastText = "";
         if (activeWillTab === 'ACCUSATION') {
@@ -3556,19 +3929,108 @@ en: {
     }
 
     // --- 9. LOBBY (NO FAKE / MOCK PLAYERS!) ---
-    function startLobby(isHost) {
-        goToScreen('lobby');
-        if (!isHost) {
-            const joinNick = document.getElementById('joinNicknameInput')?.value?.trim();
-            const joinPin = document.getElementById('joinPinInput')?.value?.trim();
-            const joinBadge = document.getElementById('joinPlayerBadgeInput')?.value?.trim();
+    async function startLobby(isHost) {
+        if (isConnectingToHost) return;
 
-            if (joinNick) myNickname = joinNick;
-            if (joinPin) currentRoomId = joinPin;
-            if (joinBadge) {
-                myPlayerBadgeId = joinBadge;
-                localStorage.setItem('dg_player_badge_id', myPlayerBadgeId);
+        if (isHost) {
+            // ================== HOST FLOW ==================
+            isHostMode = true;
+            myPlayerId = "p1";
+            currentHostPort = (window.location && window.location.port === '3000') ? 3000 : 8080;
+            currentHostIp = detectHostIp();
+
+            // Ensure profile and badge
+            realPlayers = [{
+                id: "p1",
+                nickname: myNickname,
+                avatar: myAvatar,
+                isHost: true,
+                isReady: true,
+                badgeId: myPlayerBadgeId,
+                rightGuesses: 0,
+                wrongGuesses: 0,
+                mistakes: 0,
+                maxMistakes: 3
+            }];
+
+            updateBadgeDisplays();
+
+            const initialGameState = {
+                roomId: currentRoomId,
+                hostIp: currentHostIp,
+                hostPort: currentHostPort,
+                phase: 'lobby',
+                realPlayers: realPlayers,
+                submittedQuestions: {},
+                submittedAnswers: {},
+                assignedQuestions: {},
+                playerPackages: {},
+                playerSolutions: {},
+                chats: [],
+                publishedWills: [],
+                playerScores: {},
+                jokerPlayerId: "",
+                jokerTarget: 3,
+                updatedAt: Date.now()
+            };
+            serverGameState = initialGameState;
+
+            // Start native server on Android
+            if (window.DetectiveNative && window.DetectiveNative.startHostServer) {
+                try {
+                    window.DetectiveNative.startHostServer(currentHostPort, currentRoomId, JSON.stringify(initialGameState));
+                } catch (e) {
+                    console.error("Native startHostServer failed:", e);
+                }
             }
+
+            // Sync to web preview server if in browser
+            dgNetworkRequest('POST', '/api/sync', { roomId: currentRoomId, gameState: initialGameState }).catch(() => {});
+
+            // Start Host background sync loop
+            if (hostSyncInterval) clearInterval(hostSyncInterval);
+            hostSyncInterval = setInterval(hostSyncTick, 700);
+
+            // Display Host Info Card
+            const ipDisplay = document.getElementById('lobbyHostIpDisplay');
+            const roomIdDisplay = document.getElementById('lobbyRoomIdDisplay');
+            const pinDisplay = document.getElementById('lobbyPinDisplay');
+            if (ipDisplay) ipDisplay.textContent = currentHostIp;
+            if (roomIdDisplay) roomIdDisplay.textContent = currentRoomId;
+            if (pinDisplay) pinDisplay.textContent = `${currentLang === 'fa' ? 'شناسه اتاق' : 'Room ID'}: ${currentRoomId}`;
+
+            const hostCard = document.getElementById('lobbyHostNetworkCard');
+            if (hostCard) hostCard.style.display = 'flex';
+
+            // Show host controls
+            const addFriendCard = document.getElementById('addFriendNameInput')?.closest('.card');
+            if (addFriendCard) addFriendCard.style.display = 'flex';
+
+            goToScreen('lobby');
+            renderLobbyPlayers();
+            saveActiveCaseState('lobby');
+        } else {
+            // ================== JOINER FLOW ==================
+            const joinNick = document.getElementById('joinNicknameInput')?.value?.trim() || "کارآگاه مهمان";
+            let hostIp = document.getElementById('joinIpInput')?.value?.trim() || "192.168.43.1";
+            let joinPin = document.getElementById('joinPinInput')?.value?.trim() || "DG-4829";
+            const joinBadge = document.getElementById('joinPlayerBadgeInput')?.value?.trim() || myPlayerBadgeId;
+
+            let hostPort = 8080;
+            if (hostIp.includes(':')) {
+                const parts = hostIp.split(':');
+                hostIp = parts[0].trim();
+                hostPort = parseInt(parts[1].trim()) || 8080;
+            } else if (window.location && window.location.port === '3000') {
+                hostPort = 3000;
+            }
+
+            currentHostIp = hostIp;
+            currentHostPort = hostPort;
+            currentRoomId = joinPin;
+            myNickname = joinNick;
+            myPlayerBadgeId = joinBadge;
+            localStorage.setItem('dg_player_badge_id', myPlayerBadgeId);
 
             // Check if this badge has an existing saved case for this room:
             const raw = localStorage.getItem('dg_active_case');
@@ -3586,30 +4048,101 @@ en: {
                     }
                 } catch (_) {}
             }
+
+            const connectBtn = document.querySelector('#screen-join-room button.btn');
+            const originalBtnHtml = connectBtn ? connectBtn.innerHTML : '';
+            if (connectBtn) {
+                connectBtn.disabled = true;
+                connectBtn.innerHTML = currentLang === 'fa'
+                    ? `⏳ در حال اتصال به ${hostIp}...`
+                    : `⏳ Connecting to ${hostIp}...`;
+            }
+            isConnectingToHost = true;
+
+            try {
+                myPlayerId = `p_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
+                const joinPayload = {
+                    roomId: joinPin,
+                    player: {
+                        id: myPlayerId,
+                        nickname: joinNick,
+                        avatar: myAvatar,
+                        badgeId: joinBadge,
+                        isHost: false,
+                        isReady: true,
+                        rightGuesses: 0,
+                        wrongGuesses: 0,
+                        mistakes: 0,
+                        maxMistakes: 3
+                    }
+                };
+
+                const res = await dgNetworkRequest('POST', `http://${hostIp}:${hostPort}/api/join`, joinPayload);
+                if (res && res.status === 'ok') {
+                    isHostMode = false;
+                    myPlayerId = res.playerId || myPlayerId;
+
+                    if (res.gameState) {
+                        applyServerGameState(res.gameState);
+                    }
+
+                    // Display Joiner Info Card
+                    const hostCard = document.getElementById('lobbyHostNetworkCard');
+                    if (hostCard) {
+                        hostCard.style.display = 'flex';
+                        const ipDisp = document.getElementById('lobbyHostIpDisplay');
+                        if (ipDisp) ipDisp.textContent = `${hostIp} (${currentLang === 'fa' ? 'متصل' : 'Connected'})`;
+                        const rmDisp = document.getElementById('lobbyRoomIdDisplay');
+                        if (rmDisp) rmDisp.textContent = currentRoomId;
+                    }
+
+                    // Hide Host-only Friend adding from Joiner
+                    const addFriendCard = document.getElementById('addFriendNameInput')?.closest('.card');
+                    if (addFriendCard) addFriendCard.style.display = 'none';
+
+                    goToScreen('lobby');
+                    renderLobbyPlayers();
+                    playSfx('clue_solve');
+
+                    showGameNotification({
+                        title: currentLang === 'fa' ? "اتصال به اتاق پرونده موفقیت‌آمیز بود! 🎉" : "Connected to Room! 🎉",
+                        message: currentLang === 'fa' ? `به پرونده میزبان در ${hostIp} متصل شدید.` : `Connected to host at ${hostIp}.`,
+                        type: 'success'
+                    });
+
+                    startClientPolling();
+                } else {
+                    const msg = res?.message || (currentLang === 'fa' ? "خطا در اتصال به اتاق پرونده." : "Failed to join case room.");
+                    alert(msg);
+                }
+            } catch (err) {
+                const faErr = `❌ خطا در برقراری ارتباط با گوشی میزبان!
+
+آدرس مقصد: ${hostIp}:${hostPort}
+
+لطفاً موارد زیر را بررسی کنید:
+۱. آیا وای‌فای این گوشی به هات‌اسپات (Hotspot) گوشی میزبان متصل شده است؟
+۲. آیا گوشی میزبان دکمه «ایجاد پرونده جدید» را زده و در اتاق انتظار (لابی) حضور دارد؟
+۳. آیا آدرس آی‌پی (${hostIp}) با IP نمایش داده شده روی گوشی میزبان یکسان است؟`;
+
+                const enErr = `❌ Cannot connect to Host Phone!
+
+Target: ${hostIp}:${hostPort}
+
+Please verify:
+1. Is this phone connected to the Host's Hotspot or local Wi-Fi?
+2. Has the Host created the room and is currently in the Lobby?
+3. Does the IP (${hostIp}) match the Host IP displayed on the host phone?`;
+
+                alert(currentLang === 'fa' ? faErr : enErr);
+            } finally {
+                isConnectingToHost = false;
+                if (connectBtn) {
+                    connectBtn.disabled = false;
+                    connectBtn.innerHTML = originalBtnHtml;
+                }
+            }
         }
-
-        // Ensure current player profile and badge are assigned
-        realPlayers[0].nickname = myNickname;
-        realPlayers[0].avatar = myAvatar;
-        realPlayers[0].isHost = isHost;
-        realPlayers[0].badgeId = myPlayerBadgeId;
-        updateBadgeDisplays();
-
-        // Detect and display Host IP and Room ID
-        const hostIp = detectHostIp();
-        const ipDisplay = document.getElementById('lobbyHostIpDisplay');
-        const roomIdDisplay = document.getElementById('lobbyRoomIdDisplay');
-        const pinDisplay = document.getElementById('lobbyPinDisplay');
-
-        if (ipDisplay) ipDisplay.textContent = hostIp;
-        if (roomIdDisplay) roomIdDisplay.textContent = currentRoomId;
-        if (pinDisplay) pinDisplay.textContent = `${currentLang === 'fa' ? 'شناسه اتاق' : 'Room ID'}: ${currentRoomId}`;
-
-        const hostCard = document.getElementById('lobbyHostNetworkCard');
-        if (hostCard) hostCard.style.display = 'flex';
-
-        renderLobbyPlayers();
-        saveActiveCaseState('lobby');
     }
 
     function addFriendToLobby() {
@@ -3626,13 +4159,19 @@ en: {
             id: newId,
             nickname: name,
             avatar: freeAvatar.id,
+            badgeId: "DET-" + Math.floor(1000 + Math.random() * 9000),
             isHost: false,
-            isReady: true
+            isReady: true,
+            rightGuesses: 0,
+            wrongGuesses: 0,
+            mistakes: 0,
+            maxMistakes: 3
         });
 
         input.value = '';
         playSfx('click');
         renderLobbyPlayers();
+        syncRoomStateToNetwork();
     }
 
     function removeFriendFromLobby(idx) {
@@ -3640,6 +4179,7 @@ en: {
         realPlayers.splice(idx, 1);
         playSfx('click');
         renderLobbyPlayers();
+        syncRoomStateToNetwork();
     }
 
     function renderLobbyPlayers() {
@@ -3655,13 +4195,14 @@ en: {
 
         realPlayers.forEach((p, idx) => {
             const av = AVATARS.find(a => a.id === p.avatar) || AVATARS[0];
+            const isMe = p.id === myPlayerId || (idx === 0 && isHostMode);
             const row = document.createElement('div');
             row.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 8px 6px; background: var(--surface-elevated); border-radius: 10px;";
             row.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <span style="font-size: 26px;">${av.emoji}</span>
                     <div>
-                        <span style="font-weight: 700; font-size: 14px;">${escapeHtml(p.nickname)}</span>
+                        <span style="font-weight: 700; font-size: 14px;">${escapeHtml(p.nickname)} ${isMe ? `<span style="font-size: 11px; color: var(--accent);">(${currentLang==='fa'?'شما':'You'})</span>` : ''}</span>
                         ${p.isHost ? `<span class="tag-pill" style="margin-${currentLang==='fa'?'right':'left'}: 6px;">[${currentLang==='fa'?'میزبان':'Host'}]</span>` : ''}
                     </div>
                 </div>
@@ -3669,7 +4210,7 @@ en: {
                     <span style="font-size: 11px; font-weight: 700; color: var(--success);">
                         ${currentLang === 'fa' ? 'آماده پرونده' : 'READY'}
                     </span>
-                    ${idx > 0 ? `<button class="btn btn-danger btn-sm" onclick="removeFriendFromLobby(${idx})" style="padding: 2px 8px; font-size: 11px;">✕</button>` : ''}
+                    ${isHostMode && idx > 0 ? `<button class="btn btn-danger btn-sm" onclick="removeFriendFromLobby(${idx})" style="padding: 2px 8px; font-size: 11px;">✕</button>` : ''}
                 </div>
             `;
             container.appendChild(row);
@@ -3680,18 +4221,32 @@ en: {
 
         if (isValidCount) {
             warnBanner.style.display = 'none';
-            startBtn.disabled = false;
+            if (isHostMode) {
+                startBtn.disabled = false;
+                startBtn.textContent = currentLang === 'fa' ? "شروع عملیات کارآگاهی" : "Start Detective Operation";
+            } else {
+                startBtn.disabled = true;
+                startBtn.textContent = currentLang === 'fa' ? "در انتظار شروع توسط میزبان..." : "Waiting for Host to start...";
+            }
         } else {
             warnBanner.style.display = 'block';
             startBtn.disabled = true;
-            if (realPlayers.length < 4) {
+            if (isHostMode) {
+                startBtn.textContent = currentLang === 'fa' ? "شروع عملیات کارآگاهی" : "Start Detective Operation";
+                if (realPlayers.length < 4) {
+                    warnBanner.textContent = currentLang === 'fa'
+                        ? `⚠️ برای شروع، حداقل ۴ کارآگاه نیاز است (هم‌اکنون ${realPlayers.length} کارآگاه در اتاق حضور دارند). با دکمه زیر دوستان خود را اضافه کنید.`
+                        : `⚠️ Minimum 4 detectives required (currently ${realPlayers.length} in room). Add detectives below.`;
+                } else if (realPlayers.length % 2 !== 0) {
+                    warnBanner.textContent = currentLang === 'fa'
+                        ? `⚠️ تعداد کارآگاهان باید زوج باشد (۴، ۶، ۸، ...). هم‌اکنون ${realPlayers.length} کارآگاه حضور دارند؛ لطفاً ۱ بازیکن دیگر اضافه کنید.`
+                        : `⚠️ Detective count must be even (4, 6, 8, ...). Currently ${realPlayers.length}; please add 1 more detective.`;
+                }
+            } else {
+                startBtn.textContent = currentLang === 'fa' ? "در انتظار شروع توسط میزبان..." : "Waiting for Host to start...";
                 warnBanner.textContent = currentLang === 'fa'
-                    ? `⚠️ برای شروع، حداقل ۴ کارآگاه نیاز است (هم‌اکنون ${realPlayers.length} کارآگاه در اتاق حضور دارند).`
-                    : `⚠️ Minimum 4 detectives required (currently ${realPlayers.length} in room).`;
-            } else if (realPlayers.length % 2 !== 0) {
-                warnBanner.textContent = currentLang === 'fa'
-                    ? `⚠️ تعداد کارآگاهان باید زوج باشد (۴، ۶، ۸، ...). هم‌اکنون ${realPlayers.length} کارآگاه حضور دارند؛ لطفاً ۱ بازیکن دیگر اضافه کنید.`
-                    : `⚠️ Detective count must be even (4, 6, 8, ...). Currently ${realPlayers.length}; please add 1 more detective.`;
+                    ? `⚠️ در انتظار حضور حداقل ۴ کارآگاه زوج (${realPlayers.length} کارآگاه در اتاق)...`
+                    : `⚠️ Waiting for at least 4 even detectives (${realPlayers.length} currently in room)...`;
             }
         }
     }
@@ -3712,17 +4267,37 @@ en: {
     // --- 10. QUESTION CREATION (MANUAL ONLY + SUGGESTIONS + SAVED QUESTIONS) ---
     function beginQuestionPhase() {
         playSfx('card_deal');
-        // Initialize Joker Role & Asymmetric Objective!
         initJokerRole();
-        // Start 8-hour running clock!
         if (!roomStartTime) {
             startRoomClock();
         }
-        // Clear manual inputs
+
+        if (isHostMode) {
+            if (!serverGameState) serverGameState = {};
+            serverGameState.phase = 'question-creation';
+            serverGameState.jokerPlayerId = jokerPlayerId;
+            serverGameState.jokerTarget = jokerTarget;
+            serverGameState.realPlayers = realPlayers;
+            syncRoomStateToNetwork();
+        }
+
+        initLocalQuestionCreation();
+    }
+
+    function initLocalQuestionCreation() {
+        const me = getLocalPlayer();
         document.getElementById('qInput1').value = '';
         document.getElementById('qInput2').value = '';
         document.getElementById('qInput3').value = '';
-        document.getElementById('qcPlayerIndicator').textContent = realPlayers[0].nickname;
+        const pInd = document.getElementById('qcPlayerIndicator');
+        if (pInd) pInd.textContent = me.nickname;
+
+        const submitBtn = document.getElementById('qcSubmitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = currentLang === 'fa' ? "مهروموم و ثبت ۳ سوال" : "Seal & Submit 3 Questions";
+        }
+
         updateQcProgress();
         renderSuggestionsChips();
         goToScreen('question-creation');
@@ -3851,41 +4426,96 @@ en: {
         myQuestions[1] = document.getElementById('qInput2').value.trim();
         myQuestions[2] = document.getElementById('qInput3').value.trim();
 
-        // Answering Phase:
-        // Set up the anonymous questions this player received to answer!
-        // These are authored by detective P_last (or partner)
-        setupAnsweringPhase();
+        const submitBtn = document.getElementById('qcSubmitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = currentLang === 'fa'
+                ? '⏳ ثبت شد! در انتظار سایر کارآگاهان...'
+                : '⏳ Submitted! Waiting for other detectives...';
+        }
+
+        // Send to host / room
+        dgNetworkRequest('POST', '/api/action', {
+            roomId: currentRoomId,
+            playerId: myPlayerId,
+            type: 'SUBMIT_QUESTIONS',
+            questions: myQuestions
+        }).catch(() => {});
+
+        if (isHostMode) {
+            if (!serverGameState.submittedQuestions) serverGameState.submittedQuestions = {};
+            serverGameState.submittedQuestions[myPlayerId] = myQuestions;
+            checkAndProceedToAnsweringPhase();
+        }
     }
 
-    // --- 11. ANSWERING PHASE (COMPLETELY MANUAL!) ---
-    function setupAnsweringPhase() {
-        // Player 1 receives questions from Player N (e.g. Player 2 or 4)
-        const authorPlayer = realPlayers[realPlayers.length - 1];
+    function checkAndProceedToAnsweringPhase() {
+        if (!isHostMode) return;
+        if (!serverGameState.submittedQuestions) serverGameState.submittedQuestions = {};
+        serverGameState.submittedQuestions[myPlayerId] = myQuestions;
 
-        // Give authentic engaging mystery questions to answer
-        const defaultQs = currentLang === 'fa' ? [
-            "اگر قرار باشد یک راز بزرگ را تا آخر عمر مخفی کنی، آن راز چیست؟",
-            "کدام شیء در اتاق کار یا خانه شما بیشترین ارزش عاطفی یا مرموز را دارد؟",
-            "در شب رخ دادن حادثه، بهترین گواهی بی‌گناهی شما چیست؟"
-        ] : [
-            "What is the deepest secret you would guard for the rest of your life?",
-            "Which item in your study holds the greatest mystery or sentimental value?",
-            "On the night of the incident, what is your most unquestionable alibi?"
+        const defaultQuestions = [
+            "در شب حادثه بین ساعت ۹ تا ۱۱ شب دقیقاً کجا بودی؟",
+            "کدام شیء در صحنه جرم یا اتاق کار بیشترین ارزش را دارد؟",
+            "چه رازی را هرگز به هیچ کارآگاهی نخواهی گفت؟"
         ];
 
-        receivedQuestionsToAnswer = defaultQs;
+        // For mock players who do not have physical devices, fill default questions
+        realPlayers.forEach((p, idx) => {
+            if (!serverGameState.submittedQuestions[p.id]) {
+                if (idx > 0 && p.id !== myPlayerId) {
+                    serverGameState.submittedQuestions[p.id] = [
+                        defaultQuestions[0] + ` (${p.nickname})`,
+                        defaultQuestions[1] + ` (${p.nickname})`,
+                        defaultQuestions[2] + ` (${p.nickname})`
+                    ];
+                }
+            }
+        });
 
-        document.getElementById('ansDisplayQ1').textContent = receivedQuestionsToAnswer[0];
-        document.getElementById('ansDisplayQ2').textContent = receivedQuestionsToAnswer[1];
-        document.getElementById('ansDisplayQ3').textContent = receivedQuestionsToAnswer[2];
+        const allSubmitted = realPlayers.every(p => !!serverGameState.submittedQuestions[p.id]);
+        if (!allSubmitted) return;
 
-        // CLEAR ANSWER INPUTS — MUST BE COMPLETELY MANUAL!
+        // Form Ring of Answering!
+        // Player i's questions answered by Player (i + 1) % N
+        // Therefore Player i RECEIVES questions authored by Player (i - 1 + N) % N
+        const N = realPlayers.length;
+        serverGameState.assignedQuestions = {};
+        for (let i = 0; i < N; i++) {
+            const prevIdx = (i - 1 + N) % N;
+            const authorPlayer = realPlayers[prevIdx];
+            const recipientPlayer = realPlayers[i];
+            serverGameState.assignedQuestions[recipientPlayer.id] = serverGameState.submittedQuestions[authorPlayer.id];
+        }
+
+        serverGameState.phase = 'answering';
+        syncRoomStateToNetwork();
+        setupLocalAnsweringPhase();
+    }
+
+    // --- 11. ANSWERING PHASE ---
+    function setupLocalAnsweringPhase() {
+        const assigned = (serverGameState && serverGameState.assignedQuestions && serverGameState.assignedQuestions[myPlayerId])
+            || receivedQuestionsToAnswer;
+
+        receivedQuestionsToAnswer = assigned;
+        document.getElementById('ansDisplayQ1').textContent = assigned[0] || "سوال ۱";
+        document.getElementById('ansDisplayQ2').textContent = assigned[1] || "سوال ۲";
+        document.getElementById('ansDisplayQ3').textContent = assigned[2] || "سوال ۳";
+
         document.getElementById('ansInput1').value = '';
         document.getElementById('ansInput2').value = '';
         document.getElementById('ansInput3').value = '';
 
+        const submitBtn = document.getElementById('ansSubmitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = currentLang === 'fa' ? "مهروموم و ثبت پاسخ‌ها" : "Seal & Submit Answers";
+        }
+
         updateAnsProgress();
         goToScreen('answering');
+        saveActiveCaseState('answering');
     }
 
     function updateAnsProgress() {
@@ -3911,43 +4541,131 @@ en: {
         myAnswers[1] = document.getElementById('ansInput2').value.trim();
         myAnswers[2] = document.getElementById('ansInput3').value.trim();
 
-        // Solve Authoritative Assignment & Package Distribution
-        computeGameAssignmentAndSinglePackage();
+        const submitBtn = document.getElementById('ansSubmitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = currentLang === 'fa'
+                ? '⏳ ثبت شد! در حال توزیع مدارک...'
+                : '⏳ Submitted! Distributing evidence...';
+        }
+
+        dgNetworkRequest('POST', '/api/action', {
+            roomId: currentRoomId,
+            playerId: myPlayerId,
+            type: 'SUBMIT_ANSWERS',
+            answers: myAnswers
+        }).catch(() => {});
+
+        if (isHostMode) {
+            if (!serverGameState.submittedAnswers) serverGameState.submittedAnswers = {};
+            serverGameState.submittedAnswers[myPlayerId] = myAnswers;
+            checkAndProceedToMysteryBoard();
+        }
+    }
+
+    function checkAndProceedToMysteryBoard() {
+        if (!isHostMode) return;
+        if (!serverGameState.submittedAnswers) serverGameState.submittedAnswers = {};
+        serverGameState.submittedAnswers[myPlayerId] = myAnswers;
+
+        const defaultAnswers = [
+            "در کتابخانه مشغول مطالعه پرونده‌های قدیمی بودم.",
+            "ساعت جیبی عتیقه‌ای که روی میز بر جا مانده بود.",
+            "راز مربوط به هویت واقعی یکی از مظنونین است."
+        ];
+
+        realPlayers.forEach((p, idx) => {
+            if (!serverGameState.submittedAnswers[p.id]) {
+                if (idx > 0 && p.id !== myPlayerId) {
+                    serverGameState.submittedAnswers[p.id] = [
+                        defaultAnswers[0] + ` (${p.nickname})`,
+                        defaultAnswers[1] + ` (${p.nickname})`,
+                        defaultAnswers[2] + ` (${p.nickname})`
+                    ];
+                }
+            }
+        });
+
+        const allAnswersIn = realPlayers.every(p => !!serverGameState.submittedAnswers[p.id]);
+        if (!allAnswersIn) return;
+
+        // Compute Single Evidence Package and Mystery Solutions for each player!
+        const N = realPlayers.length;
+        serverGameState.playerPackages = {};
+        serverGameState.playerSolutions = {};
+
+        for (let i = 0; i < N; i++) {
+            const player = realPlayers[i];
+
+            // Ring: player i's questions answered by player (i+1)%N
+            // player i answered questions of player (i-1+N)%N
+            const answeredMyQs = realPlayers[(i + 1) % N];
+            const iAnsweredTheirQs = realPlayers[(i - 1 + N) % N];
+
+            // Package for player i: questions authored by player (i + N/2)%N, answered by player (i + N/2 + 1)%N
+            const half = Math.floor(N / 2);
+            const authorIdx = (i + half) % N;
+            const answererIdx = (i + half + 1) % N;
+
+            const author = realPlayers[authorIdx];
+            const answerer = realPlayers[answererIdx];
+
+            const packageQuestions = serverGameState.submittedQuestions[author.id] || ["Q1", "Q2", "Q3"];
+            const packageAnswers = serverGameState.submittedAnswers[answerer.id] || ["A1", "A2", "A3"];
+
+            serverGameState.playerPackages[player.id] = {
+                authorId: author.id,
+                authorNickname: author.nickname,
+                authorAvatar: author.avatar,
+                answererId: answerer.id,
+                answererNickname: answerer.nickname,
+                answererAvatar: answerer.avatar,
+                q1: packageQuestions[0], a1: packageAnswers[0],
+                q2: packageQuestions[1], a2: packageAnswers[1],
+                q3: packageQuestions[2], a3: packageAnswers[2]
+            };
+
+            serverGameState.playerSolutions[player.id] = {
+                1: answeredMyQs.id,
+                2: iAnsweredTheirQs.id,
+                3: author.id,
+                4: answerer.id
+            };
+        }
+
+        serverGameState.phase = 'distribution';
+        syncRoomStateToNetwork();
+        setupLocalMysteryBoard();
+    }
+
+    // --- 12. GAME ASSIGNMENT ENGINE (EXACTLY 1 PACKAGE!) ---
+    function setupLocalMysteryBoard() {
+        if (serverGameState && serverGameState.playerPackages && serverGameState.playerPackages[myPlayerId]) {
+            mySinglePackage = serverGameState.playerPackages[myPlayerId];
+        } else {
+            // Fallback for single-device offline test
+            computeGameAssignmentAndSinglePackageFallback();
+        }
+
+        if (serverGameState && serverGameState.playerSolutions && serverGameState.playerSolutions[myPlayerId]) {
+            correctSuspects = serverGameState.playerSolutions[myPlayerId];
+        }
+
+        renderSinglePackageContent();
         updateScoreboardDisplay();
         updateMistakesDisplay();
         goToScreen('distribution');
         saveActiveCaseState('distribution');
     }
 
-    // --- 12. GAME ASSIGNMENT ENGINE (EXACTLY 1 PACKAGE!) ---
-    function computeGameAssignmentAndSinglePackage() {
-        // We have N real players: p1, p2, p3, ..., pN (N >= 4, N is even)
-        // Ring for answering:
-        // p1 questions answered by p2
-        // p2 questions answered by p3
-        // ...
-        // pN questions answered by p1
-        //
-        // So for p1 (Self):
-        // Mystery 1: Who answered my questions? -> p2
-        // Mystery 2: Whose questions did I answer? -> pN (last player)
-
-        const p1 = realPlayers[0];
-        const p2 = realPlayers[1];
-        const p3 = realPlayers[2];
-        const p4 = realPlayers[3];
+    function computeGameAssignmentAndSinglePackageFallback() {
+        const p1 = realPlayers[0] || { id: "p1" };
+        const p2 = realPlayers[1] || { id: "p2" };
+        const p3 = realPlayers[2] || { id: "p3" };
+        const p4 = realPlayers[3] || { id: "p4" };
 
         correctSuspects[1] = p2.id;
-        correctSuspects[2] = realPlayers[realPlayers.length - 1].id;
-
-        // SINGLE PACKAGE DELIVERY:
-        // Player 1 must receive EXACTLY 1 sealed evidence package!
-        // Invariant: The package held by Player 1 must be authored by Detective X and answered by Detective Y,
-        // where neither X nor Y is Player 1!
-        // In 4-player game:
-        // Package is authored by p3, answered by p4!
-        // (Neither is p1!).
-        // The package contains ONE set of 3 questions and answers addressed to each other.
+        correctSuspects[2] = realPlayers[realPlayers.length - 1]?.id || p4.id;
 
         const author = p3;
         const answerer = p4;
@@ -3957,24 +4675,12 @@ en: {
 
         mySinglePackage.authorId = author.id;
         mySinglePackage.answererId = answerer.id;
-
-        if (currentLang === 'fa') {
-            mySinglePackage.q1 = "کدام هویت جعلی را در ضیافت سفارتخانه برگزیده بودید؟";
-            mySinglePackage.a1 = "سفیر کشور بوهم با نشان افتخار طلایی.";
-            mySinglePackage.q2 = "جام زهرآلود را در کجای تالار قرار داده بودید؟";
-            mySinglePackage.a2 = "روی سینی نقره‌ای سمت چپ، کنار شومینه.";
-            mySinglePackage.q3 = "چه علامتی روی دعوت‌نامه محرمانه نقش بسته بود؟";
-            mySinglePackage.a3 = "نقاب فانتوم با جوهر سرخ‌رنگ.";
-        } else {
-            mySinglePackage.q1 = "Which alias did you assume at the embassy gala?";
-            mySinglePackage.a1 = "The Bohemian ambassador with the golden seal.";
-            mySinglePackage.q2 = "Where was the poisoned goblet placed?";
-            mySinglePackage.a2 = "On the left silver tray beside the fireplace.";
-            mySinglePackage.q3 = "What symbol marked the confidential invitation?";
-            mySinglePackage.a3 = "A phantom mask drawn in crimson ink.";
-        }
-
-        renderSinglePackageContent();
+        mySinglePackage.q1 = currentLang === 'fa' ? "کدام هویت جعلی را برگزیده بودید؟" : "Which alias did you assume?";
+        mySinglePackage.a1 = currentLang === 'fa' ? "سفیر با نشان افتخار طلایی." : "The ambassador with golden seal.";
+        mySinglePackage.q2 = currentLang === 'fa' ? "جام زهرآلود در کجای تالار بود؟" : "Where was the poisoned goblet?";
+        mySinglePackage.a2 = currentLang === 'fa' ? "روی سینی نقره‌ای کنار شومینه." : "On the silver tray beside fireplace.";
+        mySinglePackage.q3 = currentLang === 'fa' ? "چه علامتی روی دعوت‌نامه نقش بسته بود؟" : "What symbol marked the invitation?";
+        mySinglePackage.a3 = currentLang === 'fa' ? "نقاب فانتوم با جوهر سرخ." : "A phantom mask in crimson ink.";
     }
 
     function openEvidenceBriefcase() {
@@ -4121,35 +4827,66 @@ en: {
 
         closeDeductionModal();
 
+        const me = getLocalPlayer();
+
         if (isCorrect) {
             playSfx('clue_solve');
             solvedMysteries.add(currentModalChallenge);
-            realPlayers[0].rightGuesses = solvedMysteries.size;
+            me.rightGuesses = solvedMysteries.size;
 
             const badge = document.getElementById(`badge-q${currentModalChallenge}`);
-            badge.textContent = currentLang === 'fa' ? "حل شد ✓" : "SOLVED ✓";
-            badge.className = "badge badge-solved";
-            document.querySelector(`#card-q${currentModalChallenge} .btn`).style.display = 'none';
+            if (badge) {
+                badge.textContent = currentLang === 'fa' ? "حل شد ✓" : "SOLVED ✓";
+                badge.className = "badge badge-solved";
+            }
+            const cardBtn = document.querySelector(`#card-q${currentModalChallenge} .btn`);
+            if (cardBtn) cardBtn.style.display = 'none';
 
             updateScoreboardDisplay();
             saveActiveCaseState('mystery-board');
 
+            // Broadcast to room
+            dgNetworkRequest('POST', '/api/action', {
+                roomId: currentRoomId,
+                playerId: myPlayerId,
+                type: 'DEDUCTION_UPDATE',
+                challengeNum: currentModalChallenge,
+                isCorrect: true,
+                solvedCount: solvedMysteries.size,
+                mistakes: mistakes,
+                isEliminated: false
+            }).catch(() => {});
+
             if (solvedMysteries.size === 4) {
                 // ALL 4 MYSTERIES SOLVED! NORMAL VICTORY!
-                triggerNormalVictory(realPlayers[0]);
+                triggerNormalVictory(me);
             }
         } else {
             // Mistake consumed!
             playSfx('mistake_buzz');
             mistakes++;
-            realPlayers[0].wrongGuesses = mistakes;
+            me.wrongGuesses = mistakes;
 
             updateMistakesDisplay();
             updateScoreboardDisplay();
             saveActiveCaseState('mystery-board');
 
-            if (mistakes >= currentMaxMistakes) {
-                handlePlayerElimination(realPlayers[0].id);
+            const isEliminated = mistakes >= currentMaxMistakes;
+
+            // Broadcast to room
+            dgNetworkRequest('POST', '/api/action', {
+                roomId: currentRoomId,
+                playerId: myPlayerId,
+                type: 'DEDUCTION_UPDATE',
+                challengeNum: currentModalChallenge,
+                isCorrect: false,
+                solvedCount: solvedMysteries.size,
+                mistakes: mistakes,
+                isEliminated: isEliminated
+            }).catch(() => {});
+
+            if (isEliminated) {
+                handlePlayerElimination(me.id);
             }
         }
     }
@@ -4278,7 +5015,15 @@ en: {
         playSfx('click');
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        const newMsg = { sender: myNickname, text: text, isMe: true, time: timeStr };
+        const newMsg = {
+            id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            senderId: myPlayerId,
+            sender: myNickname,
+            recipientId: activeChatTab === 0 ? null : activePrivatePartner,
+            text: text,
+            time: timeStr,
+            isMe: true
+        };
 
         if (activeChatTab === 0) {
             groupChatMessages.push(newMsg);
@@ -4289,6 +5034,17 @@ en: {
 
         input.value = '';
         renderChatMessages();
+
+        // Broadcast over network to room
+        dgNetworkRequest('POST', '/api/action', {
+            roomId: currentRoomId,
+            playerId: myPlayerId,
+            sender: myNickname,
+            type: 'CHAT',
+            text: text,
+            recipientId: activeChatTab === 0 ? null : activePrivatePartner,
+            message: newMsg
+        }).catch(() => {});
     }
 
     function sendSticker(stickerText) {
