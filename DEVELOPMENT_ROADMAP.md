@@ -20,7 +20,7 @@
 - [x] Finite State Machine (`LOBBY` -> `QUESTION_CREATION` -> `ANSWERING` -> `DISTRIBUTION` -> `INVESTIGATION` -> `FINISHED`).
 - [x] Validation rules for Questions (5-300 chars, no duplicates) and Answers (1-500 chars).
 - [x] Constrained randomized assignment algorithm fulfilling all 13 invariants.
-- [x] Challenge validation for Q1, Q2, Q3 (set of 2 authors), Q4 (set of 2 answerers).
+- [x] Challenge validation for Q1, Q2, Q3 (author of held package), Q4 (answerer of held package).
 - [x] Elimination rules (3 mistakes) and serialized winner resolution.
 - [x] Pure Kotlin test suite running thousands of randomized simulations for player counts 4, 6, 8, 10, 12, 14, 16, 18, 20 (9,000 simulations passing 100%).
 

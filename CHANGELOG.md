@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pure Kotlin Game Engine in `game-engine`:
   - Constrained randomized assignment algorithm in `AssignmentSolver` fulfilling all 13 core invariants across all even player counts (4..20).
   - Validation rules for Questions (5..300 chars, no duplicates) and Answers (1..500 chars).
-  - Four Mystery Challenges validator in `MysteryValidator` (Q1, Q2, Q3, Q4) with unordered pair validation and strict partial-match confidentiality.
+  - Four Mystery Challenges validator in `MysteryValidator` (Q1, Q2, Q3, Q4) with single-suspect verification, 3-mistake elimination, and strict confidentiality.
   - Authoritative state machine in `DetectiveGameEngine` with serialized event ordering, mistake counters, elimination, and winner resolution.
   - Session snapshot creation and recovery.
 - Local Multiplayer Networking in `networking`:

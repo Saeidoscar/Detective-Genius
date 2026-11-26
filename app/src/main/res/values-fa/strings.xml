@@ -98,8 +98,8 @@
 
     <!-- Distribution -->
     <string name="dist_title">توزیع مدارک</string>
-    <string name="dist_subtitle">بسته‌های محرمانه مدارک در حال مهروموم و توزیع هستند...</string>
-    <string name="dist_received_notice">شما ۲ بسته مهروموم‌شده مدارک دریافت کردید!</string>
+    <string name="dist_subtitle">بسته محرمانه مدارک در حال مهروموم و توزیع است...</string>
+    <string name="dist_received_notice">شما بسته مهروموم‌شده مدارک خود را دریافت کردید!</string>
     <string name="dist_open_packages">گشودن کیف مدارک</string>
 
     <!-- Mystery Board -->
@@ -110,19 +110,19 @@
     <string name="mb_q1_desc">کارآگاهی که به ۳ سوال شما پاسخ داده است را شناسایی کنید.</string>
     <string name="mb_q2_title">معمای ۲: من به سوالات چه کسی پاسخ داده‌ام؟</string>
     <string name="mb_q2_desc">کارآگاهی که شما به ۳ سوال او پاسخ داده‌اید را شناسایی کنید.</string>
-    <string name="mb_q3_title">معمای ۳: سوالات چه کسانی در دست من است؟</string>
-    <string name="mb_q3_desc">۲ کارآگاهی که سوالات بسته‌های مدارک شما را نوشته‌اند شناسایی کنید.</string>
-    <string name="mb_q4_title">معمای ۴: پاسخ‌های چه کسانی در دست من است؟</string>
-    <string name="mb_q4_desc">۲ کارآگاهی که به سوالات بسته‌های مدارک شما پاسخ داده‌اند شناسایی کنید.</string>
+    <string name="mb_q3_title">معمای ۳: نویسنده سوالات بسته مدارک من کیست؟</string>
+    <string name="mb_q3_desc">کارآگاهی که سوالات بسته مدارک شما را نوشته است شناسایی کنید.</string>
+    <string name="mb_q4_title">معمای ۴: پاسخ‌دهنده سوالات بسته مدارک من کیست؟</string>
+    <string name="mb_q4_desc">کارآگاهی که به سوالات بسته مدارک شما پاسخ داده است شناسایی کنید.</string>
     <string name="mb_status_solved">حل شده</string>
     <string name="mb_status_unsolved">حل نشده</string>
     <string name="mb_solve_action">ثبت حدس استنتاجی</string>
-    <string name="mb_inspect_packages">بررسی بسته‌های مدارک</string>
+    <string name="mb_inspect_packages">بررسی بسته مدارک</string>
 
     <!-- Deduction Guess Dialog -->
-    <string name="guess_title_single">انتخاب مظنون</string>
-    <string name="guess_title_pair">انتخاب دقیقاً دو مظنون</string>
-    <string name="guess_pair_hint">دو کارآگاه را انتخاب کنید. هر دو باید درست باشند؛ درستی جزیی آشکار نخواهد شد.</string>
+    <string name="guess_title_single">انتخاب کارآگاه مظنون</string>
+    <string name="guess_title_pair">انتخاب کارآگاه مظنون</string>
+    <string name="guess_pair_hint">کارآگاه مظنون را برای این چالش معما انتخاب کنید.</string>
     <string name="guess_submit">تأیید استنتاج</string>
     <string name="guess_correct">استنتاج درخشان! معما حل شد!</string>
     <string name="guess_incorrect">استنتاج نادرست! یک خطا ثبت شد.</string>

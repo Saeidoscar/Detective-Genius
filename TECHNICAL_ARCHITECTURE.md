@@ -23,7 +23,7 @@
 3. **Privacy by Design:**
    - Hidden author and answerer identities are NEVER sent to clients during distribution or investigation.
    - Specific DTOs (`AuthorizedGameStateDto`, `PackageSummaryDto`, `MysteryChallengeDto`) sanitize internal engine models before wire serialization.
-   - Set-based mystery challenges (Q3 and Q4) do not disclose partial matches to prevent information leakage.
+   - Single-evidence package mystery challenges (Q1 through Q4) validate exact single-suspect identities with zero identity leakage over the wire.
 
 4. **Offline First & Resilient Networking:**
    - Operates entirely without external internet access over local Wi-Fi or Android Hotspot.

@@ -57,7 +57,7 @@
 - `testValidationRules`: **PASSED** (Validated length limits 5..300 for questions, 1..500 for answers, duplicate rejection, and even player constraints)
 - `testAssignmentSolverInvariantsAcrossPlayerCounts`: **PASSED** (9,000 simulations: 1,000 runs each for counts 4, 6, 8, 10, 12, 14, 16, 18, 20 with 100% success rate)
 - `testCompleteGameFlowAndRules`: **PASSED** (Full lifecycle from Lobby to Answering to Investigation)
-- `testMysteryChallengesAndPartialCorrectnessSecrecy`: **PASSED** (Verified that guessing 1 of 2 correct in Q3/Q4 does not disclose partial correctness)
+- `testMysteryChallengesAndPartialCorrectnessSecrecy`: **PASSED** (Verified single-suspect verification for Q1, Q2, Q3, and Q4 with strict mistake tracking and zero information leak)
 - `testMistakesAndElimination`: **PASSED** (Verified 1 mistake, 2 mistakes, and elimination on 3rd mistake with active spectator permissions)
 - `testWinnerDeterminationAndTieBreaking`: **PASSED** (Verified first player to solve all 4 wins, tie-breaking order preserved)
 - `testSnapshotAndRestore`: **PASSED** (Verified zero state loss when restoring engine state)
