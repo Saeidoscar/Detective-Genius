@@ -156,7 +156,7 @@ fun testCompleteGameFlowAndRules() {
     assertEquals(4, engine.packages.size)
     playerIds.forEach { id ->
         val view = engine.createClientView(id)
-        assertEquals(2, view.receivedPackages.size, "Each player must receive exactly 2 packages")
+        assertEquals(1, view.receivedPackages.size, "Each player must receive exactly 1 package")
     }
 }
 
@@ -199,23 +199,19 @@ fun testMysteryChallengesAndPartialCorrectnessSecrecy() {
     val q2Right = engine.submitGuess("p1", ChallengeType.Q2_WHOSE_QUESTIONS_DID_I_ANSWER, correct.q2AuthorOfQuestionsIAnswered, null)
     assert(q2Right is GuessValidationResult.Correct, "Q2 retry with correct answer should be Correct")
 
-    // Q3: Test Partial Correctness Secrecy!
-    // One right and one wrong in pair
-    val oneRight = correct.q3AuthorsOfPackagesIHeld.first()
-    val oneWrong = players.first { !correct.q3AuthorsOfPackagesIHeld.contains(it) }
-    val partialPair = setOf(oneRight, oneWrong)
-    val q3Partial = engine.submitGuess("p1", ChallengeType.Q3_WHOSE_QUESTIONS_AM_I_HOLDING, null, partialPair)
-    assert(q3Partial is GuessValidationResult.Incorrect, "Partial match must be treated strictly as Incorrect!")
-    // Invariant: The result must NOT expose that one was right
-    assertEquals(2, (q3Partial as GuessValidationResult.Incorrect).currentMistakes)
+    // Q3: Guess incorrectly first
+    val wrongAuthor = players.first { it != correct.q3AuthorOfPackageIHeld }
+    val q3Wrong = engine.submitGuess("p1", ChallengeType.Q3_WHOSE_QUESTIONS_AM_I_HOLDING, wrongAuthor, null)
+    assert(q3Wrong is GuessValidationResult.Incorrect, "Wrong Q3 guess must be Incorrect")
+    assertEquals(2, (q3Wrong as GuessValidationResult.Incorrect).currentMistakes)
 
-    // Now submit full correct pair for Q3 (order independent)
-    val q3Right = engine.submitGuess("p1", ChallengeType.Q3_WHOSE_QUESTIONS_AM_I_HOLDING, null, correct.q3AuthorsOfPackagesIHeld.reversed().toSet())
-    assert(q3Right is GuessValidationResult.Correct, "Q3 unordered correct pair should succeed")
+    // Now submit correct author for Q3
+    val q3Right = engine.submitGuess("p1", ChallengeType.Q3_WHOSE_QUESTIONS_AM_I_HOLDING, correct.q3AuthorOfPackageIHeld, null)
+    assert(q3Right is GuessValidationResult.Correct, "Q3 correct author should succeed")
 
-    // Q4: Correct pair
-    val q4Right = engine.submitGuess("p1", ChallengeType.Q4_WHOSE_ANSWERS_AM_I_HOLDING, null, correct.q4AnswerersOfPackagesIHeld)
-    assert(q4Right is GuessValidationResult.Correct, "Q4 correct pair should succeed")
+    // Q4: Correct answerer for Q4
+    val q4Right = engine.submitGuess("p1", ChallengeType.Q4_WHOSE_ANSWERS_AM_I_HOLDING, correct.q4AnswererOfPackageIHeld, null)
+    assert(q4Right is GuessValidationResult.Correct, "Q4 correct answerer should succeed")
 
     // Player 1 has solved all 4 mysteries!
     assertEquals(GamePhase.FINISHED, engine.phase)

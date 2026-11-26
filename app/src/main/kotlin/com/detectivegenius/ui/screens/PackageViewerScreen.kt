@@ -54,22 +54,24 @@ fun PackageViewerScreen(
             }
         }
 
-        // Package Tabs
-        TabRow(
-            selectedTabIndex = selectedPackageIndex,
-            containerColor = DetectiveAppTheme.colors.surface,
-            contentColor = DetectiveAppTheme.colors.primary
-        ) {
-            Tab(
-                selected = selectedPackageIndex == 0,
-                onClick = { selectedPackageIndex = 0 },
-                text = { Text(stringResource(R.string.pv_package_1)) }
-            )
-            Tab(
-                selected = selectedPackageIndex == 1,
-                onClick = { selectedPackageIndex = 1 },
-                text = { Text(stringResource(R.string.pv_package_2)) }
-            )
+        // Package Tabs (Only show if multiple packages received)
+        if (packages.size > 1) {
+            TabRow(
+                selectedTabIndex = selectedPackageIndex,
+                containerColor = DetectiveAppTheme.colors.surface,
+                contentColor = DetectiveAppTheme.colors.primary
+            ) {
+                Tab(
+                    selected = selectedPackageIndex == 0,
+                    onClick = { selectedPackageIndex = 0 },
+                    text = { Text(stringResource(R.string.pv_package_1)) }
+                )
+                Tab(
+                    selected = selectedPackageIndex == 1,
+                    onClick = { selectedPackageIndex = 1 },
+                    text = { Text(stringResource(R.string.pv_package_2)) }
+                )
+            }
         }
 
         // Classified Redacted Notice
