@@ -46,7 +46,7 @@ This must be a complete, functional Android game, not a prototype or a collectio
 
 Players answer questions written by another participant. Their questions and answers are assembled into anonymous packages.
 
-Every player receives two packages and must investigate four mysteries:
+Every player receives exactly one sealed evidence package and must investigate four mysteries:
 
 1. Who answered my questions?
 2. Whose questions did I answer?
@@ -67,8 +67,8 @@ Players can challenge their theories, make mistakes, and eventually be eliminate
 | Packages created per player | 1 |
 | Questions per package | 3 |
 | Answers per package | 3 |
-| Recipients per package | Exactly 2 |
-| Packages received per player | Exactly 2 |
+| Recipients per package | Exactly 1 |
+| Packages received per player | Exactly 1 |
 | Incorrect submissions tolerated | 2 |
 | Elimination | Third incorrect submission |
 | Winner | First player to solve all four mysteries |
@@ -95,15 +95,13 @@ For example:
 - Player B answers those questions.
 - The resulting package contains A's questions and B's corresponding answers.
 
-The package is then distributed to exactly two eligible recipients.
+The package is then distributed to exactly one eligible recipient.
 
 A recipient cannot be:
 - The author of that package.
 - The answerer of that package.
 
-Every player must receive exactly two packages from distinct authors.
-
-The assignment algorithm should preferably also ensure distinct answerers for the two packages a player receives, whenever the constraints permit.
+Every player receives exactly one sealed evidence package from distinct author and answerer.
 
 ---
 
@@ -187,9 +185,9 @@ Each package contains:
 - Three corresponding answers.
 - Hidden author identity.
 - Hidden answerer identity.
-- Exactly two recipients.
+- Exactly one recipient.
 
-Each player receives exactly two packages.
+Each player receives exactly one sealed evidence package.
 
 The distribution animation should feel like a mysterious delivery of sealed evidence.
 
@@ -231,15 +229,13 @@ For every valid game:
 4. Every package has one author.
 5. Every package has one answerer.
 6. Author and answerer must be different.
-7. Every package has exactly two recipients.
+7. Every package has exactly one recipient.
 8. A package cannot be delivered to its author.
 9. A package cannot be delivered to its answerer.
-10. Every player receives exactly two packages.
-11. The two packages received by a player must have distinct authors.
+10. Every player receives exactly one package.
+11. No player receives their own authored or answered package.
 12. No player receives the same package twice.
-13. Every player participates as an author and answerer.
-
-Where feasible, ensure that a player does not receive two packages with the same answerer.
+13. Every player participates as an author, answerer, and recipient.
 
 ## Example: Four players
 
@@ -301,15 +297,15 @@ The player must identify the author of the questions they answered.
 
 ## Q3 — Whose questions am I holding?
 
-The player must identify the two distinct authors of their received packages.
+The player must identify the single author of their received evidence package.
 
-**Correct answer:** A set of two player identities.
+**Correct answer:** One player identity.
 
 ## Q4 — Whose answers am I holding?
 
-The player must identify the two distinct answerers of their received packages.
+The player must identify the single answerer of their received evidence package.
 
-**Correct answer:** A set of two player identities.
+**Correct answer:** One player identity.
 
 ## Validation rules
 
@@ -382,7 +378,7 @@ The host must:
 - Select an avatar.
 - Write questions.
 - Answer questions.
-- Receive two packages.
+- Receive one sealed evidence package.
 - Solve all four challenges.
 - Compete for victory.
 
@@ -1580,7 +1576,7 @@ Detective Genius V1 is complete only when:
 - [ ] QR and manual connection work.
 - [ ] Questions and answers are submitted correctly.
 - [ ] Assignment invariants are verified.
-- [ ] Every player receives exactly two packages.
+- [x] Every player receives exactly one package.
 - [ ] All four mystery challenges work.
 - [ ] Incorrect guesses are counted correctly.
 - [ ] Elimination works.

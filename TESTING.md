@@ -19,20 +19,19 @@
     4. Every package has 1 author.
     5. Every package has 1 answerer.
     6. Author != Answerer.
-    7. Every package has exactly 2 recipients.
+    7. Every package has exactly 1 recipient.
     8. Recipient != Author.
     9. Recipient != Answerer.
-    10. Every player receives exactly 2 packages.
-    11. The 2 packages received by any player have distinct authors.
+    10. Every player receives exactly 1 package.
+    11. No player receives their own authored or answered package.
     12. No player receives the same package twice.
-    13. Every player participates as author and answerer.
-    14. Distinct answerers preference when feasible.
+    13. Every player participates as author, answerer, and recipient.
 - **Challenge Verification Tests:**
   - Q1: Single identity check (Author's answerer).
   - Q2: Single identity check (Answerer's author).
-  - Q3: Set of 2 package authors (unordered equality).
-  - Q4: Set of 2 package answerers (unordered equality).
-  - Verification that partial matches do not disclose single correct answers.
+  - Q3: Single identity check (Held package author).
+  - Q4: Single identity check (Held package answerer).
+  - Verification that incorrect guesses increment mistake counter.
   - Mistake counting and elimination upon 3 mistakes.
   - Victory determination upon first player completing all 4 challenges.
   - Serialized event tie-breaking.

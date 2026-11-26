@@ -118,7 +118,7 @@ fun testMultiClientMultiplayerAndStateSync() {
 
     assertEquals(GamePhase.INVESTIGATION, hostClient.currentView.value?.phase)
     clients.forEach { c ->
-        assertEquals(2, c.currentView.value!!.receivedPackages.size)
+        assertEquals(1, c.currentView.value!!.receivedPackages.size)
     }
 }
 

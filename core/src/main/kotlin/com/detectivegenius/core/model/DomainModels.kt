@@ -20,7 +20,7 @@ enum class ChallengeType {
     Q4_WHOSE_ANSWERS_AM_I_HOLDING;
 
     val isSetBased: Boolean
-        get() = this == Q3_WHOSE_QUESTIONS_AM_I_HOLDING || this == Q4_WHOSE_ANSWERS_AM_I_HOLDING
+        get() = false
 }
 
 @Serializable

@@ -82,16 +82,15 @@
 
 ## 3. Package Assignment Algorithm
 
-The constrained randomized assignment algorithm solves the following bipartite/hypergraph distribution constraints:
+The constrained randomized assignment algorithm solves the following bipartite distribution constraints:
 1. $N$ players ($N \in \{4, 6, 8, \dots, 20\}$).
 2. Exactly $N$ packages: Package $P_i$ has Author $A_i$ and Answerer $B_i$ ($A_i \ne B_i$).
-3. Exactly 2 recipients per package: $R_{i,1}, R_{i,2} \notin \{A_i, B_i\}$.
-4. Every player receives exactly 2 packages: $\forall p, |\{P_i : p \in \text{Recipients}(P_i)\}| = 2$.
-5. Distinct authors per recipient: For any player $p$ receiving $P_x$ and $P_y$, $A_x \ne A_y$.
-6. Distinct answerers preference: For any player $p$ receiving $P_x$ and $P_y$, $B_x \ne B_y$ whenever feasible.
-7. Derangement mapping for Question Answering: $B = \text{Derangement}(A)$ such that $\forall i, B_i \ne A_i$.
+3. Exactly 1 recipient per package: $R_i \notin \{A_i, B_i\}$.
+4. Every player receives exactly 1 package: $\forall p, |\{P_i : p \in \text{Recipients}(P_i)\}| = 1$.
+5. Distinct recipient assignment: Recipient mapping $R$ is a derangement/permutation such that no player receives their own authored or answered package.
+6. Derangement mapping for Question Answering: $B = \text{Derangement}(A)$ such that $\forall i, B_i \ne A_i$.
 
-Validation checks enforce invariants deterministically with bounded restart heuristics (max 100 attempts, average convergence < 3 attempts).
+Validation checks enforce invariants deterministically with bounded restart heuristics (max 200 attempts, average convergence < 2 attempts).
 
 ---
 
@@ -99,10 +98,10 @@ Validation checks enforce invariants deterministically with bounded restart heur
 
 - **Q1 (Who answered my questions?):** Correct if $guess == \text{Answerer}(P_{\text{self}})$.
 - **Q2 (Whose questions did I answer?):** Correct if $guess == \text{Author}(P_{\text{answered}})$.
-- **Q3 (Whose questions am I holding?):** Correct if $\{guess_1, guess_2\} == \{Author(P_{rec,1}), Author(P_{rec,2})\}$.
-- **Q4 (Whose answers am I holding?):** Correct if $\{guess_1, guess_2\} == \{Answerer(P_{rec,1}), Answerer(P_{rec,2})\}$.
+- **Q3 (Whose questions am I holding?):** Correct if $guess == \text{Author}(P_{\text{held}})$.
+- **Q4 (Whose answers am I holding?):** Correct if $guess == \text{Answerer}(P_{\text{held}})$.
 
-Failure behavior: Each failed attempt increments mistake count. Upon 3 mistakes, player is transitioned to `Eliminated` state. Partial matches in Q3/Q4 return `INCORRECT` without exposing single-element correctness.
+Failure behavior: Each failed attempt increments mistake count. Upon 3 mistakes, player is transitioned to `Eliminated` state.
 
 ---
 

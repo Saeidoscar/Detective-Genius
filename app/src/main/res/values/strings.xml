@@ -20,7 +20,7 @@
     <string name="onboarding_title_2">Write and Answer</string>
     <string name="onboarding_desc_2">Craft 3 intriguing questions. Someone will answer them anonymously, while you answer another mystery participant\'s queries.</string>
     <string name="onboarding_title_3">Uncover 4 Mysteries</string>
-    <string name="onboarding_desc_3">Receive two sealed evidence packages. Deduce who answered your questions, whose you answered, and who is behind the packages you hold.</string>
+    <string name="onboarding_desc_3">Receive a single sealed evidence package. Deduce who answered your questions, whose you answered, and who is behind the package you hold.</string>
     <string name="onboarding_button_start">Enter the Bureau</string>
     <string name="onboarding_button_skip">Skip Tutorial</string>
 
