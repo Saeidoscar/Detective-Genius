@@ -25,6 +25,11 @@ function getHostLanIp() {
     return '192.168.43.1';
 }
 
+function normalizePin(pin) {
+    if (!pin) return '';
+    return String(pin).replace(/dg-/i, '').trim().toLowerCase();
+}
+
 const mimeTypes = {
     '.html': 'text/html; charset=utf-8',
     '.js': 'application/javascript; charset=utf-8',
@@ -53,10 +58,11 @@ const server = http.createServer((req, res) => {
     const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     const pathname = urlObj.pathname;
 
-    // API: Host info
-    if (pathname === '/api/host-info') {
+    // API: Host info / Ping
+    if (pathname === '/api/host-info' || pathname === '/api/ping') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
+            status: 'ok',
             hostIp: getHostLanIp(),
             defaultHotspotIp: '192.168.43.1',
             port: PORT,
@@ -65,38 +71,162 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // API: Room Sync
-    if (pathname === '/api/room/sync' && req.method === 'POST') {
+    // API: Join Room
+    if (pathname === '/api/join' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => body += chunk);
         req.on('end', () => {
             try {
                 const payload = JSON.parse(body);
-                if (payload && payload.roomId) {
-                    rooms.set(payload.roomId, {
-                        ...payload,
+                const reqRoomId = payload.roomId || 'DG-4829';
+                const player = payload.player || {};
+                const normReq = normalizePin(reqRoomId);
+
+                // Find matching room
+                let foundRoomKey = null;
+                for (const key of rooms.keys()) {
+                    if (normalizePin(key) === normReq) {
+                        foundRoomKey = key;
+                        break;
+                    }
+                }
+
+                // If room doesn't exist yet, auto-create room with host default
+                if (!foundRoomKey) {
+                    foundRoomKey = reqRoomId;
+                    rooms.set(foundRoomKey, {
+                        roomId: foundRoomKey,
+                        phase: 'lobby',
+                        realPlayers: [],
+                        chats: [],
                         updatedAt: Date.now()
                     });
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ status: 'ok', roomId: payload.roomId }));
-                    return;
                 }
-            } catch (err) {}
-            res.writeHead(400, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'invalid_payload' }));
+
+                const room = rooms.get(foundRoomKey);
+                if (!room.realPlayers) room.realPlayers = [];
+
+                // Check if player already exists
+                const existingIdx = room.realPlayers.findIndex(p => p.id === player.id || (player.badgeId && p.badgeId === player.badgeId));
+                if (existingIdx >= 0) {
+                    room.realPlayers[existingIdx] = { ...room.realPlayers[existingIdx], ...player };
+                } else {
+                    room.realPlayers.push(player);
+                }
+                room.updatedAt = Date.now();
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    status: 'ok',
+                    roomId: foundRoomKey,
+                    playerId: player.id,
+                    gameState: room
+                }));
+                return;
+            } catch (err) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ status: 'error', message: err.message || 'Invalid join payload' }));
+            }
         });
         return;
     }
 
-    if (pathname === '/api/room/state') {
-        const roomId = urlObj.searchParams.get('roomId');
-        if (roomId && rooms.has(roomId)) {
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(rooms.get(roomId)));
-            return;
+    // API: Poll Room
+    if (pathname === '/api/poll' || pathname === '/api/room/state') {
+        const roomId = urlObj.searchParams.get('roomId') || 'DG-4829';
+        const norm = normalizePin(roomId);
+
+        let roomData = null;
+        for (const [key, val] of rooms.entries()) {
+            if (normalizePin(key) === norm) {
+                roomData = val;
+                break;
+            }
         }
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'room_not_found' }));
+
+        if (!roomData) {
+            roomData = {
+                roomId: roomId,
+                phase: 'lobby',
+                realPlayers: [],
+                chats: [],
+                updatedAt: Date.now()
+            };
+            rooms.set(roomId, roomData);
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            status: 'ok',
+            roomId: roomData.roomId || roomId,
+            timestamp: Date.now(),
+            gameState: roomData
+        }));
+        return;
+    }
+
+    // API: Action
+    if (pathname === '/api/action' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            try {
+                const payload = JSON.parse(body);
+                const roomId = payload.roomId || 'DG-4829';
+                const norm = normalizePin(roomId);
+
+                let room = null;
+                for (const [key, val] of rooms.entries()) {
+                    if (normalizePin(key) === norm) {
+                        room = val;
+                        break;
+                    }
+                }
+
+                if (room && payload.type === 'CHAT') {
+                    if (!room.chats) room.chats = [];
+                    room.chats.push({
+                        id: `msg_${Date.now()}`,
+                        senderId: payload.playerId,
+                        text: payload.text,
+                        recipientId: payload.recipientId || null,
+                        timestamp: Date.now()
+                    });
+                }
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ status: 'ok', gameState: room || {} }));
+                return;
+            } catch (err) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ status: 'error', message: err.message }));
+            }
+        });
+        return;
+    }
+
+    // API: Room Sync
+    if ((pathname === '/api/sync' || pathname === '/api/room/sync') && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            try {
+                const payload = JSON.parse(body);
+                const stateObj = payload.gameState || payload;
+                const roomId = stateObj.roomId || payload.roomId || 'DG-4829';
+                rooms.set(roomId, {
+                    ...stateObj,
+                    roomId: roomId,
+                    updatedAt: Date.now()
+                });
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ status: 'ok', roomId: roomId }));
+                return;
+            } catch (err) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'invalid_payload' }));
+            }
+        });
         return;
     }
 
