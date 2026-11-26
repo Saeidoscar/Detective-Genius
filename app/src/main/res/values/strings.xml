@@ -98,8 +98,8 @@
 
     <!-- Distribution -->
     <string name="dist_title">Package Delivery</string>
-    <string name="dist_subtitle">Confidential evidence packages are being sealed and delivered...</string>
-    <string name="dist_received_notice">You have received 2 sealed evidence packages!</string>
+    <string name="dist_subtitle">Confidential evidence package is being sealed and delivered...</string>
+    <string name="dist_received_notice">You have received your sealed evidence package!</string>
     <string name="dist_open_packages">Open Evidence Briefcase</string>
 
     <!-- Mystery Board -->
@@ -111,18 +111,18 @@
     <string name="mb_q2_title">Mystery 2: Whose questions did I answer?</string>
     <string name="mb_q2_desc">Identify the detective whose 3 questions you answered.</string>
     <string name="mb_q3_title">Mystery 3: Whose questions am I holding?</string>
-    <string name="mb_q3_desc">Identify the 2 detectives who authored the packages in your possession.</string>
+    <string name="mb_q3_desc">Identify the detective who authored the questions in your package.</string>
     <string name="mb_q4_title">Mystery 4: Whose answers am I holding?</string>
-    <string name="mb_q4_desc">Identify the 2 detectives who answered the packages in your possession.</string>
+    <string name="mb_q4_desc">Identify the detective who answered the questions in your package.</string>
     <string name="mb_status_solved">SOLVED</string>
     <string name="mb_status_unsolved">UNSOLVED</string>
     <string name="mb_solve_action">Submit Deduction</string>
-    <string name="mb_inspect_packages">Inspect Evidence Packages</string>
+    <string name="mb_inspect_packages">Inspect Evidence Package</string>
 
     <!-- Deduction Guess Dialog -->
     <string name="guess_title_single">Select Suspect Detective</string>
-    <string name="guess_title_pair">Select Exactly Two Suspects</string>
-    <string name="guess_pair_hint">Select two detectives. Both must be correct; partial matches will not be revealed.</string>
+    <string name="guess_title_pair">Select Suspect Detective</string>
+    <string name="guess_pair_hint">Select the suspect detective for this mystery challenge.</string>
     <string name="guess_submit">Confirm Deduction</string>
     <string name="guess_correct">Brilliant deduction! Mystery Solved!</string>
     <string name="guess_incorrect">Deduction incorrect! Mistake recorded.</string>

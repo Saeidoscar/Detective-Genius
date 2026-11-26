@@ -21,7 +21,7 @@
 | **Game Engine Models** | [x] | Pure Kotlin domain models (`Player`, `Question`, `Answer`, `QuestionPackage`, `PlayerProgress`, `ChallengeType`, `GuessValidationResult`). |
 | **State Machine** | [x] | Authoritative state machine handling `LOBBY` -> `QUESTION_CREATION` -> `ANSWERING` -> `DISTRIBUTION` -> `INVESTIGATION` -> `FINISHED`. |
 | **Assignment Algorithm** | [x] | Constrained randomized solver satisfying all 13 invariants + preference heuristics. Verified across 9,000 simulations (1,000 runs each for counts 4, 6, 8, 10, 12, 14, 16, 18, 20). |
-| **Challenge Validator** | [x] | Q1, Q2, Q3, Q4 mystery solvers with 3-mistake elimination & unordered sets. Partial matches strictly concealed. |
+| **Challenge Validator** | [x] | Q1, Q2, Q3, Q4 mystery solvers with single-suspect verification, 3-mistake elimination & strict confidentiality. |
 | **Engine Test Suite** | [x] | Pure Kotlin test suite passing 100% of invariant, rule, scoring, and snapshot tests. |
 | **Networking Protocol** | [x] | Versioned WebSocket message schemas (`ClientPacket`, `ServerPacket`) and sanitized DTOs (`ClientPlayerViewDto`). |
 | **Embedded Server (Host)**| [x] | Authoritative host server with session auth, duplicate packet filtering, and DTO sanitization. |

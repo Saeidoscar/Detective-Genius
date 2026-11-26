@@ -250,12 +250,14 @@ One possible author-answerer relationship:
 
 Possible distribution:
 
-| Recipient | Package 1 | Package 2 |
-|---|---|---|
-| A | P2 | P3 |
-| B | P3 | P4 |
-| C | P4 | P1 |
-| D | P1 | P2 |
+| Recipient | Held Evidence Package | Author of Package | Answerer of Package |
+|---|---|---|---|
+| A | P3 | C | D |
+| B | P4 | D | A |
+| C | P1 | A | B |
+| D | P2 | B | C |
+
+Notice that every player receives exactly one package, and no player receives a package they authored or answered.
 
 This is only an example. The implementation must generate valid assignments dynamically.
 
@@ -309,25 +311,15 @@ The player must identify the single answerer of their received evidence package.
 
 ## Validation rules
 
-For Q1 and Q2:
+For all challenges (Q1, Q2, Q3, Q4):
 - Validate the selected identity against the correct identity.
+- Q1: Single identity check (Author's answerer).
+- Q2: Single identity check (Answerer's author).
+- Q3: Single identity check (Held package author).
+- Q4: Single identity check (Held package answerer).
 - One incorrect submission consumes one mistake.
-
-For Q3 and Q4:
-- The player must submit two distinct identities.
-- Validate the complete pair as an unordered set.
-- The selection order does not matter.
-- If either identity is incorrect, the entire submission is incorrect.
-- Count it as one mistake.
-- Never reveal partial correctness.
-
-Example:
-
-Correct set: `{Player A, Player B}`
-
-Submitted set: `{Player A, Player C}`
-
-Result: Incorrect. One mistake consumed.
+- Never reveal hints or partial correctness.
+- Three mistakes results in elimination.
 
 Do not reveal that Player A was correct.
 

@@ -24,6 +24,7 @@ class AssignmentSolver(
     fun solve(playerIds: List<String>, random: Random = Random.Default): List<RawAssignment>? {
         require(playerIds.size >= 4) { "Minimum 4 players required, got ${playerIds.size}" }
         require(playerIds.size <= 20) { "Maximum 20 players allowed in V1, got ${playerIds.size}" }
+        require(playerIds.size % 2 == 0) { "Player count must be even, got ${playerIds.size}" }
 
         val n = playerIds.size
 
