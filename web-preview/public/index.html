@@ -384,6 +384,73 @@
             box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
         }
 
+        /* Radar Scanner Display */
+        .radar-viewport {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            margin: 0 auto;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.18) 0%, rgba(10, 15, 30, 0.95) 75%);
+            border: 2px solid rgba(6, 182, 212, 0.55);
+            box-shadow: 0 0 24px rgba(6, 182, 212, 0.3), inset 0 0 16px rgba(6, 182, 212, 0.2);
+            overflow: hidden;
+        }
+        .radar-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 1px dashed rgba(6, 182, 212, 0.35);
+            pointer-events: none;
+        }
+        .radar-circle-1 { width: 44px; height: 44px; }
+        .radar-circle-2 { width: 88px; height: 88px; }
+        .radar-circle-3 { width: 132px; height: 132px; }
+        .radar-crosshair-h {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: rgba(6, 182, 212, 0.3);
+        }
+        .radar-crosshair-v {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: rgba(6, 182, 212, 0.3);
+        }
+        .radar-center-dot {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 8px;
+            height: 8px;
+            margin: -4px 0 0 -4px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+        }
+        .radar-sweep {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 70px;
+            height: 70px;
+            transform-origin: 0 0;
+            background: conic-gradient(from 0deg, rgba(6, 182, 212, 0.55) 0deg, transparent 60deg);
+            animation: radarSweep 2.4s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes radarSweep {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         /* Deduction Modal */
         .modal-overlay {
             display: none;
@@ -845,7 +912,7 @@
             </div>
         </div>
 
-        <button class="btn" onclick="startLobby(true)">
+        <button class="btn" onclick="openCreateRoomModal()">
             ➕ <span data-i18n="home_create_room">ایجاد اتاق پرونده (میزبانی)</span>
         </button>
         <button class="btn btn-secondary" onclick="goToScreen('join-room')">
@@ -984,60 +1051,108 @@
         <button class="btn" onclick="goToScreen('home')" data-i18n="btn_enter_bureau">ورود به اداره کارآگاهی</button>
     </div>
 
-    <!-- SCREEN 4: JOIN ROOM -->
+    <!-- SCREEN 4: JOIN ROOM (AUTOMATIC SEARCH RADAR) -->
     <div id="screen-join-room" class="screen">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h2 data-i18n="join_room_title" style="font-size: 18px;">پیوستن به پرونده</h2>
             <button class="btn btn-secondary btn-sm" onclick="goToScreen('home')" data-i18n="btn_back">بازگشت</button>
         </div>
 
-        <div class="card">
+        <div class="card" style="padding: 10px 14px;">
             <div class="input-group">
                 <label class="input-label" data-i18n="join_room_nickname">نام کارآگاهی شما</label>
                 <input class="input-field" id="joinNicknameInput" value="کارآگاه مهمان" />
             </div>
+        </div>
 
+        <!-- SEARCH RADAR CARD -->
+        <div class="card card-elevated" style="text-align: center; padding: 16px 12px; position: relative; overflow: hidden; background: linear-gradient(180deg, rgba(6, 182, 212, 0.08) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid rgba(6, 182, 212, 0.45); gap: 10px;">
+            <div class="radar-viewport">
+                <div class="radar-circle radar-circle-3"></div>
+                <div class="radar-circle radar-circle-2"></div>
+                <div class="radar-circle radar-circle-1"></div>
+                <div class="radar-crosshair-h"></div>
+                <div class="radar-crosshair-v"></div>
+                <div class="radar-sweep" id="radarSweepAnim"></div>
+                <div class="radar-center-dot"></div>
+            </div>
+
+            <div>
+                <h3 style="font-size: 15px; font-weight: 800; color: var(--accent);" id="radarStatusTitle">📡 رادار جستجوی پرونده‌ها</h3>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-top: 3px; line-height: 1.4;" id="radarStatusText">
+                    در حال پایش شبکه وای‌فای و هات‌اسپات برای یافتن اتاق‌های پرونده...
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 8px; justify-content: center;">
+                <button class="btn btn-secondary btn-sm" id="radarRefreshBtn" onclick="triggerRadarScan()">
+                    🔄 اسکن مجدد رادار
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="openNetworkFaqModal()">
+                    ❓ راهنمای شبکه
+                </button>
+            </div>
+        </div>
+
+        <!-- DISCOVERED ROOMS CONTAINER -->
+        <div style="display: flex; flex-direction: column; gap: 8px;" id="radarDiscoveredRoomsContainer">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 4px;">
+                <span style="font-size: 12px; font-weight: 700; color: var(--accent);">اتاق‌های کشف‌شده در اطراف شما:</span>
+                <span class="tag-pill" id="discoveredRoomsCountTag" style="font-size: 10.5px;">۰ اتاق</span>
+            </div>
+            <div id="radarDiscoveredRoomsList" style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="text-align: center; padding: 18px 12px; color: var(--text-muted); font-size: 12px; background: var(--surface); border: 1px dashed var(--border); border-radius: 12px;">
+                    رادار در حال پایش امواج شبکه محلی است...<br>
+                    <span style="font-size: 11px; color: var(--text-secondary);">گوشی شما باید به هات‌اسپات یا مودم وای‌فای میزبان متصل باشد.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLLAPSIBLE MANUAL IP CONNECT FOR ADVANCED USERS -->
+        <div style="margin-top: 6px; text-align: center;">
+            <span style="font-size: 11.5px; color: var(--text-muted); cursor: pointer; text-decoration: underline;" onclick="toggleManualIpSection()">
+                ⚙️ اتصال دستی پیشرفته با آدرس IP (اختیاری) ▼
+            </span>
+        </div>
+
+        <div id="manualIpSection" class="card" style="display: none; margin-top: 6px; gap: 8px;">
             <div class="input-group">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <label class="input-label" data-i18n="join_room_host_ip">آدرس IP میزبان (در وای‌فای محلی یا هات‌اسپات)</label>
-                    <span style="font-size: 11px; color: var(--accent); cursor: pointer;" onclick="openNetworkFaqModal()" data-i18n="btn_network_faq">❓ راهنما</span>
+                    <label class="input-label" data-i18n="join_room_host_ip">آدرس IP میزبان</label>
                 </div>
                 <input class="input-field" id="joinIpInput" value="192.168.43.1" dir="ltr" style="font-family: monospace;" />
                 <div style="display: flex; gap: 6px; margin-top: 2px;">
                     <button class="btn btn-secondary btn-sm" style="flex: 1; font-size: 11px; padding: 4px 6px;" onclick="setJoinIpPreset('192.168.43.1')">
                         📱 هات‌اسپات (192.168.43.1)
                     </button>
-                    <button class="btn btn-secondary btn-sm" style="flex: 1; font-size: 11px; padding: 4px 6px;" onclick="setJoinIpPreset('192.168.1.100')">
-                        📶 مودم وای‌فای
+                    <button class="btn btn-secondary btn-sm" style="flex: 1; font-size: 11px; padding: 4px 6px;" onclick="setJoinIpPreset('127.0.0.1')">
+                        💻 این دستگاه (127.0.0.1)
                     </button>
                 </div>
             </div>
 
             <div class="input-group">
-                <label class="input-label" data-i18n="join_room_pin">شناسه پرونده / پین اتاق (Room ID)</label>
+                <label class="input-label" data-i18n="join_room_pin">شناسه پرونده (Room ID)</label>
                 <input class="input-field" id="joinPinInput" value="DG-4829" dir="ltr" style="font-family: monospace; font-weight: 700;" />
             </div>
 
-            <!-- Optional Detective Badge ID for Zero-loss Reconnection -->
-            <div class="input-group" style="margin-top: 4px;">
+            <div class="input-group">
+                <label class="input-label">رمز عبور اتاق (در صورت وجود)</label>
+                <input class="input-field" id="joinManualPasswordInput" type="password" placeholder="اگر رمز دارد وارد کنید..." />
+            </div>
+
+            <div class="input-group">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <label class="input-label" data-i18n="join_room_badge_id">نشان کارآگاهی شما (جهت بازگشت و بازیابی مدارک)</label>
+                    <label class="input-label" data-i18n="join_room_badge_id">نشان کارآگاهی شما</label>
                     <span style="font-size: 10px; color: var(--accent); cursor: pointer;" onclick="pasteBadgeIdFromStorage()" data-i18n="btn_use_my_badge">نشان من 🛡️</span>
                 </div>
                 <input class="input-field" id="joinPlayerBadgeInput" dir="ltr" style="font-family: monospace; font-weight: 700;" placeholder="مثال: DET-8492" />
-                <p style="font-size: 10.5px; color: var(--text-muted); margin: 3px 0 0; line-height: 1.4;" data-i18n="join_room_badge_hint">
-                    اگه قبلاً تو این اتاق بودی، این نشان رو وارد کن تا دقیقاً همون پاکت مدارک، جواب‌ها و وضعیتت بدون هیچ نقصی بازیابی بشه.
-                </p>
             </div>
+
+            <button class="btn btn-secondary" onclick="startLobby(false)" data-i18n="join_room_connect_btn">
+                🔗 اتصال مستقیم با IP
+            </button>
         </div>
-
-        <button class="btn" onclick="startLobby(false)" data-i18n="join_room_connect_btn">
-            🔗 اتصال به اتاق پرونده
-        </button>
-
-        <button class="btn btn-secondary" onclick="openNetworkFaqModal()">
-            ❓ <span data-i18n="faq_join_btn">راهنمای اتصال و رفع خطای هات‌اسپات</span>
-        </button>
     </div>
 
     <!-- SCREEN 5: LOBBY (NO FAKE / MOCK PLAYERS!) -->
@@ -1053,6 +1168,20 @@
                 </div>
             </div>
             <span style="font-size: 13px; color: var(--text-secondary); font-weight: 700;" id="lobbyPlayerCount">کارآگاهان: ۱ / ۲۰</span>
+        </div>
+
+        <!-- Room Name & Password Status Pill -->
+        <div class="card card-elevated" style="padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(15, 23, 42, 0.85)); border: 1px solid var(--accent);">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 22px;">🏠</span>
+                <div>
+                    <span style="font-size: 11px; color: var(--text-muted);">نام پرونده:</span>
+                    <h3 style="font-size: 14px; font-weight: 800; color: #FFF; margin: 0;" id="lobbyRoomNameDisplay">اتاق کارآگاهان</h3>
+                </div>
+            </div>
+            <span class="tag-pill" id="lobbyPasswordStatusBadge" style="font-size: 11px; padding: 4px 8px; background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.4);">
+                🔓 بدون رمز (عمومی)
+            </span>
         </div>
 
         <!-- Host Connection & Network IP Card (For Smooth Multiplayer!) -->
@@ -1142,97 +1271,198 @@
             <span class="tag-pill" id="qcPlayerIndicator">کارآگاه اصلی</span>
         </div>
 
-        <div class="card card-elevated" style="padding: 10px 14px; background: rgba(6, 182, 212, 0.1); border-color: var(--accent);">
-            <p style="font-size: 12px; color: var(--text-primary); line-height: 1.5;" data-i18n="qc_instruction_banner">
-                ✍️ <b>توجه:</b> سوالات باید کاملاً دستی نوشته شوند. می‌توانید از پیشنهادات زیر ایده بگیرید یا سوالات ذخیره‌شده در پروفایل را بارگذاری کنید.
-            </p>
-        </div>
+        <!-- HOST QUESTION CREATION SECTION -->
+        <div id="qcHostSection" style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="card card-elevated" style="padding: 10px 14px; background: rgba(6, 182, 212, 0.1); border-color: var(--accent);">
+                <p style="font-size: 12px; color: var(--text-primary); line-height: 1.5;" data-i18n="qc_instruction_banner">
+                    ✍️ <b>توجه:</b> سوالات باید کاملاً دستی نوشته شوند. می‌توانید از پیشنهادات زیر ایده بگیرید یا سوالات ذخیره‌شده در پروفایل را بارگذاری کنید.
+                </p>
+            </div>
 
-        <!-- Quick Actions: Load Saved Questions / Suggestions -->
-        <div style="display: flex; gap: 8px;">
-            <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="openLoadSavedQuestionsModal()">
-                📥 <span data-i18n="qc_btn_load_saved">بارگذاری از پروفایل</span>
-            </button>
-            <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="toggleSuggestionsDrawer()">
-                💡 <span data-i18n="qc_btn_suggestions">مشاهده پیشنهادات</span>
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="saveCurrentQuestionsToProfile()" title="Save to Profile">
-                💾 <span data-i18n="qc_btn_save_to_profile">ذخیره</span>
-            </button>
-        </div>
+            <!-- Quick Actions: Load Saved Questions / Suggestions -->
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="openLoadSavedQuestionsModal()">
+                    📥 <span data-i18n="qc_btn_load_saved">بارگذاری از پروفایل</span>
+                </button>
+                <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="toggleSuggestionsDrawer()">
+                    💡 <span data-i18n="qc_btn_suggestions">مشاهده پیشنهادات</span>
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="saveCurrentQuestionsToProfile()" title="Save to Profile">
+                    💾 <span data-i18n="qc_btn_save_to_profile">ذخیره</span>
+                </button>
+            </div>
 
-        <!-- Suggestions Drawer (Collapsible) -->
-        <div id="suggestionsDrawer" class="card" style="display: none; padding: 12px; gap: 8px; border-color: var(--accent);">
+            <!-- Suggestions Drawer (Collapsible) -->
+            <div id="suggestionsDrawer" class="card" style="display: none; padding: 12px; gap: 8px; border-color: var(--accent);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12px; font-weight: 700; color: var(--accent);" data-i18n="qc_suggestions_heading">💡 سوالات پیشنهادی (لمس کنید تا کپی شود):</span>
+                    <span style="font-size: 11px; color: var(--text-muted); cursor: pointer;" onclick="toggleSuggestionsDrawer()">✕</span>
+                </div>
+                <div id="suggestionsChipsContainer" style="display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto;">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- 3 Manual Question Fields (Starts EMPTY!) -->
+            <div class="card">
+                <label class="input-label" data-i18n="qc_q1_label">سوال اول (دستی بنویسید)</label>
+                <textarea class="textarea-field" id="qInput1" placeholder="سوال اول خود را اینجا بنویسید..." oninput="updateQcProgress()"></textarea>
+            </div>
+            <div class="card">
+                <label class="input-label" data-i18n="qc_q2_label">سوال دوم (دستی بنویسید)</label>
+                <textarea class="textarea-field" id="qInput2" placeholder="سوال دوم خود را اینجا بنویسید..." oninput="updateQcProgress()"></textarea>
+            </div>
+            <div class="card">
+                <label class="input-label" data-i18n="qc_q3_label">سوال سوم (دستی بنویسید)</label>
+                <textarea class="textarea-field" id="qInput3" placeholder="سوال سوم خود را اینجا بنویسید..." oninput="updateQcProgress()"></textarea>
+            </div>
+
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 12px; font-weight: 700; color: var(--accent);" data-i18n="qc_suggestions_heading">💡 سوالات پیشنهادی (لمس کنید تا کپی شود):</span>
-                <span style="font-size: 11px; color: var(--text-muted); cursor: pointer;" onclick="toggleSuggestionsDrawer()">✕</span>
+                <span style="font-size: 12px; font-weight: 700; color: var(--accent);" id="qcProgressLabel">۰ / ۳ سوال تکمیل شده</span>
+                <button class="btn btn-secondary btn-sm" onclick="clearQuestionInputs()" data-i18n="btn_clear">پاک کردن</button>
             </div>
-            <div id="suggestionsChipsContainer" style="display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto;">
-                <!-- Populated dynamically -->
+
+            <button class="btn" id="qcSubmitBtn" onclick="submitQuestions()" disabled data-i18n="qc_submit_btn">
+                مهروموم و ثبت ۳ سوال
+            </button>
+        </div>
+
+        <!-- PASS-THE-PHONE LOCAL FRIENDS QUESTION SECTION -->
+        <div id="localFriendsQcSection" style="display: none; flex-direction: column; gap: 10px;">
+            <div class="card card-elevated" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(15, 23, 42, 0.9)); border: 1.5px solid var(--warning); padding: 12px; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 28px;" id="localFriendQcAvatar">👤</span>
+                        <div>
+                            <span style="font-size: 11px; color: var(--warning); font-weight: 800;">📱 طرح سوال رفقای دورهمی (گوشی مشترک)</span>
+                            <h3 style="font-size: 15px; font-weight: 800; color: #FFF; margin: 0;">نوبت: <span id="localFriendQcName" style="color: var(--accent);">سارا</span></h3>
+                        </div>
+                    </div>
+                    <span class="tag-pill" id="localFriendQcStep" style="background: rgba(245, 158, 11, 0.25); color: var(--warning); font-size: 11px;">رفیق ۱ از ۱</span>
+                </div>
+                <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin: 0;">
+                    🤫 گوشی را به کارآگاه <b id="localFriendQcNameBold" style="color: #FFF;">دوست‌تان</b> تحویل دهید تا ۳ سوال محرمانه خود را بنویسد!
+                </p>
             </div>
-        </div>
 
-        <!-- 3 Manual Question Fields (Starts EMPTY!) -->
-        <div class="card">
-            <label class="input-label" data-i18n="qc_q1_label">سوال اول (دستی بنویسید)</label>
-            <textarea class="textarea-field" id="qInput1" placeholder="سوال اول خود را اینجا بنویسید..." oninput="updateQcProgress()"></textarea>
-        </div>
-        <div class="card">
-            <label class="input-label" data-i18n="qc_q2_label">سوال دوم (دستی بنویسید)</label>
-            <textarea class="textarea-field" id="qInput2" placeholder="سوال دوم خود را اینجا بنویسید..." oninput="updateQcProgress()"></textarea>
-        </div>
-        <div class="card">
-            <label class="input-label" data-i18n="qc_q3_label">سوال سوم (دستی بنویسید)</label>
-            <textarea class="textarea-field" id="qInput3" placeholder="سوال سوم خود را اینجا بنویسید..." oninput="updateQcProgress()"></textarea>
-        </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="fillRandomLocalQuestions()">
+                    ✨ پیشنهاد سریع ۳ سوال
+                </button>
+            </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 12px; font-weight: 700; color: var(--accent);" id="qcProgressLabel">۰ / ۳ سوال تکمیل شده</span>
-            <button class="btn btn-secondary btn-sm" onclick="clearQuestionInputs()" data-i18n="btn_clear">پاک کردن</button>
-        </div>
+            <div class="card">
+                <label class="input-label">سوال اول</label>
+                <textarea class="textarea-field" id="localQInput1" placeholder="سوال اول را بنویسید..." oninput="updateLocalQcProgress()"></textarea>
+            </div>
+            <div class="card">
+                <label class="input-label">سوال دوم</label>
+                <textarea class="textarea-field" id="localQInput2" placeholder="سوال دوم را بنویسید..." oninput="updateLocalQcProgress()"></textarea>
+            </div>
+            <div class="card">
+                <label class="input-label">سوال سوم</label>
+                <textarea class="textarea-field" id="localQInput3" placeholder="سوال سوم را بنویسید..." oninput="updateLocalQcProgress()"></textarea>
+            </div>
 
-        <button class="btn" id="qcSubmitBtn" onclick="submitQuestions()" disabled data-i18n="qc_submit_btn">
-            مهروموم و ثبت ۳ سوال
-        </button>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 12px; font-weight: 700; color: var(--accent);" id="localQcProgressLabel">۰ / ۳ سوال تکمیل شده</span>
+            </div>
+
+            <button class="btn" id="localQcSubmitBtn" onclick="submitLocalFriendQuestions()" disabled>
+                مهروموم و ثبت سوالات
+            </button>
+        </div>
     </div>
 
     <!-- SCREEN 7: ANSWERING (COMPLETELY MANUAL!) -->
     <div id="screen-answering" class="screen">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h2 data-i18n="ans_title" style="font-size: 18px;">پاسخ به سوالات بازجویی</h2>
-            <span class="tag-pill" data-i18n="ans_anonymous_tag">سوالات ناشناس</span>
+            <span class="tag-pill" id="ansPlayerIndicator" data-i18n="ans_anonymous_tag">سوالات ناشناس</span>
         </div>
 
-        <div class="card card-elevated" style="padding: 10px 14px; background: rgba(139, 92, 246, 0.1); border-color: var(--primary);">
-            <p style="font-size: 12px; color: var(--text-primary); line-height: 1.5;" data-i18n="ans_instruction_banner">
-                ✍️ <b>توجه:</b> شما ۳ سوال ناشناس از یک کارآگاه دیگر دریافت کرده‌اید. پاسخ‌ها باید <b>کاملاً دستی</b> و توسط خودتان تایپ شوند.
-            </p>
+        <!-- HOST ANSWERING SECTION -->
+        <div id="ansHostSection" style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="card card-elevated" style="padding: 10px 14px; background: rgba(139, 92, 246, 0.1); border-color: var(--primary);">
+                <p style="font-size: 12px; color: var(--text-primary); line-height: 1.5;" data-i18n="ans_instruction_banner">
+                    ✍️ <b>توجه:</b> شما ۳ سوال ناشناس از یک کارآگاه دیگر دریافت کرده‌اید. پاسخ‌ها باید <b>کاملاً دستی</b> و توسط خودتان تایپ شوند.
+                </p>
+            </div>
+
+            <!-- 3 Manual Answer Fields (Starts EMPTY!) -->
+            <div class="card">
+                <span style="font-size: 11px; font-weight: 700; color: var(--accent);" data-i18n="ans_q1_header">سوال اول (ناشناس):</span>
+                <p style="font-size: 14px; font-weight: 600; line-height: 1.4;" id="ansDisplayQ1">در حال دریافت سوال اول...</p>
+                <textarea class="textarea-field" id="ansInput1" placeholder="پاسخ دستی خود را به سوال اول بنویسید..." oninput="updateAnsProgress()"></textarea>
+            </div>
+
+            <div class="card">
+                <span style="font-size: 11px; font-weight: 700; color: var(--accent);" data-i18n="ans_q2_header">سوال دوم (ناشناس):</span>
+                <p style="font-size: 14px; font-weight: 600; line-height: 1.4;" id="ansDisplayQ2">در حال دریافت سوال دوم...</p>
+                <textarea class="textarea-field" id="ansInput2" placeholder="پاسخ دستی خود را به سوال دوم بنویسید..." oninput="updateAnsProgress()"></textarea>
+            </div>
+
+            <div class="card">
+                <span style="font-size: 11px; font-weight: 700; color: var(--accent);" data-i18n="ans_q3_header">سوال سوم (ناشناس):</span>
+                <p style="font-size: 14px; font-weight: 600; line-height: 1.4;" id="ansDisplayQ3">در حال دریافت سوال سوم...</p>
+                <textarea class="textarea-field" id="ansInput3" placeholder="پاسخ دستی خود را به سوال سوم بنویسید..." oninput="updateAnsProgress()"></textarea>
+            </div>
+
+            <span style="font-size: 12px; font-weight: 700; color: var(--accent);" id="ansProgressLabel">۰ / ۳ پاسخ تکمیل شده</span>
+
+            <button class="btn" id="ansSubmitBtn" onclick="submitAnswers()" disabled data-i18n="ans_submit_btn">
+                ارسال پاسخ‌های مهروموم‌شده
+            </button>
         </div>
 
-        <!-- 3 Manual Answer Fields (Starts EMPTY!) -->
-        <div class="card">
-            <span style="font-size: 11px; font-weight: 700; color: var(--accent);" data-i18n="ans_q1_header">سوال اول (ناشناس):</span>
-            <p style="font-size: 14px; font-weight: 600; line-height: 1.4;" id="ansDisplayQ1">در حال دریافت سوال اول...</p>
-            <textarea class="textarea-field" id="ansInput1" placeholder="پاسخ دستی خود را به سوال اول بنویسید..." oninput="updateAnsProgress()"></textarea>
+        <!-- PASS-THE-PHONE LOCAL FRIENDS ANSWERING SECTION -->
+        <div id="localFriendsAnsSection" style="display: none; flex-direction: column; gap: 10px;">
+            <div class="card card-elevated" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(15, 23, 42, 0.9)); border: 1.5px solid #A855F7; padding: 12px; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 28px;" id="localFriendAnsAvatar">👤</span>
+                        <div>
+                            <span style="font-size: 11px; color: #D8B4FE; font-weight: 800;">📱 پاسخ به سوالات دورهمی (گوشی مشترک)</span>
+                            <h3 style="font-size: 15px; font-weight: 800; color: #FFF; margin: 0;">نوبت: <span id="localFriendAnsName" style="color: var(--accent);">سارا</span></h3>
+                        </div>
+                    </div>
+                    <span class="tag-pill" id="localFriendAnsStep" style="background: rgba(168, 85, 247, 0.25); color: #D8B4FE; font-size: 11px;">رفیق ۱ از ۱</span>
+                </div>
+                <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin: 0;">
+                    🤫 گوشی را به کارآگاه <b id="localFriendAnsNameBold" style="color: #FFF;">دوست‌تان</b> تحویل دهید تا به ۳ سوال ناشناس پاسخ دهد!
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="fillRandomLocalAnswers()">
+                    ✨ پیشنهاد سریع ۳ پاسخ
+                </button>
+            </div>
+
+            <div class="card">
+                <span style="font-size: 11px; font-weight: 700; color: var(--accent);">سوال اول دریافتی (ناشناس):</span>
+                <p style="font-size: 14px; font-weight: 600; line-height: 1.4;" id="localAnsDisplayQ1">در حال دریافت...</p>
+                <textarea class="textarea-field" id="localAnsInput1" placeholder="پاسخ را بنویسید..." oninput="updateLocalAnsProgress()"></textarea>
+            </div>
+            <div class="card">
+                <span style="font-size: 11px; font-weight: 700; color: var(--accent);">سوال دوم دریافتی (ناشناس):</span>
+                <p style="font-size: 14px; font-weight: 600; line-height: 1.4;" id="localAnsDisplayQ2">در حال دریافت...</p>
+                <textarea class="textarea-field" id="localAnsInput2" placeholder="پاسخ را بنویسید..." oninput="updateLocalAnsProgress()"></textarea>
+            </div>
+            <div class="card">
+                <span style="font-size: 11px; font-weight: 700; color: var(--accent);">سوال سوم دریافتی (ناشناس):</span>
+                <p style="font-size: 14px; font-weight: 600; line-height: 1.4;" id="localAnsDisplayQ3">در حال دریافت...</p>
+                <textarea class="textarea-field" id="localAnsInput3" placeholder="پاسخ را بنویسید..." oninput="updateLocalAnsProgress()"></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 12px; font-weight: 700; color: var(--accent);" id="localAnsProgressLabel">۰ / ۳ پاسخ تکمیل شده</span>
+            </div>
+
+            <button class="btn" id="localAnsSubmitBtn" onclick="submitLocalFriendAnswers()" disabled>
+                مهروموم و ثبت پاسخ‌ها
+            </button>
         </div>
-
-        <div class="card">
-            <span style="font-size: 11px; font-weight: 700; color: var(--accent);" data-i18n="ans_q2_header">سوال دوم (ناشناس):</span>
-            <p style="font-size: 14px; font-weight: 600; line-height: 1.4;" id="ansDisplayQ2">در حال دریافت سوال دوم...</p>
-            <textarea class="textarea-field" id="ansInput2" placeholder="پاسخ دستی خود را به سوال دوم بنویسید..." oninput="updateAnsProgress()"></textarea>
-        </div>
-
-        <div class="card">
-            <span style="font-size: 11px; font-weight: 700; color: var(--accent);" data-i18n="ans_q3_header">سوال سوم (ناشناس):</span>
-            <p style="font-size: 14px; font-weight: 600; line-height: 1.4;" id="ansDisplayQ3">در حال دریافت سوال سوم...</p>
-            <textarea class="textarea-field" id="ansInput3" placeholder="پاسخ دستی خود را به سوال سوم بنویسید..." oninput="updateAnsProgress()"></textarea>
-        </div>
-
-        <span style="font-size: 12px; font-weight: 700; color: var(--accent);" id="ansProgressLabel">۰ / ۳ پاسخ تکمیل شده</span>
-
-        <button class="btn" id="ansSubmitBtn" onclick="submitAnswers()" disabled data-i18n="ans_submit_btn">
-            ارسال پاسخ‌های مهروموم‌شده
-        </button>
     </div>
 
     <!-- SCREEN 8: DISTRIBUTION (EXACTLY 1 SEALED PACKAGE!) -->
@@ -1275,6 +1505,17 @@
             </div>
             <div class="mistake-dots" id="mbMistakeDots">
                 <!-- Dynamically populated based on maxMistakes -->
+            </div>
+        </div>
+
+        <!-- Shared Device / Pass-the-Phone Player Selector (Visible if local friends present) -->
+        <div id="localFriendsMysterySwitcher" class="card" style="padding: 8px 10px; display: none; background: rgba(6, 182, 212, 0.12); border: 1.5px solid var(--accent); margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 11px; font-weight: 700; color: var(--accent);">📱 پرونده فعال در این گوشی (گوشی مشترک):</span>
+                <span class="tag-pill" style="font-size: 10px; background: rgba(6, 182, 212, 0.2); color: var(--accent);">دست‌به‌دست</span>
+            </div>
+            <div id="localMysteryPlayerTabs" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px;">
+                <!-- Filled with buttons for Host and local friends -->
             </div>
         </div>
 
@@ -1902,6 +2143,76 @@
     </div>
 </div>
 
+<!-- Modal: Create Case Room (Host sets Name and optional Password) -->
+<div class="modal-overlay" id="createRoomModal">
+    <div class="modal-sheet">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 24px;">🎮</span>
+                <h3 style="font-size: 16px; font-weight: 800; color: var(--accent);">ساخت پرونده جدید (میزبانی)</h3>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="closeCreateRoomModal()" style="padding: 2px 8px;">✕</button>
+        </div>
+
+        <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin-top: 4px;">
+            تنها کافیست یک نام برای اتاق پرونده بگذارید. در صورت تمایل می‌توانید رمز عبور هم تعیین کنید.
+        </p>
+
+        <div class="input-group" style="margin-top: 8px;">
+            <label class="input-label">🏠 نام اتاق / پرونده</label>
+            <input class="input-field" id="createRoomNameInput" value="پرونده عمارت مشکوک" placeholder="مثال: پرونده عمارت مشکوک..." />
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">🔒 رمز عبور اتاق (اختیاری)</label>
+            <input class="input-field" id="createRoomPasswordInput" type="text" placeholder="بدون رمز (خالی بگذارید) یا رمز دلخواه..." />
+            <p style="font-size: 10.5px; color: var(--text-muted); margin: 3px 0 0;">
+                💡 اگر خالی بگذارید، اتاق بدون رمز بوده و دوستان با یک لمس به راحتی وارد می‌شوند.
+            </p>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button class="btn" style="flex: 2;" onclick="confirmHostCreateRoom()">
+                🚀 ایجاد پرونده و ورود به لابی
+            </button>
+            <button class="btn btn-secondary" style="flex: 1;" onclick="closeCreateRoomModal()">
+                انصراف
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Room Password Prompt (When joining a password-protected room) -->
+<div class="modal-overlay" id="roomPasswordModal">
+    <div class="modal-sheet">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 22px;">🔒</span>
+                <h3 style="font-size: 15px; font-weight: 800; color: var(--accent);">اتاق پرونده دارای رمز عبور است</h3>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="closeRoomPasswordModal()" style="padding: 2px 8px;">✕</button>
+        </div>
+
+        <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin-top: 4px;">
+            میزبان برای ورود به اتاق <b id="roomPasswordModalRoomName" style="color: #FFF;">...</b> رمز عبور تعیین کرده است:
+        </p>
+
+        <div class="input-group" style="margin-top: 6px;">
+            <label class="input-label">رمز عبور اتاق</label>
+            <input class="input-field" id="joinRoomPasswordInput" type="password" placeholder="رمز عبور تعیین‌شده توسط میزبان..." />
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button class="btn" style="flex: 2;" onclick="confirmJoinRoomWithPassword()">
+                🔓 ورود به پرونده
+            </button>
+            <button class="btn btn-secondary" style="flex: 1;" onclick="closeRoomPasswordModal()">
+                انصراف
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Navigation Pill -->
 <div class="nav-bar">
     <div class="nav-pill"></div>
@@ -2521,6 +2832,14 @@ en: {
     let lastKnownPhase = 'lobby';
     let serverGameState = null;
     let isConnectingToHost = false;
+    let currentRoomName = "پرونده عمارت مشکوک";
+    let currentRoomPassword = "";
+    let localFriendQcIndex = 0;
+    let localFriendAnsIndex = 0;
+    let activeLocalViewingPlayerId = null;
+    let discoveredRooms = [];
+    let isRadarScanning = false;
+    let pendingJoinRoom = null;
 
     // Detect Host IP with priority for Android hotspot gateway (192.168.43.x)
     function detectHostIp() {
@@ -2781,6 +3100,12 @@ en: {
     function applyServerGameState(state) {
         if (!state) return;
         serverGameState = state;
+
+        if (state.roomName) {
+            currentRoomName = state.roomName;
+            const nameDisplay = document.getElementById('lobbyRoomNameDisplay');
+            if (nameDisplay) nameDisplay.textContent = currentRoomName;
+        }
 
         // 1. Sync realPlayers
         if (Array.isArray(state.realPlayers) && state.realPlayers.length > 0) {
@@ -3736,6 +4061,9 @@ en: {
         if (screenName === 'home') {
             updateHomeActiveCaseCard();
         }
+        if (screenName === 'join-room') {
+            setTimeout(triggerRadarScan, 150);
+        }
     }
 
     // --- 7. LANGUAGE & LOCALIZATION ---
@@ -3928,9 +4256,369 @@ en: {
         goToScreen('home');
     }
 
-    // --- 9. LOBBY (NO FAKE / MOCK PLAYERS!) ---
-    async function startLobby(isHost) {
+    // --- 9. LOBBY & ROOM CREATION & SEARCH RADAR ---
+    function openCreateRoomModal() {
+        const modal = document.getElementById('createRoomModal');
+        const nameInput = document.getElementById('createRoomNameInput');
+        const passInput = document.getElementById('createRoomPasswordInput');
+
+        if (nameInput) {
+            nameInput.value = `پرونده کارآگاه ${myNickname}`;
+        }
+        if (passInput) {
+            passInput.value = '';
+        }
+        if (modal) modal.classList.add('active');
+        playSfx('click');
+    }
+
+    function closeCreateRoomModal() {
+        const modal = document.getElementById('createRoomModal');
+        if (modal) modal.classList.remove('active');
+        playSfx('click');
+    }
+
+    function confirmHostCreateRoom() {
+        const nameInput = document.getElementById('createRoomNameInput');
+        const passInput = document.getElementById('createRoomPasswordInput');
+
+        const roomName = nameInput ? nameInput.value.trim() : '';
+        const roomPassword = passInput ? passInput.value.trim() : '';
+
+        currentRoomName = roomName || `پرونده کارآگاه ${myNickname}`;
+        currentRoomPassword = roomPassword;
+
+        closeCreateRoomModal();
+        startLobby(true, currentRoomName, currentRoomPassword);
+    }
+
+    function openRoomPasswordModal(room) {
+        pendingJoinRoom = room;
+        const modal = document.getElementById('roomPasswordModal');
+        const nameEl = document.getElementById('roomPasswordModalRoomName');
+        const passInput = document.getElementById('joinRoomPasswordInput');
+
+        if (nameEl) nameEl.textContent = room.roomName || 'اتاق پرونده';
+        if (passInput) {
+            passInput.value = '';
+            setTimeout(() => passInput.focus(), 150);
+        }
+        if (modal) modal.classList.add('active');
+        playSfx('click');
+    }
+
+    function closeRoomPasswordModal() {
+        const modal = document.getElementById('roomPasswordModal');
+        if (modal) modal.classList.remove('active');
+        pendingJoinRoom = null;
+        playSfx('click');
+    }
+
+    function confirmJoinRoomWithPassword() {
+        const passInput = document.getElementById('joinRoomPasswordInput');
+        const pw = passInput ? passInput.value.trim() : '';
+        const target = pendingJoinRoom;
+        closeRoomPasswordModal();
+        if (target) {
+            executeJoinRoom(target, pw);
+        }
+    }
+
+    function toggleManualIpSection() {
+        const sec = document.getElementById('manualIpSection');
+        if (!sec) return;
+        sec.style.display = sec.style.display === 'none' ? 'flex' : 'none';
+        playSfx('click');
+    }
+
+    // AUTOMATIC NETWORK SEARCH RADAR
+    async function triggerRadarScan() {
+        if (isRadarScanning) return;
+        isRadarScanning = true;
+
+        const statusTitle = document.getElementById('radarStatusTitle');
+        const statusText = document.getElementById('radarStatusText');
+        const refreshBtn = document.getElementById('radarRefreshBtn');
+        const countTag = document.getElementById('discoveredRoomsCountTag');
+        const listEl = document.getElementById('radarDiscoveredRoomsList');
+
+        if (refreshBtn) {
+            refreshBtn.disabled = true;
+            refreshBtn.textContent = '⏳ در حال جستجو...';
+        }
+        if (statusTitle) statusTitle.textContent = '📡 رادار در حال پایش شبکه...';
+        if (statusText) statusText.textContent = 'پایش پورت‌های هات‌اسپات، مودم محلی و امواج UDP...';
+
+        discoveredRooms = [];
+
+        // 1. Android Native Radar Probe (UDP beacon + local gateway probe)
+        if (window.DetectiveNative && window.DetectiveNative.scanLocalRooms) {
+            try {
+                const jsonStr = window.DetectiveNative.scanLocalRooms();
+                if (jsonStr) {
+                    const parsed = JSON.parse(jsonStr);
+                    if (Array.isArray(parsed)) {
+                        parsed.forEach(r => {
+                            if (r && (r.status === 'ok' || r.roomId)) {
+                                discoveredRooms.push(r);
+                            }
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error("Native scanLocalRooms error:", e);
+            }
+        }
+
+        // 2. HTTP Probes to standard candidate IPs and ports
+        const candidateIps = ['192.168.43.1', '127.0.0.1', '10.0.2.2'];
+        if (window.location && window.location.hostname && !candidateIps.includes(window.location.hostname)) {
+            candidateIps.push(window.location.hostname);
+        }
+        const ports = (window.location && window.location.port === '3000') ? [3000, 8080, 8081] : [8080, 8081, 3000];
+
+        const probePromises = [];
+        for (const ip of candidateIps) {
+            for (const port of ports) {
+                probePromises.push(
+                    dgNetworkRequest('GET', `http://${ip}:${port}/api/ping`)
+                        .then(res => {
+                            if (res && res.status === 'ok') {
+                                return { ...res, hostIp: ip, port: port };
+                            }
+                            return null;
+                        })
+                        .catch(() => null)
+                );
+            }
+        }
+
+        // Also query /api/rooms
+        probePromises.push(
+            dgNetworkRequest('GET', '/api/rooms')
+                .then(res => {
+                    if (res && res.status === 'ok' && Array.isArray(res.rooms)) {
+                        return res.rooms;
+                    }
+                    return null;
+                })
+                .catch(() => null)
+        );
+
+        try {
+            const results = await Promise.all(probePromises);
+            results.forEach(item => {
+                if (!item) return;
+                if (Array.isArray(item)) {
+                    item.forEach(r => discoveredRooms.push(r));
+                } else if (item.status === 'ok' || item.roomId) {
+                    discoveredRooms.push(item);
+                }
+            });
+        } catch (_) {}
+
+        // Deduplicate discovered rooms by roomId or hostIp:port
+        const uniqueMap = new Map();
+        discoveredRooms.forEach(r => {
+            const key = r.roomId || `${r.hostIp}:${r.port}`;
+            if (!uniqueMap.has(key)) {
+                uniqueMap.set(key, r);
+            }
+        });
+        discoveredRooms = Array.from(uniqueMap.values());
+
+        isRadarScanning = false;
+        if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.textContent = '🔄 اسکن مجدد رادار';
+        }
+
+        renderDiscoveredRooms();
+    }
+
+    function renderDiscoveredRooms() {
+        const listEl = document.getElementById('radarDiscoveredRoomsList');
+        const countTag = document.getElementById('discoveredRoomsCountTag');
+        const statusTitle = document.getElementById('radarStatusTitle');
+        const statusText = document.getElementById('radarStatusText');
+
+        if (!listEl) return;
+        if (countTag) countTag.textContent = `${discoveredRooms.length} اتاق`;
+
+        if (discoveredRooms.length === 0) {
+            if (statusTitle) statusTitle.textContent = '🔍 اتاقی در شبکه کشف نشد';
+            if (statusText) statusText.textContent = 'مطمئن شوید وای‌فای این گوشی به هات‌اسپات یا مودم گوشی میزبان متصل است و میزبان اتاق را ساخته است.';
+            listEl.innerHTML = `
+                <div style="text-align: center; padding: 18px 12px; color: var(--text-muted); font-size: 12px; background: var(--surface); border: 1px dashed var(--border); border-radius: 12px; line-height: 1.5;">
+                    رادار اتاقی در شبکه محلی نیافت.<br>
+                    <span style="font-size: 11px; color: var(--text-secondary);">
+                        ۱. وای‌فای گوشی را به هات‌اسپات گوشی میزبان وصل کنید.<br>
+                        ۲. دکمه «اسکن مجدد رادار» را لمس نمایید.
+                    </span>
+                </div>
+            `;
+            return;
+        }
+
+        if (statusTitle) statusTitle.textContent = `🎉 ${discoveredRooms.length} پرونده فعال کشف شد!`;
+        if (statusText) statusText.textContent = 'روی اتاق مورد نظر ضربه بزنید تا مستقیماً ملحق شوید:';
+
+        listEl.innerHTML = discoveredRooms.map((room, idx) => {
+            const rName = escapeHtml(room.roomName || 'اتاق کارآگاهان');
+            const hNick = escapeHtml(room.hostNickname || 'میزبان');
+            const hasPw = !!room.hasPassword;
+            const pCount = room.playerCount || 1;
+            const rId = escapeHtml(room.roomId || 'DG-4829');
+
+            return `
+                <div class="card card-elevated" style="border: 1.5px solid var(--accent); padding: 12px; gap: 8px; background: linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(15, 23, 42, 0.9));">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(6, 182, 212, 0.2); border: 1.5px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                                🏠
+                            </div>
+                            <div>
+                                <h4 style="font-size: 14px; font-weight: 800; color: #FFF; margin: 0;">${rName}</h4>
+                                <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                                    <span style="font-size: 11px; color: var(--accent);">👑 ${hNick}</span>
+                                    <span style="font-size: 10px; color: var(--text-muted);">• ${rId}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="tag-pill" style="font-size: 10.5px; background: ${hasPw ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}; color: ${hasPw ? 'var(--error)' : 'var(--success)'}; border: 1px solid ${hasPw ? 'rgba(239, 68, 68, 0.4)' : 'rgba(16, 185, 129, 0.4)'};">
+                            ${hasPw ? '🔒 دارای رمز' : '🔓 بدون رمز'}
+                        </span>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(148, 163, 184, 0.15); padding-top: 8px; margin-top: 4px;">
+                        <div style="font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px;">
+                            <span>👥 کارآگاهان: <b>${pCount}</b> / ۲۰</span>
+                        </div>
+                        <button class="btn btn-sm" style="padding: 6px 14px; font-weight: 800;" onclick="handleSelectDiscoveredRoom(${idx})">
+                            🔗 ورود به این اتاق
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function handleSelectDiscoveredRoom(index) {
+        const room = discoveredRooms[index];
+        if (!room) return;
+
+        if (room.hasPassword) {
+            openRoomPasswordModal(room);
+        } else {
+            executeJoinRoom(room, '');
+        }
+    }
+
+    async function executeJoinRoom(room, password = '') {
+        const joinNick = document.getElementById('joinNicknameInput')?.value?.trim() || myNickname || "کارآگاه مهمان";
+        const joinBadge = myPlayerBadgeId;
+
+        currentHostIp = room.hostIp || "192.168.43.1";
+        currentHostPort = room.port || 8080;
+        currentRoomId = room.roomId || "DG-4829";
+        currentRoomName = room.roomName || "اتاق کارآگاهان";
+        currentRoomPassword = password;
+        myNickname = joinNick;
+
+        const refreshBtn = document.getElementById('radarRefreshBtn');
+        if (refreshBtn) refreshBtn.textContent = '⏳ در حال ورود...';
+
+        try {
+            myPlayerId = `p_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
+            const joinPayload = {
+                roomId: currentRoomId,
+                password: password,
+                player: {
+                    id: myPlayerId,
+                    nickname: joinNick,
+                    avatar: myAvatar,
+                    badgeId: joinBadge,
+                    isHost: false,
+                    isReady: true,
+                    rightGuesses: 0,
+                    wrongGuesses: 0,
+                    mistakes: 0,
+                    maxMistakes: 3
+                }
+            };
+
+            const res = await dgNetworkRequest('POST', `http://${currentHostIp}:${currentHostPort}/api/join`, joinPayload);
+            if (res && res.status === 'ok') {
+                isHostMode = false;
+                myPlayerId = res.playerId || myPlayerId;
+                if (res.roomName) currentRoomName = res.roomName;
+
+                if (res.gameState) {
+                    applyServerGameState(res.gameState);
+                }
+
+                updateLobbyDisplays();
+
+                // Hide Host-only Friend adding from Joiner
+                const addFriendCard = document.getElementById('addFriendNameInput')?.closest('.card');
+                if (addFriendCard) addFriendCard.style.display = 'none';
+
+                goToScreen('lobby');
+                renderLobbyPlayers();
+                playSfx('clue_solve');
+
+                showGameNotification({
+                    title: currentLang === 'fa' ? "ورود با موفقیت انجام شد! 🎉" : "Connected to Room! 🎉",
+                    message: `${currentRoomName}`,
+                    type: 'success'
+                });
+
+                startClientPolling();
+            } else if (res && res.code === 'WRONG_PASSWORD') {
+                alert(currentLang === 'fa' ? "❌ رمز عبور اتاق اشتباه است!" : "❌ Incorrect room password!");
+            } else {
+                alert(res?.message || (currentLang === 'fa' ? "خطا در پیوستن به اتاق پرونده." : "Failed to join case room."));
+            }
+        } catch (err) {
+            alert(currentLang === 'fa'
+                ? `❌ خطا در برقراری ارتباط با گوشی میزبان (${currentHostIp}:${currentHostPort}). مطمئن شوید وای‌فای به هات‌اسپات میزبان وصل است.`
+                : `❌ Connection error to host (${currentHostIp}:${currentHostPort}). Ensure Wi-Fi is connected to host hotspot.`);
+        } finally {
+            if (refreshBtn) refreshBtn.textContent = '🔄 اسکن مجدد رادار';
+        }
+    }
+
+    function updateLobbyDisplays() {
+        const ipDisplay = document.getElementById('lobbyHostIpDisplay');
+        const roomIdDisplay = document.getElementById('lobbyRoomIdDisplay');
+        const pinDisplay = document.getElementById('lobbyPinDisplay');
+        const nameDisplay = document.getElementById('lobbyRoomNameDisplay');
+        const passBadge = document.getElementById('lobbyPasswordStatusBadge');
+
+        if (ipDisplay) ipDisplay.textContent = currentHostIp;
+        if (roomIdDisplay) roomIdDisplay.textContent = currentRoomId;
+        if (pinDisplay) pinDisplay.textContent = `${currentLang === 'fa' ? 'شناسه اتاق' : 'Room ID'}: ${currentRoomId}`;
+        if (nameDisplay) nameDisplay.textContent = currentRoomName || 'اتاق کارآگاهان';
+        if (passBadge) {
+            if (currentRoomPassword && currentRoomPassword.length > 0) {
+                passBadge.textContent = '🔒 دارای رمز عبور';
+                passBadge.style.color = 'var(--error)';
+                passBadge.style.background = 'rgba(239, 68, 68, 0.2)';
+                passBadge.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+            } else {
+                passBadge.textContent = '🔓 بدون رمز (عمومی)';
+                passBadge.style.color = 'var(--success)';
+                passBadge.style.background = 'rgba(16, 185, 129, 0.2)';
+                passBadge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+            }
+        }
+    }
+
+    async function startLobby(isHost, customRoomName, customRoomPassword) {
         if (isConnectingToHost) return;
+
+        if (customRoomName) currentRoomName = customRoomName;
+        if (customRoomPassword !== undefined) currentRoomPassword = customRoomPassword;
 
         if (isHost) {
             // ================== HOST FLOW ==================
@@ -3957,6 +4645,9 @@ en: {
 
             const initialGameState = {
                 roomId: currentRoomId,
+                roomName: currentRoomName,
+                roomPassword: currentRoomPassword,
+                hostNickname: myNickname,
                 hostIp: currentHostIp,
                 hostPort: currentHostPort,
                 phase: 'lobby',
@@ -3978,26 +4669,33 @@ en: {
             // Start native server on Android
             if (window.DetectiveNative && window.DetectiveNative.startHostServer) {
                 try {
-                    window.DetectiveNative.startHostServer(currentHostPort, currentRoomId, JSON.stringify(initialGameState));
+                    window.DetectiveNative.startHostServer(
+                        currentHostPort,
+                        currentRoomId,
+                        currentRoomName,
+                        currentRoomPassword,
+                        myNickname,
+                        JSON.stringify(initialGameState)
+                    );
                 } catch (e) {
                     console.error("Native startHostServer failed:", e);
                 }
             }
 
             // Sync to web preview server if in browser
-            dgNetworkRequest('POST', '/api/sync', { roomId: currentRoomId, gameState: initialGameState }).catch(() => {});
+            dgNetworkRequest('POST', '/api/sync', {
+                roomId: currentRoomId,
+                roomName: currentRoomName,
+                roomPassword: currentRoomPassword,
+                hostNickname: myNickname,
+                gameState: initialGameState
+            }).catch(() => {});
 
             // Start Host background sync loop
             if (hostSyncInterval) clearInterval(hostSyncInterval);
             hostSyncInterval = setInterval(hostSyncTick, 700);
 
-            // Display Host Info Card
-            const ipDisplay = document.getElementById('lobbyHostIpDisplay');
-            const roomIdDisplay = document.getElementById('lobbyRoomIdDisplay');
-            const pinDisplay = document.getElementById('lobbyPinDisplay');
-            if (ipDisplay) ipDisplay.textContent = currentHostIp;
-            if (roomIdDisplay) roomIdDisplay.textContent = currentRoomId;
-            if (pinDisplay) pinDisplay.textContent = `${currentLang === 'fa' ? 'شناسه اتاق' : 'Room ID'}: ${currentRoomId}`;
+            updateLobbyDisplays();
 
             const hostCard = document.getElementById('lobbyHostNetworkCard');
             if (hostCard) hostCard.style.display = 'flex';
@@ -4010,11 +4708,11 @@ en: {
             renderLobbyPlayers();
             saveActiveCaseState('lobby');
         } else {
-            // ================== JOINER FLOW ==================
+            // Manual fallback
             const joinNick = document.getElementById('joinNicknameInput')?.value?.trim() || "کارآگاه مهمان";
             let hostIp = document.getElementById('joinIpInput')?.value?.trim() || "192.168.43.1";
             let joinPin = document.getElementById('joinPinInput')?.value?.trim() || "DG-4829";
-            const joinBadge = document.getElementById('joinPlayerBadgeInput')?.value?.trim() || myPlayerBadgeId;
+            const joinPw = document.getElementById('joinManualPasswordInput')?.value?.trim() || "";
 
             let hostPort = 8080;
             if (hostIp.includes(':')) {
@@ -4025,123 +4723,13 @@ en: {
                 hostPort = 3000;
             }
 
-            currentHostIp = hostIp;
-            currentHostPort = hostPort;
-            currentRoomId = joinPin;
-            myNickname = joinNick;
-            myPlayerBadgeId = joinBadge;
-            localStorage.setItem('dg_player_badge_id', myPlayerBadgeId);
-
-            // Check if this badge has an existing saved case for this room:
-            const raw = localStorage.getItem('dg_active_case');
-            if (raw) {
-                try {
-                    const saved = JSON.parse(raw);
-                    if (saved.roomId === currentRoomId || saved.playerBadgeId === myPlayerBadgeId || saved.playerToken?.includes(myPlayerBadgeId)) {
-                        resumeActiveCase();
-                        showGameNotification({
-                            title: currentLang === 'fa' ? "مدارک با موفقیت بازیابی شد! 🎉" : "Evidence Restored! 🎉",
-                            message: currentLang === 'fa' ? "با نشان اختصاصی‌ت برگشتی و ۱۰۰٪ سوالات، جواب‌ها و پاکت مدارکت لود شد!" : "Restored your case progress and evidence package with your Badge ID!",
-                            type: 'success'
-                        });
-                        return;
-                    }
-                } catch (_) {}
-            }
-
-            const connectBtn = document.querySelector('#screen-join-room button.btn');
-            const originalBtnHtml = connectBtn ? connectBtn.innerHTML : '';
-            if (connectBtn) {
-                connectBtn.disabled = true;
-                connectBtn.innerHTML = currentLang === 'fa'
-                    ? `⏳ در حال اتصال به ${hostIp}...`
-                    : `⏳ Connecting to ${hostIp}...`;
-            }
-            isConnectingToHost = true;
-
-            try {
-                myPlayerId = `p_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
-                const joinPayload = {
-                    roomId: joinPin,
-                    player: {
-                        id: myPlayerId,
-                        nickname: joinNick,
-                        avatar: myAvatar,
-                        badgeId: joinBadge,
-                        isHost: false,
-                        isReady: true,
-                        rightGuesses: 0,
-                        wrongGuesses: 0,
-                        mistakes: 0,
-                        maxMistakes: 3
-                    }
-                };
-
-                const res = await dgNetworkRequest('POST', `http://${hostIp}:${hostPort}/api/join`, joinPayload);
-                if (res && res.status === 'ok') {
-                    isHostMode = false;
-                    myPlayerId = res.playerId || myPlayerId;
-
-                    if (res.gameState) {
-                        applyServerGameState(res.gameState);
-                    }
-
-                    // Display Joiner Info Card
-                    const hostCard = document.getElementById('lobbyHostNetworkCard');
-                    if (hostCard) {
-                        hostCard.style.display = 'flex';
-                        const ipDisp = document.getElementById('lobbyHostIpDisplay');
-                        if (ipDisp) ipDisp.textContent = `${hostIp} (${currentLang === 'fa' ? 'متصل' : 'Connected'})`;
-                        const rmDisp = document.getElementById('lobbyRoomIdDisplay');
-                        if (rmDisp) rmDisp.textContent = currentRoomId;
-                    }
-
-                    // Hide Host-only Friend adding from Joiner
-                    const addFriendCard = document.getElementById('addFriendNameInput')?.closest('.card');
-                    if (addFriendCard) addFriendCard.style.display = 'none';
-
-                    goToScreen('lobby');
-                    renderLobbyPlayers();
-                    playSfx('clue_solve');
-
-                    showGameNotification({
-                        title: currentLang === 'fa' ? "اتصال به اتاق پرونده موفقیت‌آمیز بود! 🎉" : "Connected to Room! 🎉",
-                        message: currentLang === 'fa' ? `به پرونده میزبان در ${hostIp} متصل شدید.` : `Connected to host at ${hostIp}.`,
-                        type: 'success'
-                    });
-
-                    startClientPolling();
-                } else {
-                    const msg = res?.message || (currentLang === 'fa' ? "خطا در اتصال به اتاق پرونده." : "Failed to join case room.");
-                    alert(msg);
-                }
-            } catch (err) {
-                const faErr = `❌ خطا در برقراری ارتباط با گوشی میزبان!
-
-آدرس مقصد: ${hostIp}:${hostPort}
-
-لطفاً موارد زیر را بررسی کنید:
-۱. آیا وای‌فای این گوشی به هات‌اسپات (Hotspot) گوشی میزبان متصل شده است؟
-۲. آیا گوشی میزبان دکمه «ایجاد پرونده جدید» را زده و در اتاق انتظار (لابی) حضور دارد؟
-۳. آیا آدرس آی‌پی (${hostIp}) با IP نمایش داده شده روی گوشی میزبان یکسان است؟`;
-
-                const enErr = `❌ Cannot connect to Host Phone!
-
-Target: ${hostIp}:${hostPort}
-
-Please verify:
-1. Is this phone connected to the Host's Hotspot or local Wi-Fi?
-2. Has the Host created the room and is currently in the Lobby?
-3. Does the IP (${hostIp}) match the Host IP displayed on the host phone?`;
-
-                alert(currentLang === 'fa' ? faErr : enErr);
-            } finally {
-                isConnectingToHost = false;
-                if (connectBtn) {
-                    connectBtn.disabled = false;
-                    connectBtn.innerHTML = originalBtnHtml;
-                }
-            }
+            executeJoinRoom({
+                hostIp: hostIp,
+                port: hostPort,
+                roomId: joinPin,
+                roomName: "پرونده",
+                hasPassword: !!joinPw
+            }, joinPw);
         }
     }
 
@@ -4161,6 +4749,7 @@ Please verify:
             avatar: freeAvatar.id,
             badgeId: "DET-" + Math.floor(1000 + Math.random() * 9000),
             isHost: false,
+            isLocalFriend: true, // Marked as local friend on shared host device!
             isReady: true,
             rightGuesses: 0,
             wrongGuesses: 0,
@@ -4190,6 +4779,8 @@ Please verify:
 
         if (!container) return;
 
+        updateLobbyDisplays();
+
         countLabel.textContent = `${currentLang === 'fa' ? 'کارآگاهان' : 'Detectives'}: ${realPlayers.length} / 20`;
         container.innerHTML = '';
 
@@ -4204,6 +4795,7 @@ Please verify:
                     <div>
                         <span style="font-weight: 700; font-size: 14px;">${escapeHtml(p.nickname)} ${isMe ? `<span style="font-size: 11px; color: var(--accent);">(${currentLang==='fa'?'شما':'You'})</span>` : ''}</span>
                         ${p.isHost ? `<span class="tag-pill" style="margin-${currentLang==='fa'?'right':'left'}: 6px;">[${currentLang==='fa'?'میزبان':'Host'}]</span>` : ''}
+                        ${p.isLocalFriend ? `<span class="tag-pill" style="margin-${currentLang==='fa'?'right':'left'}: 4px; background: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.4); font-size: 10px;">📱 گوشی مشترک</span>` : ''}
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -4445,7 +5037,14 @@ Please verify:
         if (isHostMode) {
             if (!serverGameState.submittedQuestions) serverGameState.submittedQuestions = {};
             serverGameState.submittedQuestions[myPlayerId] = myQuestions;
-            checkAndProceedToAnsweringPhase();
+
+            const localFriends = realPlayers.filter(p => p.isLocalFriend && p.id !== myPlayerId);
+            if (localFriends.length > 0) {
+                localFriendQcIndex = 0;
+                showLocalFriendQcScreen();
+            } else {
+                checkAndProceedToAnsweringPhase();
+            }
         }
     }
 
@@ -4460,10 +5059,10 @@ Please verify:
             "چه رازی را هرگز به هیچ کارآگاهی نخواهی گفت؟"
         ];
 
-        // For mock players who do not have physical devices, fill default questions
+        // For mock players who do not have physical devices and are not local friends
         realPlayers.forEach((p, idx) => {
             if (!serverGameState.submittedQuestions[p.id]) {
-                if (idx > 0 && p.id !== myPlayerId) {
+                if (idx > 0 && p.id !== myPlayerId && !p.isLocalFriend) {
                     serverGameState.submittedQuestions[p.id] = [
                         defaultQuestions[0] + ` (${p.nickname})`,
                         defaultQuestions[1] + ` (${p.nickname})`,
@@ -4559,7 +5158,14 @@ Please verify:
         if (isHostMode) {
             if (!serverGameState.submittedAnswers) serverGameState.submittedAnswers = {};
             serverGameState.submittedAnswers[myPlayerId] = myAnswers;
-            checkAndProceedToMysteryBoard();
+
+            const localFriends = realPlayers.filter(p => p.isLocalFriend && p.id !== myPlayerId);
+            if (localFriends.length > 0) {
+                localFriendAnsIndex = 0;
+                showLocalFriendAnsScreen();
+            } else {
+                checkAndProceedToMysteryBoard();
+            }
         }
     }
 
@@ -4576,7 +5182,7 @@ Please verify:
 
         realPlayers.forEach((p, idx) => {
             if (!serverGameState.submittedAnswers[p.id]) {
-                if (idx > 0 && p.id !== myPlayerId) {
+                if (idx > 0 && p.id !== myPlayerId && !p.isLocalFriend) {
                     serverGameState.submittedAnswers[p.id] = [
                         defaultAnswers[0] + ` (${p.nickname})`,
                         defaultAnswers[1] + ` (${p.nickname})`,
@@ -4652,6 +5258,7 @@ Please verify:
         }
 
         renderSinglePackageContent();
+        setupLocalFriendsMysterySwitcher();
         updateScoreboardDisplay();
         updateMistakesDisplay();
         goToScreen('distribution');

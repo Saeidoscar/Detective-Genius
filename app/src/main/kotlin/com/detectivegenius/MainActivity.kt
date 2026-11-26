@@ -20,7 +20,11 @@ import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import com.detectivegenius.networking.server.EmbeddedHttpServer
 import java.io.InputStream
+import java.net.DatagramPacket
+import java.net.DatagramSocket
 import java.net.HttpURLConnection
+import java.net.InetAddress
+import java.net.NetworkInterface
 import java.net.URL
 
 /**
@@ -139,21 +143,41 @@ class MainActivity : Activity() {
 /**
  * JavaScript interface exposed to the WebView as window.DetectiveNative.
  * Bridges Android OS features (Vibration/Haptics, Share, Platform detection,
- * embedded HTTP server for Hotspot/LAN multiplayer, and native HTTP client).
+ * embedded HTTP server for Hotspot/LAN multiplayer, radar scanner, and native HTTP client).
  */
 class DetectiveNativeBridge(private val context: Context) {
 
     private val httpServer = EmbeddedHttpServer(preferredPort = 8080)
 
     @JavascriptInterface
-    fun startHostServer(port: Int, roomId: String, initialData: String): String {
+    fun startHostServer(
+        port: Int,
+        roomId: String,
+        roomName: String,
+        roomPassword: String,
+        hostNickname: String,
+        initialData: String
+    ): String {
         return try {
-            val actualPort = httpServer.start(roomId, initialData)
-            """{"status":"ok","port":$actualPort,"roomId":"$roomId"}"""
+            val actualPort = httpServer.start(
+                roomId = roomId,
+                name = roomName,
+                password = roomPassword,
+                hostNick = hostNickname,
+                initialRoomStateJson = initialData
+            )
+            val safeName = roomName.replace("\"", "\\\"")
+            """{"status":"ok","port":$actualPort,"roomId":"$roomId","roomName":"$safeName"}"""
         } catch (t: Throwable) {
             val safeMsg = (t.message ?: "Failed to start server").replace("\"", "\\\"")
             """{"status":"error","message":"$safeMsg"}"""
         }
+    }
+
+    // Overload for backward compatibility
+    @JavascriptInterface
+    fun startHostServer(port: Int, roomId: String, initialData: String): String {
+        return startHostServer(port, roomId, "اتاق کارآگاهان", "", "کارآگاه (میزبان)", initialData)
     }
 
     @JavascriptInterface
@@ -194,6 +218,83 @@ class DetectiveNativeBridge(private val context: Context) {
     @JavascriptInterface
     fun drainPendingActions(): String {
         return httpServer.drainPendingActions()
+    }
+
+    /**
+     * Automatic room discovery radar:
+     * 1. Probes common local gateways (192.168.43.1:8080, 127.0.0.1)
+     * 2. Listens for UDP broadcast beacons on port 8889
+     * Returns JSON array string of discovered active rooms.
+     */
+    @JavascriptInterface
+    fun scanLocalRooms(): String {
+        val foundRooms = mutableListOf<String>()
+        val testedEndpoints = mutableSetOf<String>()
+
+        // 1. Probing candidate host IPs: Hotspot gateway and localhost
+        val candidateIps = listOf("192.168.43.1", "127.0.0.1", "10.0.2.2")
+        val ports = listOf(8080, 8081, 8888, 3000)
+
+        for (ip in candidateIps) {
+            for (p in ports) {
+                val key = "$ip:$p"
+                if (testedEndpoints.add(key)) {
+                    val roomInfo = probeHttpRoom(ip, p)
+                    if (roomInfo != null) {
+                        foundRooms.add(roomInfo)
+                    }
+                }
+            }
+        }
+
+        // 2. Listen for UDP broadcast beacon on port 8889 for up to 1000ms
+        try {
+            val udpSocket = DatagramSocket(8889)
+            udpSocket.soTimeout = 1000
+            val buf = ByteArray(1024)
+            val packet = DatagramPacket(buf, buf.size)
+            try {
+                udpSocket.receive(packet)
+                val msg = String(packet.data, 0, packet.length, Charsets.UTF_8)
+                val senderIp = packet.address?.hostAddress ?: "192.168.43.1"
+                if (msg.contains("DG_ROOM_BEACON")) {
+                    val portMatch = Regex("\"port\"\\s*:\\s*([0-9]+)").find(msg)
+                    val p = portMatch?.groupValues?.get(1)?.toIntOrNull() ?: 8080
+                    val roomJson = probeHttpRoom(senderIp, p) ?: msg.replace("DG_ROOM_BEACON", "ok")
+                    foundRooms.add(roomJson)
+                }
+            } catch (_: Throwable) {
+                // Timeout listening for beacon
+            } finally {
+                udpSocket.close()
+            }
+        } catch (_: Throwable) {}
+
+        return "[" + foundRooms.distinct().joinToString(",") + "]"
+    }
+
+    private fun probeHttpRoom(ip: String, port: Int): String? {
+        var conn: HttpURLConnection? = null
+        return try {
+            val url = URL("http://$ip:$port/api/ping")
+            conn = url.openConnection() as HttpURLConnection
+            conn.connectTimeout = 600
+            conn.readTimeout = 600
+            conn.requestMethod = "GET"
+            if (conn.responseCode in 200..299) {
+                val body = conn.inputStream.bufferedReader(Charsets.UTF_8).readText()
+                if (body.contains("\"status\":\"ok\"")) {
+                    val withIp = if (!body.contains("\"hostIp\"")) {
+                        body.replaceFirst("{", "{\"hostIp\":\"$ip\",")
+                    } else body
+                    withIp
+                } else null
+            } else null
+        } catch (_: Throwable) {
+            null
+        } finally {
+            try { conn?.disconnect() } catch (_: Throwable) {}
+        }
     }
 
     /**
@@ -271,17 +372,31 @@ class DetectiveNativeBridge(private val context: Context) {
         return "1.0.1"
     }
 
+    /**
+     * Resolves the LAN / Hotspot IP address.
+     * Strictly filters out mobile carrier / cellular interfaces (rmnet, ccmni, pdp, lte)
+     * so cellular CGNAT IPs (e.g. 10.253.x.x) are never mistakenly used as the host IP!
+     * Prioritizes standard Android Hotspot gateway 192.168.43.1 or active Wi-Fi interface.
+     */
     @JavascriptInterface
     fun getDeviceIp(): String {
         try {
-            val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
+            val interfaces = NetworkInterface.getNetworkInterfaces()
             var hotspotIp: String? = null
             var wifiIp: String? = null
-            var otherIp: String? = null
 
             while (interfaces.hasMoreElements()) {
                 val iface = interfaces.nextElement()
                 val name = iface.name.lowercase()
+
+                // STRICT FILTER: Exclude cellular/mobile carrier, VPN, and dummy interfaces!
+                if (name.contains("rmnet") || name.contains("ccmni") || name.contains("pdp") ||
+                    name.contains("lte") || name.contains("data") || name.contains("radio") ||
+                    name.contains("wwan") || name.contains("tun") || name.contains("ppp") ||
+                    name.contains("dummy")) {
+                    continue
+                }
+
                 val addresses = iface.inetAddresses
                 while (addresses.hasMoreElements()) {
                     val addr = addresses.nextElement()
@@ -289,18 +404,22 @@ class DetectiveNativeBridge(private val context: Context) {
                         val ip = addr.hostAddress ?: continue
                         if (ip.startsWith("127.")) continue
 
-                        // Prioritize standard Android hotspot gateway 192.168.43.x or ap interface
-                        if (ip.startsWith("192.168.43.") || name.contains("ap") || name.contains("swlan") || name.contains("hotspot")) {
-                            hotspotIp = ip
-                        } else if (name.contains("wlan") || ip.startsWith("192.168.")) {
+                        // Exclude carrier CGNAT IPs (10.x.x.x or 100.x.x.x when not on internal wlan)
+                        if (name.contains("wlan") || name.contains("eth") || name.contains("en")) {
                             if (wifiIp == null) wifiIp = ip
-                        } else {
-                            if (otherIp == null) otherIp = ip
+                        }
+
+                        // Hotspot gateway check
+                        if (ip == "192.168.43.1" || ip.startsWith("192.168.43.") ||
+                            name.contains("ap") || name.contains("swlan") || name.contains("hotspot") || name.contains("tether")) {
+                            hotspotIp = ip
                         }
                     }
                 }
             }
-            return hotspotIp ?: wifiIp ?: otherIp ?: "192.168.43.1"
+
+            // Return Hotspot IP if active, or Wi-Fi IP, or standard Android Hotspot IP 192.168.43.1
+            return hotspotIp ?: wifiIp ?: "192.168.43.1"
         } catch (_: Throwable) {
             return "192.168.43.1"
         }
